@@ -1,6 +1,8 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyProfileReceived } from "@/lib/email-flows";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export async function saveProfile(formData: FormData) {
@@ -29,6 +31,8 @@ export async function saveProfile(formData: FormData) {
     const { data, error } = await db.from("artisans").insert({ ...fields, user_id: user.id, country_code: profile.country_code }).select("id").single();
     if (error || !data) redirect("/tableau-de-bord?erreur=enregistrement");
     artisanId = data.id;
+    const newId = data.id as string;
+    after(() => notifyProfileReceived(newId));
   }
   await db.from("artisan_zones").delete().eq("artisan_id", artisanId!);
   await db.from("artisan_zones").insert(zoneIds.map((zone_id) => ({ artisan_id: artisanId!, zone_id })));

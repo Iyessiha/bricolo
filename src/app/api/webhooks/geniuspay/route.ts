@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
+import { notifyBoostPaid } from "@/lib/email-flows";
 import { parseWebhook, verifySignature } from "@/lib/geniuspay";
 import { activateFromPayment } from "@/lib/boost";
 
@@ -12,5 +13,6 @@ export async function POST(req: NextRequest) {
   if (!evt) return NextResponse.json({ error: "notification inconnue" }, { status: 400 });
   if (!evt.paid) return NextResponse.json({ received: true });
   const res = await activateFromPayment(evt.reference, evt.amount);
+  if (res.ok && !res.already) after(() => notifyBoostPaid(evt.reference));
   return NextResponse.json(res.ok ? { received: true } : { error: res.reason }, { status: res.ok ? 200 : 422 });
 }

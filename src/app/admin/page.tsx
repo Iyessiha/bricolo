@@ -31,7 +31,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Re
 
   return (
     <section className="inner sec stack">
-      <div><p className="eyebrow">Back-office</p><h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>Administration</h1></div>
+      <div className="row" style={{ justifyContent: "space-between" }}><div><p className="eyebrow">Back-office</p><h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>Administration</h1></div><a className="btn" href="/admin/campagnes">Campagnes e-mail</a></div>
       <div className="stats">
         <div className="card stat"><b>{all?.length ?? 0}</b><span>Artisans validés</span></div>
         <div className="card stat"><b>{pending?.length ?? 0}</b><span>Profils à valider</span></div>

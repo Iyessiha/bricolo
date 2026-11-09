@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
+import { notifyBoostPaid } from "@/lib/email-flows";
 import { activateFromPayment } from "@/lib/boost";
 import { isMock } from "@/lib/geniuspay";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
   const ref = req.nextUrl.searchParams.get("ref") ?? "";
   const { data: p } = await supabaseAdmin().from("payments").select("amount").eq("provider_ref", ref).maybeSingle();
   if (!p) return new NextResponse("Paiement inconnu", { status: 404 });
-  await activateFromPayment(ref, p.amount);
+  const res = await activateFromPayment(ref, p.amount);
+  if (res.ok && !res.already) after(() => notifyBoostPaid(ref));
   return NextResponse.redirect(new URL("/boosts?paye=1", siteUrl()), 303);
 }

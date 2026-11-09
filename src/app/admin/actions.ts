@@ -1,5 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyBadge, notifyDecision } from "@/lib/email-flows";
 import { supabaseServer } from "@/lib/supabase/server";
 
 async function admin() {
@@ -14,14 +16,18 @@ export async function decide(formData: FormData) {
   const db = await admin();
   if (!db) return;
   const status = formData.get("decision") === "approve" ? "approved" : "rejected";
-  await db.from("artisans").update({ status }).eq("id", String(formData.get("id")));
+  const id = String(formData.get("id"));
+  await db.from("artisans").update({ status }).eq("id", id);
+  after(() => notifyDecision(id, status === "approved"));
   revalidatePath("/admin");
 }
 
 export async function verifyArtisan(formData: FormData) {
   const db = await admin();
   if (!db) return;
-  await db.from("artisans").update({ verified: true, verification_requested: false }).eq("id", String(formData.get("id")));
+  const id = String(formData.get("id"));
+  await db.from("artisans").update({ verified: true, verification_requested: false }).eq("id", id);
+  after(() => notifyBadge(id));
   revalidatePath("/admin");
 }
 

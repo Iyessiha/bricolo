@@ -24,6 +24,7 @@ Sans clés Supabase, l'application s'ouvre et affiche un bandeau « configuratio
 2. Dans **SQL Editor**, exécuter dans l'ordre :
    - `supabase/migrations/0001_init.sql` (13 tables, RLS, fonctions, déclencheurs)
    - `supabase/seed.sql` (7 pays, métiers, zones, grille de prix)
+   - `supabase/migrations/0002_emails.sql` (journal d'e-mails, désabonnement, campagnes)
 3. **Authentication → URL Configuration** : Site URL = l'URL de production, et ajouter `https://<domaine>/auth/callback` (et `http://localhost:3000/auth/callback`) dans Redirect URLs.
 4. **Authentication → SMTP** : configurer un SMTP (Resend, Brevo…) pour que les liens magiques partent de votre domaine, le SMTP par défaut de Supabase est très limité.
 5. Se connecter une première fois sur le site, puis promouvoir votre compte administrateur :
@@ -31,6 +32,28 @@ Sans clés Supabase, l'application s'ouvre et affiche un bandeau « configuratio
 ```sql
 update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'vous@exemple.com');
 ```
+
+## 2 bis. E-mails (Resend)
+
+Tout passe par Resend : e-mails de l'application, de connexion et marketing.
+
+1. Resend → **Domains** : ajoutez votre domaine et créez les enregistrements DNS (SPF, DKIM). Sans domaine vérifié, seul l'expéditeur de test `onboarding@resend.dev` fonctionne, et uniquement vers votre propre adresse.
+2. Renseignez `RESEND_API_KEY` et `EMAIL_FROM` (voir ci-dessous).
+3. **Connexion par lien magique** : Supabase → Authentication → SMTP Settings, activez le SMTP personnalisé : hôte `smtp.resend.com`, port `465`, utilisateur `resend`, mot de passe = votre clé API Resend, expéditeur = `EMAIL_FROM`. Collez ensuite `supabase/email-templates/connexion.html` dans Authentication → Email Templates, à la fois pour « Magic Link » et « Confirm signup » (objet : « Votre lien de connexion Bricolo »).
+4. Webhook Resend → `https://<domaine>/api/webhooks/resend` (événements `email.bounced` et `email.complained`), puis copiez le secret `whsec_…` dans `RESEND_WEBHOOK_SECRET`. Les adresses en rebond ou en plainte sont automatiquement exclues du marketing.
+5. Exécutez aussi `supabase/migrations/0002_emails.sql`.
+
+| Déclencheur | E-mail | Type |
+|---|---|---|
+| Fiche créée | Profil reçu | transactionnel |
+| Admin valide / refuse | Profil en ligne / à corriger | transactionnel |
+| Badge accordé | Badge Vérifié | transactionnel |
+| Demande d'un client | Demande à l'artisan (réponse directe au client) + confirmation au client | transactionnel |
+| Paiement confirmé | Reçu de boost | transactionnel |
+| Tous les jours à 08:00 UTC | Boost qui se termine (rappel), compte sans fiche depuis 2 jours, aucun boost 7 jours après validation | rappel / marketing |
+| Admin → Campagnes e-mail | Message ciblé par pays, métier, « sans boost actif » | marketing |
+
+Chaque e-mail n'est envoyé qu'une fois (table `email_log`). Les messages marketing contiennent un lien de désabonnement et les en-têtes « un clic » exigés par Gmail et Yahoo. Plan gratuit Resend : 100 e-mails/jour, les envois automatiques sont plafonnés à 40 messages marketing par jour.
 
 ## 3. Variables d'environnement
 
@@ -41,7 +64,10 @@ update public.profiles set role = 'admin' where id = (select id from auth.users 
 | `NEXT_PUBLIC_SITE_URL` | URL publique du site |
 | `GENIUSPAY_MODE` | `mock` (simulation) ou `live` |
 | `GENIUSPAY_API_URL`, `GENIUSPAY_API_KEY`, `GENIUSPAY_WEBHOOK_SECRET` | Accès GeniusPay |
-| `CRON_SECRET` | Secret Bearer du cron d'expiration des boosts |
+| `CRON_SECRET` | Secret Bearer des tâches planifiées (expiration des boosts, e-mails) |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` | Envoi d'e-mails via Resend (sans clé : mode simulation) |
+| `UNSUBSCRIBE_SECRET` | Signe les liens de désabonnement |
+| `RESEND_WEBHOOK_SECRET` | Vérifie les webhooks Resend (rebonds, plaintes) |
 
 ## 4. Déploiement
 
@@ -53,7 +79,7 @@ update public.profiles set role = 'admin' where id = (select id from auth.users 
    git push -u origin main
    ```
 2. Sur vercel.com, **Import Project** depuis ce dépôt, puis renseigner les variables ci-dessus.
-3. `vercel.json` programme l'expiration des boosts chaque jour à 03:00 UTC (`/api/cron/expire-boosts`). Vercel envoie automatiquement `Authorization: Bearer $CRON_SECRET`.
+3. `vercel.json` programme deux tâches : expiration des boosts à 03:00 UTC (`/api/cron/expire-boosts`) et e-mails de rappel à 08:00 UTC (`/api/cron/emails`). Vercel envoie automatiquement `Authorization: Bearer $CRON_SECRET`.
 4. Webhook GeniusPay à déclarer : `https://<domaine>/api/webhooks/geniuspay`.
 
 ## 5. Règles métier importantes
