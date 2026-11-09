@@ -41,7 +41,7 @@ export async function reviewDossier(formData: FormData) {
   if (error) back(page, "erreur", /identite_requise/.test(error.message) ? "Aucune pièce d’identité à valider pour ce profil." : /photo_requise/.test(error.message) ? "Ce profil n’a pas de photo." : "La décision n’a pas pu être enregistrée.");
   after(() => notifyDecision(id, approve, reason ?? undefined));
   revalidatePath("/admin");
-  back("/admin", "ok", approve ? "Profil validé et mis en ligne." : "Dossier refusé, l’artisan est prévenu.");
+  back("/admin/dossiers", "ok", approve ? "Profil validé et mis en ligne." : "Dossier refusé, l’artisan est prévenu.");
 }
 
 export async function reviewDiplomaAction(formData: FormData) {
@@ -65,17 +65,4 @@ export async function verifyArtisan(formData: FormData) {
   await db.from("artisans").update({ verified: true, verification_requested: false }).eq("id", id);
   after(() => notifyBadge(id));
   revalidatePath("/admin");
-}
-
-export async function savePrices(formData: FormData) {
-  const db = await admin();
-  if (!db) return;
-  for (const [key, value] of formData.entries()) {
-    if (!key.startsWith("p:")) continue;
-    const amount = Math.max(0, parseInt(String(value), 10) || 0);
-    await db.from("price_grid").update({ amount }).eq("id", key.slice(2));
-  }
-  revalidatePath("/admin");
-  revalidatePath("/boosts");
-  back("/admin?vue=prix", "ok", "Prix enregistrés.");
 }

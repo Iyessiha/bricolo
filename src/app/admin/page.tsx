@@ -1,153 +1,117 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { hasSupabase } from "@/lib/env";
-import { supabaseServer } from "@/lib/supabase/server";
-import { COUNTRIES, countryName } from "@/lib/countries";
-import { BOOST_TYPES, DURATIONS, fcfa, initials } from "@/lib/format";
+import { COUNTRIES } from "@/lib/countries";
+import { fcfa } from "@/lib/format";
+import { requireAdmin, perDay, ago, one } from "@/lib/admin";
+import BarChart from "@/components/BarChart";
 import Flag from "@/components/Flag";
-import SetupNotice from "@/components/SetupNotice";
-import { savePrices, verifyArtisan } from "./actions";
-import { signOut } from "../auth-actions";
 
 export const metadata: Metadata = { title: "Administration", robots: { index: false } };
-const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
-const ago = (iso: string) => { const h = Math.floor((Date.now() - new Date(iso).getTime()) / 36e5); return h < 1 ? "à l’instant" : h < 48 ? `il y a ${h} h` : `il y a ${Math.floor(h / 24)} j`; };
-const STATUS = { pending: ["wait", "À valider"], approved: ["ok", "En ligne"], rejected: ["mute", "Refusé"] } as const;
-const VUES = [["dossiers", "Dossiers"], ["artisans", "Artisans"], ["prix", "Prix et pays"]] as const;
+const OLD: Record<string, string> = { dossiers: "/admin/dossiers", artisans: "/admin/artisans", prix: "/admin/prix" };
 
-export default async function Admin({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  if (!hasSupabase()) return <SetupNotice />;
+function Delta({ cur, prev }: { cur: number; prev: number }) {
+  if (!prev && !cur) return <small>—</small>;
+  if (!prev) return <small className="up">nouveau</small>;
+  const p = Math.round(((cur - prev) / prev) * 100);
+  return <small className={p >= 0 ? "up" : "down"}>{p >= 0 ? "▲" : "▼"} {Math.abs(p)} % vs 7 j précédents</small>;
+}
+
+export default async function Overview({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
-  const db = await supabaseServer();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) redirect("/connexion");
-  const { data: me } = await db.from("profiles").select("role").eq("id", user.id).single();
-  if (me?.role !== "admin") redirect("/");
+  if (sp.vue && OLD[sp.vue]) redirect(OLD[sp.vue]);
+  const { db } = await requireAdmin();
+  const nowIso = new Date().toISOString();
+  const d30 = new Date(Date.now() - 30 * 864e5).toISOString();
+  const d60 = new Date(Date.now() - 60 * 864e5).toISOString();
+  const cnt = (q: any) => q.then((r: any) => r.count ?? 0);
 
-  const vue = VUES.some(([k]) => k === sp.vue) ? sp.vue! : "dossiers";
-  const pays = COUNTRIES.some((c) => c.code === sp.pays) ? sp.pays! : "ci";
-  const since7 = new Date(Date.now() - 7 * 864e5).toISOString();
-
-  const count = (q: any) => q.then((r: any) => r.count ?? 0);
-  const [nOnline, nRejected, nBoosts, nReq, { data: paid }, { data: all }, { data: dipl }] = await Promise.all([
-    count(db.from("artisans").select("id", { count: "exact", head: true }).eq("status", "approved")),
-    count(db.from("artisans").select("id", { count: "exact", head: true }).eq("status", "rejected")),
-    count(db.from("boosts").select("id", { count: "exact", head: true }).eq("status", "active").gt("ends_at", new Date().toISOString())),
-    count(db.from("service_requests").select("id", { count: "exact", head: true }).gte("created_at", since7)),
-    db.from("payments").select("amount").eq("status", "paid"),
-    db.from("artisans").select("id, name, country_code, status, verified, verification_requested, diploma_verified, experience_years, photo_url, created_at, trade:trades(name), identity:artisan_identity(status, submitted_at, doc_type)").order("created_at", { ascending: false }).limit(300),
-    db.from("artisan_diplomas").select("id, artisan_id, title, submitted_at").eq("status", "pending").order("submitted_at"),
+  const [{ data: arts }, nAccounts, { data: ident }, { data: pays }, { data: reqs }, { data: views }, nBoosts, nDipl, nReviews, nFailed] = await Promise.all([
+    db.from("artisans").select("id, country_code, status, created_at, photo_url").limit(10000),
+    cnt(db.from("profiles").select("id", { count: "exact", head: true }).eq("role", "artisan")),
+    db.from("artisan_identity").select("artisan_id, status, submitted_at, artisan:artisans(name)").eq("status", "pending").order("submitted_at"),
+    db.from("payments").select("amount, paid_at, boost:boosts(type, artisan:artisans(country_code))").eq("status", "paid").gte("paid_at", d60).limit(10000),
+    db.from("service_requests").select("id, country_code, status, urgent, created_at").gte("created_at", d60).limit(10000),
+    db.from("events").select("created_at").eq("type", "view").gte("created_at", d30).limit(20000),
+    cnt(db.from("boosts").select("id", { count: "exact", head: true }).eq("status", "active").gt("ends_at", nowIso)),
+    cnt(db.from("artisan_diplomas").select("id", { count: "exact", head: true }).eq("status", "pending")),
+    cnt(db.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending")),
+    cnt(db.from("payments").select("id", { count: "exact", head: true }).eq("status", "failed").gte("created_at", new Date(Date.now() - 7 * 864e5).toISOString())),
   ]);
-  const rows = (all ?? []).map((a: any) => ({ ...a, identity: one(a.identity), trade: one(a.trade) }));
-  const toReview = rows.filter((a) => a.status === "pending" && a.identity?.status === "pending").sort((a, b) => a.identity.submitted_at.localeCompare(b.identity.submitted_at));
-  const incomplete = rows.filter((a) => a.status === "pending" && !a.identity);
-  const toBadge = rows.filter((a) => a.status === "approved" && a.verification_requested && !a.verified);
-  const revenue = (paid ?? []).reduce((s, p) => s + p.amount, 0);
 
-  let list = rows;
-  if (vue === "artisans") {
-    const q = (sp.q ?? "").trim().toLowerCase(), st = sp.statut;
-    list = rows.filter((a) => (!q || a.name.toLowerCase().includes(q)) && (!st || a.status === st) && (!sp.p || a.country_code === sp.p));
-  }
-  const { data: grid } = vue === "prix" ? await db.from("price_grid").select("id, boost_type, duration_hours, amount").eq("country_code", pays).order("boost_type").order("duration_hours") : { data: null };
-  const countOf = (c: string) => rows.filter((a) => a.country_code === c && a.status === "approved").length;
-  const artisanName = (id: string) => rows.find((a) => a.id === id)?.name ?? "Artisan";
+  const A = arts ?? [], R = reqs ?? [], P = pays ?? [];
+  const inRange = (iso: string, a: number, b: number) => { const t = Date.now() - new Date(iso).getTime(); return t >= a * 864e5 && t < b * 864e5; };
+  const online = A.filter((a) => a.status === "approved").length;
+  const sent = (ident ?? []).length;
+  const new7 = A.filter((a) => inRange(a.created_at, 0, 7)).length, new7p = A.filter((a) => inRange(a.created_at, 7, 14)).length;
+  const req7 = R.filter((r) => inRange(r.created_at, 0, 7)).length, req7p = R.filter((r) => inRange(r.created_at, 7, 14)).length;
+  const rev30 = P.filter((p) => inRange(p.paid_at!, 0, 30)).reduce((s, p) => s + p.amount, 0);
+  const rev30p = P.filter((p) => inRange(p.paid_at!, 30, 60)).reduce((s, p) => s + p.amount, 0);
+  const stale = (ident ?? []).filter((i) => Date.now() - new Date(i.submitted_at).getTime() > 48 * 36e5);
+  const oldestH = ident?.length ? Math.floor((Date.now() - new Date(ident[0].submitted_at).getTime()) / 36e5) : 0;
+  const unanswered = R.filter((r) => r.status === "new" && Date.now() - new Date(r.created_at).getTime() > 48 * 36e5).length;
+
+  const funnel = [
+    ["Comptes créés", nAccounts], ["Profil rempli", A.length], ["Photo ajoutée", A.filter((a) => a.photo_url).length],
+    ["Dossier envoyé", A.filter((a) => a.status !== "pending").length + sent], ["En ligne", online],
+  ] as const;
+  const fmax = Math.max(1, funnel[0][1]);
+
+  const byCountry = COUNTRIES.map((c) => ({
+    c, online: A.filter((a) => a.country_code === c.code && a.status === "approved").length,
+    pending: A.filter((a) => a.country_code === c.code && a.status === "pending").length,
+    req: R.filter((r) => r.country_code === c.code && inRange(r.created_at, 0, 30)).length,
+    rev: P.filter((p) => one(one(p.boost as any)?.artisan as any)?.country_code === c.code && inRange(p.paid_at!, 0, 30)).reduce((s, p) => s + p.amount, 0),
+  }));
+
+  const todo = [
+    { n: sent, t: "Dossiers à examiner", s: oldestH ? `le plus ancien : ${oldestH} h` : "", h: "/admin/dossiers", hot: sent > 0 },
+    { n: stale.length, t: "Dossiers en attente depuis plus de 48 h", s: "à traiter en priorité", h: "/admin/dossiers", hot: stale.length > 0 },
+    { n: nDipl, t: "Diplômes à vérifier", s: "", h: "/admin/dossiers", hot: nDipl > 0 },
+    { n: nReviews, t: "Avis à modérer", s: "", h: "/admin/avis", hot: nReviews > 0 },
+    { n: unanswered, t: "Demandes clients sans réponse (48 h)", s: "l’artisan n’a pas répondu", h: "/admin/demandes?statut=new", hot: unanswered > 0 },
+    { n: nFailed, t: "Paiements échoués, 7 jours", s: "", h: "/admin/revenus", hot: nFailed > 0 },
+  ];
+  const open = todo.filter((t) => t.n > 0);
 
   return (
-    <section className="inner sec stack">
-      <div className="sec-head" style={{ margin: 0 }}>
-        <div><p className="eyebrow">Back-office</p><h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>Administration</h1></div>
-        <div className="row"><a className="btn small" href="/admin/campagnes">Campagnes e-mail</a><form action={signOut}><button className="btn small" type="submit">Se déconnecter</button></form></div>
-      </div>
+    <>
+      <div className="atitle"><div><p className="eyebrow">Back-office</p><h1>Aperçu</h1></div><span className="meta">Mis à jour {ago(nowIso)}</span></div>
       {sp.ok && <p className="notice ok" role="status">{sp.ok}</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 
-      <div className="stats">
-        <div className={`card stat${toReview.length ? " hot" : ""}`}><b>{toReview.length}</b><span>Dossiers à examiner</span></div>
-        <div className="card stat"><b>{nOnline}</b><span>Artisans en ligne</span></div>
-        <div className="card stat"><b>{incomplete.length}</b><span>Sans documents</span></div>
-        <div className="card stat"><b>{nBoosts}</b><span>Boosts actifs</span></div>
-        <div className="card stat"><b>{nReq}</b><span>Demandes, 7 jours</span></div>
-        <div className="card stat"><b style={{ fontSize: 22 }}>{fcfa(revenue)}</b><span>Boosts encaissés</span></div>
+      <div className="akpi">
+        <div className={`kpi${sent ? " hot" : ""}`}><span>Dossiers à examiner</span><b>{sent}</b><small>{oldestH ? `plus ancien : ${oldestH} h` : "tout est à jour"}</small></div>
+        <div className="kpi"><span>Artisans en ligne</span><b>{online}</b><small>sur {A.length} profils</small></div>
+        <div className="kpi"><span>Nouveaux profils, 7 jours</span><b>{new7}</b><Delta cur={new7} prev={new7p} /></div>
+        <div className="kpi"><span>Demandes clients, 7 jours</span><b>{req7}</b><Delta cur={req7} prev={req7p} /></div>
+        <div className="kpi"><span>Revenus boosts, 30 jours</span><b style={{ fontSize: 22 }}>{fcfa(rev30)}</b><Delta cur={rev30} prev={rev30p} /></div>
+        <div className="kpi"><span>Boosts actifs</span><b>{nBoosts}</b><small>en ce moment</small></div>
       </div>
 
-      <nav className="subnav" aria-label="Sections">
-        {VUES.map(([k, t]) => <Link key={k} href={`/admin?vue=${k}`} aria-current={vue === k ? "page" : undefined} className={vue === k ? "on" : ""}>{t}{k === "dossiers" && toReview.length ? ` (${toReview.length})` : ""}</Link>)}
-      </nav>
-
-      {vue === "dossiers" && (
-        <>
-          <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Dossiers à examiner</h2>
-            {toReview.length ? toReview.map((a) => (
-              <Link key={a.id} href={`/admin/artisan/${a.id}`} className="arow">
-                {a.photo_url ? <img className="curphoto" style={{ width: 48, height: 48 }} src={a.photo_url} alt="" /> : <span className="avatar">{initials(a.name)}</span>}
-                <span style={{ minWidth: 0 }}><b>{a.name}</b><br /><span className="meta fl"><Flag code={a.country_code} size={16} />{a.trade?.name} · {countryName(a.country_code)} · reçu {ago(a.identity.submitted_at)}</span></span>
-                <span className="btn small primary">Examiner</span>
-              </Link>
-            )) : <p className="empty">Aucun dossier en attente. 🎉</p>}
-          </div>
-
-          {!!dipl?.length && (
-            <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Diplômes à vérifier</h2>
-              {dipl.map((d) => <Link key={d.id} href={`/admin/artisan/${d.artisan_id}#diplomes`} className="arow"><span className="avatar">🎓</span><span><b>{d.title}</b><br /><span className="meta">{artisanName(d.artisan_id)} · {ago(d.submitted_at)}</span></span><span className="btn small">Examiner</span></Link>)}
-            </div>
-          )}
-
-          {!!toBadge.length && (
-            <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Demandes de badge Vérifié</h2>
-              {toBadge.map((v) => (<form key={v.id} action={verifyArtisan} className="row"><input type="hidden" name="id" value={v.id} /><span>{v.name} · {countryName(v.country_code)}</span><button className="btn small primary">Accorder le badge</button></form>))}</div>
-          )}
-
-          {!!incomplete.length && (
-            <details className="card pad"><summary><b>Profils sans documents ({incomplete.length})</b> <span className="meta">créés mais pas encore envoyés à vérification</span></summary>
-              <div className="stack" style={{ marginTop: 12 }}>{incomplete.map((a) => <p key={a.id}>{a.name} <span className="meta">· {a.trade?.name} · {countryName(a.country_code)} · créé {ago(a.created_at)}</span></p>)}</div>
-            </details>
-          )}
-        </>
-      )}
-
-      {vue === "artisans" && (
-        <div className="card pad stack">
-          <h2 style={{ fontSize: 20 }}>Artisans ({list.length})</h2>
-          <form method="get" className="row">
-            <input type="hidden" name="vue" value="artisans" />
-            <input type="search" name="q" defaultValue={sp.q ?? ""} placeholder="Rechercher un nom" aria-label="Rechercher un nom" style={{ flex: "1 1 180px" }} />
-            <select name="statut" defaultValue={sp.statut ?? ""} aria-label="Statut"><option value="">Tous les statuts</option><option value="pending">À valider</option><option value="approved">En ligne</option><option value="rejected">Refusés</option></select>
-            <select name="p" defaultValue={sp.p ?? ""} aria-label="Pays"><option value="">Tous les pays</option>{COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.emoji} {c.name}</option>)}</select>
-            <button className="btn small" type="submit">Filtrer</button>
-          </form>
-          <div className="tw"><table className="tbl"><thead><tr><th>Artisan</th><th>Métier</th><th>Pays</th><th>Statut</th><th>Exp.</th><th>Badges</th><th></th></tr></thead><tbody>
-            {list.map((a) => (
-              <tr key={a.id}><td><b>{a.name}</b></td><td>{a.trade?.name}</td><td><span className="fl"><Flag code={a.country_code} size={16} />{a.country_code.toUpperCase()}</span></td>
-                <td><span className={`tag ${STATUS[a.status as keyof typeof STATUS][0]}`}>{STATUS[a.status as keyof typeof STATUS][1]}</span></td>
-                <td className="num">{a.experience_years != null ? `${a.experience_years} ans` : "—"}</td>
-                <td>{a.verified && <span className="tag ok">✓</span>} {a.diploma_verified && <span className="tag ok">🎓</span>}</td>
-                <td><Link className="btn small" href={`/admin/artisan/${a.id}`}>Ouvrir</Link></td></tr>
-            ))}</tbody></table></div>
-          {!list.length && <p className="empty">Aucun artisan ne correspond.</p>}
+      <div className="agrid">
+        <div className="card pad stack"><h2 style={{ fontSize: 17 }}>À traiter</h2>
+          {open.length ? open.map((t) => <Link key={t.t} href={t.h} className="todo"><span><b>{t.t}</b>{t.s ? <><br /><span className="meta">{t.s}</span></> : null}</span><span className={`n${t.hot ? "" : " mute"}`}>{t.n}</span></Link>) : <p className="empty">Rien en attente. 🎉</p>}
         </div>
-      )}
+        <div className="card pad stack"><h2 style={{ fontSize: 17 }}>Entonnoir d’inscription</h2>
+          <div className="funnel">{funnel.map(([l, n]) => <div className="frow" key={l}><span>{l}</span><div className="fbar"><i style={{ width: `${(n / fmax) * 100}%` }} /></div><b className="num">{n}</b></div>)}</div>
+          <p className="hint">{nAccounts ? `${Math.round((online / nAccounts) * 100)} % des comptes créés sont en ligne.` : "Aucune inscription pour le moment."}</p>
+        </div>
+      </div>
 
-      {vue === "prix" && (
-        <>
-          <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Pays ouverts</h2>
-            <div className="tw"><table className="tbl"><thead><tr><th>Pays</th><th>Monnaie</th><th>Artisans en ligne</th></tr></thead><tbody>
-              {COUNTRIES.map((c) => <tr key={c.code}><td><b className="fl"><Flag code={c.code} size={18} />{c.name}</b></td><td>FCFA</td><td className="num">{countOf(c.code)}</td></tr>)}</tbody></table></div></div>
-          <form action={savePrices} className="card pad stack">
-            <h2 style={{ fontSize: 20 }}>Grille de prix des boosts, {countryName(pays)} (FCFA)</h2>
-            <div className="row">{COUNTRIES.map((c) => <a key={c.code} className={`btn small${c.code === pays ? " primary" : ""}`} href={`/admin?vue=prix&pays=${c.code}`}>{c.emoji} {c.name}</a>)}</div>
-            <div className="tw"><table className="tbl"><thead><tr><th>Type</th><th>Durée</th><th>Prix</th></tr></thead><tbody>
-              {grid?.map((g) => (
-                <tr key={g.id}><td><b>{BOOST_TYPES[g.boost_type].name}</b></td><td>{DURATIONS[g.duration_hours]}</td>
-                  <td><input type="number" min={0} step={100} name={`p:${g.id}`} defaultValue={g.amount} aria-label={`${BOOST_TYPES[g.boost_type].name}, ${DURATIONS[g.duration_hours]}, en FCFA`} /></td></tr>
-              ))}</tbody></table></div>
-            <p className="hint">Le boost ciblé reprend le prix du boost recherche, multiplié par le coefficient de la zone.</p>
-            <div><button className="btn primary" type="submit">Enregistrer les prix</button></div>
-          </form>
-        </>
-      )}
-    </section>
+      <div className="agrid">
+        <div className="card pad stack"><BarChart label="Nouveaux profils / jour" data={perDay(A.map((a) => ({ at: a.created_at })))} /></div>
+        <div className="card pad stack"><BarChart label="Demandes clients / jour" data={perDay(R.map((r) => ({ at: r.created_at })))} color="var(--ok)" /></div>
+        <div className="card pad stack"><BarChart label="Revenus boosts / jour" unit=" FCFA" data={perDay(P.map((p) => ({ at: p.paid_at!, v: p.amount })))} color="var(--boost)" /></div>
+        <div className="card pad stack"><BarChart label="Vues de fiches / jour" data={perDay((views ?? []).map((v) => ({ at: v.created_at })))} color="#7a5af8" /></div>
+      </div>
+
+      <div className="card pad stack"><h2 style={{ fontSize: 17 }}>Par pays, 30 jours</h2>
+        <div className="tw"><table className="tbl"><thead><tr><th>Pays</th><th className="num">En ligne</th><th className="num">À valider</th><th className="num">Demandes</th><th className="num">Revenus</th></tr></thead><tbody>
+          {byCountry.map(({ c, ...x }) => <tr key={c.code}><td><b className="fl"><Flag code={c.code} size={18} />{c.name}</b></td><td className="num">{x.online}</td><td className="num">{x.pending}</td><td className="num">{x.req}</td><td className="num">{fcfa(x.rev)}</td></tr>)}
+        </tbody></table></div>
+      </div>
+    </>
   );
 }
 

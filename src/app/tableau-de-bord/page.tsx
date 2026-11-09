@@ -1,3 +1,4 @@
+import { COMPANY } from "@/lib/company";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -44,7 +45,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ]);
   if (!ident) redirect("/activation");
 
-  const approved = artisan.status === "approved", rejected = artisan.status === "rejected";
+  const approved = artisan.status === "approved", rejected = artisan.status === "rejected", suspended = artisan.status === "suspended";
   const myZones = new Set(((artisan as any).zones ?? []).map((z: any) => z.zone_id));
   const since = new Date(Date.now() - 7 * 864e5).toISOString();
   const [{ data: ev }, { data: act }, { data: reqs }, { data: grid }] = await Promise.all([
@@ -72,7 +73,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ];
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
-  const statusTag = approved ? ["ok", "● En ligne"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
+  const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
   const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["horaires", "🕒", "Horaires"], ["boosts", "🚀", "Boosts"]] as const;
   return (
     <section className="inner dash">
@@ -103,7 +104,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="stack" hidden={sec !== "apercu"}>
           <h1 className="dtitle">Bonjour 👋</h1>
         {approved && <div className="notice ok row" style={{ justifyContent: "space-between" }}><span><b>Votre profil est en ligne.</b> Les clients peuvent vous trouver.</span><Link className="btn small" href={`/artisan/${artisan.id}`}>Voir ma fiche</Link></div>}
-        {!approved && !rejected && (
+        {suspended && <div className="notice err stack" style={{ gap: 6 }}><b>Votre profil est suspendu.</b><p>{artisan.reject_reason ?? "Il n’est plus visible des clients."} Pour en savoir plus ou le réactiver, contactez-nous.</p><div><a className="btn" href={`mailto:${COMPANY.email}`}>Nous contacter</a></div></div>}
+        {!approved && !rejected && !suspended && (
           <div className="notice"><b>Dossier en cours de vérification.</b> Envoyé le {day(ident.submitted_at)}. Nous répondons en général sous 24 à 48 heures, par e-mail. Votre profil sera visible des clients dès sa validation.</div>
         )}
         {rejected && (

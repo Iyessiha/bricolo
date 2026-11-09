@@ -8,6 +8,8 @@ import { initials } from "@/lib/format";
 import Flag from "@/components/Flag";
 import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
+import { deleteArtisan, giftBoost, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
+import { fcfa } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Examen du dossier", robots: { index: false } };
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
@@ -47,21 +49,61 @@ export default async function Review({ params, searchParams }: { params: Promise
 
   const zones = ((a as any).zones ?? []).map((z: any) => one(z.zone)?.name).filter(Boolean).join(", ");
   const email = one((a as any).profile as any)?.email as string | undefined;
-  const canDecide = !!ident && a.status !== "approved";
+  const canDecide = !!ident && a.status !== "approved" && a.status !== "suspended";
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
+  const cnt = (q: any) => q.then((r: any) => r.count ?? 0);
+  const [views, calls, wa, reqs, { data: boosts }, { data: revs }] = await Promise.all([
+    cnt(db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", id).eq("type", "view").gte("created_at", since30)),
+    cnt(db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", id).eq("type", "call").gte("created_at", since30)),
+    cnt(db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", id).eq("type", "whatsapp").gte("created_at", since30)),
+    cnt(db.from("service_requests").select("id", { count: "exact", head: true }).eq("artisan_id", id)),
+    db.from("boosts").select("id, type, duration_hours, amount, status, ends_at, created_at").eq("artisan_id", id).order("created_at", { ascending: false }).limit(10),
+    db.from("reviews").select("id, author_name, rating, comment, status").eq("artisan_id", id).order("created_at", { ascending: false }).limit(10),
+  ]);
+  const susp = a.status === "suspended";
 
   return (
-    <section className="inner sec stack">
-      <p><Link href="/admin">← Retour à l’administration</Link></p>
+    <div className="stack">
+      <p><Link href="/admin/artisans">← Tous les artisans</Link></p>
       {sp.ok && <p className="notice ok" role="status">{sp.ok}</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 
       <div className="card pad row" style={{ gap: 16, flexWrap: "nowrap" }}>
         {a.photo_url ? <img className="curphoto" src={a.photo_url} alt="Photo de profil" /> : <span className="avatar" style={{ width: 96, height: 96 }}>{initials(a.name)}</span>}
         <div className="stack" style={{ gap: 6, minWidth: 0 }}>
-          <div className="tags"><span className={`tag ${a.status === "approved" ? "ok" : a.status === "rejected" ? "mute" : "wait"}`}>{a.status === "approved" ? "En ligne" : a.status === "rejected" ? "Refusé" : "À valider"}</span>{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified && <span className="tag ok">✓ Vérifié</span>}{a.diploma_verified && <span className="tag ok">🎓 Diplôme vérifié</span>}</div>
+          <div className="tags"><span className={`tag ${a.status === "approved" ? "ok" : susp ? "err" : a.status === "rejected" ? "mute" : "wait"}`}>{a.status === "approved" ? "En ligne" : susp ? "Suspendu" : a.status === "rejected" ? "Refusé" : "À valider"}</span>{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified && <span className="tag ok">✓ Vérifié</span>}{a.diploma_verified && <span className="tag ok">🎓 Diplôme vérifié</span>}</div>
           <h1 style={{ fontSize: "clamp(22px,4vw,32px)" }}>{a.name}</h1>
           <p className="meta fl"><Flag code={a.country_code} size={16} />{one(a.trade as any)?.name} · {countryName(a.country_code)} · inscrit le {when(a.created_at)}</p>
         </div>
+      </div>
+
+
+      <div className="akpi">
+        <div className="kpi"><span>Vues, 30 jours</span><b>{views}</b></div><div className="kpi"><span>Appels</span><b>{calls}</b></div>
+        <div className="kpi"><span>WhatsApp</span><b>{wa}</b></div><div className="kpi"><span>Demandes reçues</span><b>{reqs}</b></div>
+      </div>
+
+      <div className="card pad stack">
+        <h2 style={{ fontSize: 20 }}>Gestion du compte</h2>
+        <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+          <form action={setVerified}><input type="hidden" name="id" value={id} /><input type="hidden" name="on" value={a.verified ? "0" : "1"} /><button className="btn small" type="submit">{a.verified ? "Retirer le badge Vérifié" : "Accorder le badge Vérifié"}</button></form>
+          {susp && <form action={reactivateArtisan}><input type="hidden" name="id" value={id} /><button className="btn small primary" type="submit">Réactiver le profil</button></form>}
+          <a className="btn small" href={`/artisan/${id}`} target="_blank" rel="noopener noreferrer">Voir la fiche publique</a>
+        </div>
+        {susp && a.reject_reason && <p className="notice err">Motif de suspension : {a.reject_reason}</p>}
+        <form action={saveNote} className="stack"><input type="hidden" name="id" value={id} />
+          <div className="fld"><label htmlFor="note">Note interne <span className="hint">(jamais visible par l’artisan)</span></label><textarea id="note" name="note" maxLength={2000} defaultValue={(a as any).admin_note ?? ""} /></div>
+          <div><button className="btn small" type="submit">Enregistrer la note</button></div></form>
+        <form action={giftBoost} className="afilters" style={{ borderTop: "1px solid var(--line)", paddingTop: 14 }}><input type="hidden" name="id" value={id} />
+          <b>Offrir un boost :</b>
+          <select name="type" aria-label="Type"><option value="recherche">Recherche</option><option value="accueil">Accueil</option><option value="urgence">Urgence</option></select>
+          <select name="hours" aria-label="Durée"><option value="24">24 h</option><option value="72">3 jours</option><option value="168">7 jours</option></select>
+          <button className="btn small" type="submit">Offrir</button></form>
+      </div>
+
+      <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Boosts et avis</h2>
+        {boosts?.length ? <table className="tbl"><tbody>{boosts.map((b) => <tr key={b.id}><td>{b.type} · {b.duration_hours / 24} j</td><td><span className={`tag ${b.status === "active" ? "ok" : "mute"}`}>{b.status}</span></td><td className="num">{b.amount ? fcfa(b.amount) : "Offert"}</td></tr>)}</tbody></table> : <p className="empty">Aucun boost.</p>}
+        {revs?.length ? revs.map((r) => <p key={r.id} className="meta"><b>{"★".repeat(r.rating)}</b> {r.author_name} · {r.status} — {r.comment}</p>) : null}
       </div>
 
       <div className="card pad stack">
@@ -122,7 +164,18 @@ export default async function Review({ params, searchParams }: { params: Promise
           </div>
         )) : <p className="empty">Aucun diplôme envoyé.</p>}
       </div>
-    </section>
+
+      {!susp && (
+        <form action={suspendArtisan} className="card pad stack danger-zone"><input type="hidden" name="id" value={id} />
+          <h2 style={{ fontSize: 18 }}>Suspendre ce profil</h2><p className="hint">Le profil disparaît immédiatement du site. Il peut être réactivé à tout moment.</p>
+          <div className="fld"><label htmlFor="reason">Motif (visible par l’artisan)</label><input id="reason" name="reason" minLength={5} maxLength={300} required /></div>
+          <div><button className="btn danger" type="submit">Suspendre</button></div></form>
+      )}
+      <form action={deleteArtisan} className="card pad stack danger-zone"><input type="hidden" name="id" value={id} />
+        <h2 style={{ fontSize: 18 }}>Supprimer définitivement le compte</h2><p className="hint">Efface le compte, le profil, les pièces et l’historique. Irréversible.</p>
+        <div className="fld"><label htmlFor="confirm">Tapez SUPPRIMER pour confirmer</label><input id="confirm" name="confirm" autoComplete="off" required /></div>
+        <div><button className="btn danger" type="submit">Supprimer le compte</button></div></form>
+    </div>
   );
 }
 

@@ -26,7 +26,7 @@ export default async function Campagnes({ searchParams }: { searchParams: Promis
   const errors: Record<string, string> = { champs: "Renseignez un objet (3 caractères minimum) et un message (10 minimum).", confirmation: "Tapez ENVOYER pour confirmer l'envoi.", envoi: "L'envoi du test a échoué. Vérifiez la clé Resend et l'expéditeur." };
 
   return (
-    <section className="inner sec stack">
+    <div className="stack">
       <div><p className="eyebrow"><a href="/admin">Administration</a></p><h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>Campagnes e-mail</h1></div>
       {!emailConfigured() && <div className="card pad"><b>Mode simulation.</b> <span>RESEND_API_KEY n'est pas défini : rien n'est réellement envoyé.</span></div>}
       {sp.test && <div className="card pad">Test envoyé à votre adresse.</div>}
@@ -60,6 +60,6 @@ export default async function Campagnes({ searchParams }: { searchParams: Promis
           {past.map((c) => <tr key={c.id}><td>{new Date(c.created_at).toLocaleDateString("fr-FR")}</td><td><b>{c.subject}</b></td><td className="num">{c.recipients}</td><td className="num">{c.sent}</td><td className="num">{c.failed}</td></tr>)}
         </tbody></table></div> : <p className="empty">Aucune campagne envoyée.</p>}
       </div>
-    </section>
+    </div>
   );
 }
