@@ -43,8 +43,8 @@ Tout passe par Resend : e-mails de l'application, de connexion et marketing.
 2. Renseignez `RESEND_API_KEY` et `EMAIL_FROM` (voir ci-dessous).
 3. **E-mails d'authentification** (connexion = e-mail + mot de passe, aucun lien de connexion envoyé) : Supabase → Authentication → SMTP Settings, SMTP personnalisé : hôte `smtp.resend.com`, port `465`, utilisateur `resend`, mot de passe = clé API Resend, expéditeur = `EMAIL_FROM`. Dans Email Templates : « Confirm signup » ← `supabase/email-templates/confirmation.html`, « Reset password » ← `supabase/email-templates/reinitialisation.html`. Un seul e-mail part par nouvel artisan (confirmation) ; si le quota Resend est serré, désactivez « Confirm email » (Authentication → Providers → Email).
 4. **Sécurité** (Authentication → Providers → Email / Rate Limits) : longueur minimale du mot de passe 8, lettres + chiffres exigés ; ajoutez un CAPTCHA (Attack Protection) si des robots apparaissent ; « Leaked password protection » nécessite le plan Pro. Côté base (migration 0005) : adresses jetables refusées, un seul compte par boîte e-mail (alias `+` et points Gmail ramenés à l'adresse réelle), un numéro de téléphone/WhatsApp, une immatriculation et une pièce d'identité (empreinte salée, `IDENTITY_HASH_SECRET` facultatif) par profil, limite de demandes clients (1/heure/artisan, 3/jour/e-mail, 10/jour/IP).
-4. Webhook Resend → `https://<domaine>/api/webhooks/resend` (événements `email.bounced` et `email.complained`), puis copiez le secret `whsec_…` dans `RESEND_WEBHOOK_SECRET`. Les adresses en rebond ou en plainte sont automatiquement exclues du marketing.
-5. Exécutez aussi `supabase/migrations/0002_emails.sql`.
+5. Webhook Resend → `https://<domaine>/api/webhooks/resend` (événements `email.bounced` et `email.complained`), puis copiez le secret `whsec_…` dans `RESEND_WEBHOOK_SECRET`. Les adresses en rebond ou en plainte sont automatiquement exclues du marketing.
+6. Exécutez aussi `supabase/migrations/0002_emails.sql`.
 
 | Déclencheur | E-mail | Type |
 |---|---|---|
