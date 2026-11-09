@@ -10,7 +10,9 @@ import { BOOST_TERMS_LINK } from "@/lib/company";
 import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import DiplomaAdd from "@/components/DiplomaAdd";
-import { markAnswered, saveProfile } from "./actions";
+import { markAnswered, saveHours, saveProfile } from "./actions";
+import HoursEditor from "@/components/HoursEditor";
+import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
 
 export const metadata: Metadata = { title: "Mon espace" };
@@ -57,7 +59,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
-  const sec = (["apercu", "demandes", "profil", "diplomes", "visibilite"] as const).find((k) => k === sp.s) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "horaires", "diplomes", "visibilite"] as const).find((k) => k === sp.s) ?? "apercu";
   return (
     <section className="inner sec stack">
       <div className="sec-head" style={{ margin: 0 }}>
@@ -72,7 +74,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </div>
 
       <nav className="subnav" aria-label="Sections">
-        {([["apercu", "Aperçu"], ["demandes", `Demandes${newReqs ? ` (${newReqs})` : ""}`], ["profil", "Profil"], ["diplomes", "Diplômes"], ["visibilite", "Visibilité"]] as const).map(([k, l]) => (
+        {([["apercu", "Aperçu"], ["demandes", `Demandes${newReqs ? ` (${newReqs})` : ""}`], ["profil", "Profil"], ["horaires", "Horaires"], ["diplomes", "Diplômes"], ["visibilite", "Visibilité"]] as const).map(([k, l]) => (
           <Link key={k} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>{l}</Link>
         ))}
       </nav>
@@ -144,6 +146,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           <button className="btn primary" type="submit">Enregistrer</button>
         </form>
+      </div>
+
+      <div id="horaires" className="card pad stack" hidden={sec !== "horaires"}>
+        <h2 style={{ fontSize: 20 }}>Jours et heures de disponibilité</h2>
+        <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
+        <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
       </div>
 
       <div id="diplomes" className="card pad stack" hidden={sec !== "diplomes"}>

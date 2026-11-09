@@ -25,7 +25,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
 
   const { data: rows } = await db.rpc("search_artisans", {
     p_country: country, p_trade: trade?.id ?? null, p_zone: zone?.id ?? null,
-    p_verified: sp.verifie === "1", p_seed: String(Math.floor(Date.now() / 60000)),
+    p_verified: sp.verifie === "1", p_open: sp.ouvert === "1", p_seed: String(Math.floor(Date.now() / 60000)),
   });
   const tradeName = (id: string) => trades?.find((t) => t.id === id)?.name;
   const list = (rows ?? []) as any[];
@@ -50,11 +50,14 @@ export default async function Results({ searchParams }: { searchParams: Promise<
         <label className="check" htmlFor="verifie" style={{ minHeight: 44, alignItems: "center" }}>
           <input type="checkbox" id="verifie" name="verifie" value="1" defaultChecked={sp.verifie === "1"} /> Artisans vérifiés uniquement
         </label>
+        <label className="check" htmlFor="ouvert" style={{ minHeight: 44, alignItems: "center" }}>
+          <input type="checkbox" id="ouvert" name="ouvert" value="1" defaultChecked={sp.ouvert === "1"} /> Ouverts maintenant
+        </label>
         <button className="btn primary" type="submit">Filtrer</button>
       </AutoSubmitForm>
       {list.some((a) => a.sponsored) && <p className="hint" style={{ marginBottom: 12 }}>Les résultats sponsorisés passent en premier. Leur ordre change régulièrement pour rester équitable.</p>}
       {list.length ? (
-        <div className="cards">{list.map((a) => <ArtisanCard key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
+        <div className="cards">{list.map((a) => <ArtisanCard country={country} key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
       ) : (
         <p className="empty">Aucun artisan pour cette recherche. Essayez une autre zone ou retirez le filtre Vérifié.</p>
       )}

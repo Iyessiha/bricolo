@@ -1,4 +1,5 @@
 import { priceText } from "@/lib/format";
+import { DAYS, cleanHours, openStatus, timeLabel } from "@/lib/hours";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { hasSupabase } from "@/lib/env";
@@ -15,7 +16,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, account_type, company_name, description, price_label, photo_url, experience_years, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, photo_url, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
@@ -49,6 +50,13 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           </div>
         </div>
         <aside className="card aside">
+          {(() => { const st = openStatus((a as any).hours, (a as any).open_24_7, a.country_code); const h = cleanHours((a as any).hours); return st.state === "none" && !(a as any).takes_urgent ? null : (
+            <div className="stack" style={{ gap: 6 }}>
+              <p className="lbl">Disponibilité</p>
+              {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
+              {(a as any).takes_urgent && <p className="meta">🚨 Prend les urgences</p>}
+              {!(a as any).open_24_7 && Object.keys(h).length > 0 && <table className="hours-tbl"><tbody>{DAYS.map(([d, l]) => <tr key={d}><th scope="row">{l}</th><td>{h[d] ? `${timeLabel(h[d][0])} – ${timeLabel(h[d][1])}` : "Fermé"}</td></tr>)}</tbody></table>}
+            </div>); })()}
           <div><p className="lbl">Tarif indicatif</p><p className="price">{priceText(a.price_label) ?? "Sur devis"}</p></div>
           <a className="btn primary dcall" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
           <a className="btn dcall" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>

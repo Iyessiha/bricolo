@@ -27,7 +27,7 @@ export default async function Home() {
   ]);
   const ids = [...new Set((boosts ?? []).map((b) => b.artisan_id))];
   const { data: featured } = ids.length
-    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, experience_years, diploma_verified, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").limit(6)
+    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, experience_years, diploma_verified, hours, open_24_7, takes_urgent, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").limit(6)
     : { data: [] };
   return (
     <>
@@ -81,7 +81,7 @@ export default async function Home() {
 
       {featured?.length ? <section className="inner sec">
         <div className="sec-head"><h2>Artisans à la une</h2><span className="tag boost">Sponsorisé</span></div>
-        <div className="cards">{featured.map((a: any) => <ArtisanCard key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
+        <div className="cards">{featured.map((a: any) => <ArtisanCard country={country} key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
       </section> : null}
 
 

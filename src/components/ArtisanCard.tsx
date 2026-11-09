@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { initials, priceText } from "@/lib/format";
+import { openStatus } from "@/lib/hours";
 
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
   photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
+  hours?: unknown; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string;
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
-export default function ArtisanCard({ a }: { a: ArtisanRow }) {
+export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: string }) {
+  const st = openStatus(a.hours, a.open_24_7, country ?? a.country_code ?? "ci");
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
   return (
     <article className={`acard${a.sponsored ? " sp" : ""}`}>
@@ -28,6 +31,8 @@ export default function ArtisanCard({ a }: { a: ArtisanRow }) {
           {a.review_count ? <><b className="num">★ {String(a.avg_rating).replace(".", ",")}</b> ({a.review_count})</> : <span className="tag mute">Nouveau</span>}
           {a.experience_years ? <span> · {a.experience_years} an{a.experience_years > 1 ? "s" : ""}</span> : null}
         </p>
+        {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
+        {a.takes_urgent && <p className="acard-meta">🚨 Prend les urgences</p>}
         {priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
       </div>
       <div className="acard-cta">
