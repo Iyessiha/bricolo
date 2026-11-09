@@ -90,6 +90,10 @@ Chaque e-mail n'est envoyé qu'une fois (table `email_log`). Les messages market
 - **Garde-fous RLS** : un artisan ne peut pas se valider lui-même ; boosts et paiements ne sont modifiables que côté serveur.
 - **Rotation équitable** des artisans sponsorisés dans la recherche (`md5(id || seed)`).
 
+## 5 bis. Pages légales
+
+Mentions légales, conditions d'utilisation, conditions des boosts, confidentialité et cookies sont dans `src/app/`. La société éditrice (MonWe Infinity LLC) est définie à un seul endroit : `src/lib/company.ts`. Renseignez-y `registrationNumber`, `postalAddress` et `phone` : ils s'affichent alors automatiquement dans les mentions légales. Faites relire ces textes par un juriste avant la mise en production.
+
 ## 6. À finaliser avant la mise en production
 
 - **GeniusPay en mode `live`** : les noms de champs, l'URL d'API et l'en-tête de signature (`x-geniuspay-signature`) dans `src/lib/geniuspay.ts` sont des hypothèses à aligner sur la documentation officielle.

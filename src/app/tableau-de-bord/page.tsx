@@ -27,6 +27,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     db.from("zones").select("id, name").eq("country_code", country).order("name"),
     db.from("artisans").select("*, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
   ]);
+  // Prérempli depuis le tunnel d’inscription tant que la fiche n’existe pas.
+  const meta = (user.user_metadata ?? {}) as { business_name?: string; trade_id?: string };
   const myZones = new Set(((artisan as any)?.zones ?? []).map((z: any) => z.zone_id));
 
   let stats = { vues: 0, appels: 0, wa: 0, demandes: 0 };
@@ -83,9 +85,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
       <form action={saveProfile} className="card pad stack">
         <h2 style={{ fontSize: 20 }}>{artisan ? "Modifier mon profil" : "Votre profil"}</h2>
-        <div className="fld"><label htmlFor="name">Nom ou nom de l’atelier</label><input type="text" id="name" name="name" required defaultValue={artisan?.name ?? ""} /></div>
+        <div className="fld"><label htmlFor="name">Nom ou nom de l’atelier</label><input type="text" id="name" name="name" required defaultValue={artisan?.name ?? meta.business_name ?? ""} /></div>
         <div className="fld"><label htmlFor="trade_id">Métier principal</label>
-          <select id="trade_id" name="trade_id" required defaultValue={artisan?.trade_id ?? ""}>
+          <select id="trade_id" name="trade_id" required defaultValue={artisan?.trade_id ?? meta.trade_id ?? ""}>
             <option value="" disabled>Choisir…</option>
             {trades?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select></div>

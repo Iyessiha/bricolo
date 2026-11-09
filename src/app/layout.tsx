@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { COMPANY } from "@/lib/company";
 
 export const metadata: Metadata = {
+  authors: [{ name: COMPANY.name }],
+  publisher: COMPANY.name,
   title: { default: "Bricolo", template: "%s · Bricolo" },
   description: "L’annuaire des artisans de l’Afrique de l’Ouest francophone : frigoristes, mécaniciens, menuisiers, électriciens et plus.",
 };
@@ -21,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Header />
         <main>{children}</main>
-        <footer className="inner foot">Bricolo, l’annuaire des métiers de l’artisanat en Afrique de l’Ouest francophone.</footer>
+        <Footer />
       </body>
     </html>
   );
