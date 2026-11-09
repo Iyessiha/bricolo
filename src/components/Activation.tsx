@@ -41,6 +41,7 @@ export default function Activation(p: ActivationProps) {
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [docType, setDocType] = useState<string>("cni");
+  const [docNumber, setDocNumber] = useState("");
   const [front, setFront] = useState<File | null>(null);
   const [back, setBack] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<File | null>(null);
@@ -86,7 +87,7 @@ export default function Activation(p: ActivationProps) {
       const sp = await up(selfie, "selfie");
       const dp = dTitle.trim() && dFile ? { title: dTitle.trim(), path: await up(dFile, "diplome") } : null;
       setBusy("Finalisation…");
-      const r = await submitDossier({ docType, front: fp, back: bp, selfie: sp, diploma: dp });
+      const r = await submitDossier({ docType, docNumber, front: fp, back: bp, selfie: sp, diploma: dp });
       if (!r.ok) { setErr(r.error ?? "Erreur."); return; }
       setDone(true);
     } catch (e) { setErr(errText(e)); } finally { setBusy(""); }
@@ -164,9 +165,13 @@ export default function Activation(p: ActivationProps) {
               <label key={o.v} className="opt"><input type="radio" name="doc" value={o.v} checked={docType === o.v} onChange={() => setDocType(o.v)} /><b>{o.t}</b><span>{o.s}</span></label>
             ))}
           </div>
+          <label className="field"><span>Numéro de la pièce</span>
+            <input className="input" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} autoComplete="off" maxLength={40} placeholder="Tel qu’écrit sur le document" />
+            <small className="muted">Sert à vérifier qu’une même pièce n’ouvre pas plusieurs comptes. Il n’est pas conservé en clair.</small>
+          </label>
           <ImagePick label="Recto (face avec la photo)" hint="Les 4 coins visibles, texte lisible, sans reflet." file={front} onFile={setFront} />
           {docType !== "passeport" && <ImagePick label="Verso" optional hint="Recommandé pour la carte d’identité et le permis." file={back} onFile={setBack} />}
-          {nav(2, <button className="btn primary" type="button" disabled={!front} onClick={() => { setErr(""); setStep(4); }}>Continuer</button>)}
+          {nav(2, <button className="btn primary" type="button" disabled={!front || docNumber.replace(/[^a-zA-Z0-9]/g, "").length < 5} onClick={() => { setErr(""); setStep(4); }}>Continuer</button>)}
         </>
       )}
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 
+const PHONE_USED = "Ce numéro de téléphone ou WhatsApp est déjà utilisé par un autre profil.";
 export type SaveResult = { ok: true; created: boolean; artisanId: string } | { ok: false; error: string };
 
 /** Enregistre (crée ou met à jour) la fiche de l'utilisateur connecté. Partagé par le tunnel d'activation et le formulaire du tableau de bord. */
@@ -37,10 +38,10 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
   let artisanId = existing?.id as string | undefined, created = false;
   if (artisanId) {
     const { error } = await db.from("artisans").update(fields).eq("id", artisanId);
-    if (error) return { ok: false, error: "L’enregistrement a échoué. Réessayez." };
+    if (error) return { ok: false, error: /telephone_deja_utilise/.test(error.message) ? PHONE_USED : "L’enregistrement a échoué. Réessayez." };
   } else {
     const { data, error } = await db.from("artisans").insert({ ...fields, user_id: user.id, country_code: profile.country_code }).select("id").single();
-    if (error || !data) return { ok: false, error: "L’enregistrement a échoué. Réessayez." };
+    if (error || !data) return { ok: false, error: /telephone_deja_utilise/.test(error?.message ?? "") ? PHONE_USED : "L’enregistrement a échoué. Réessayez." };
     artisanId = data.id as string; created = true;
   }
   if (fields.account_type === "entreprise" && registration) await db.from("artisan_companies").upsert({ artisan_id: artisanId, registration_number: registration, updated_at: new Date().toISOString() });

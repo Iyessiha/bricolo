@@ -54,6 +54,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <details open={sp.envoye !== "1"}>
             <summary className="btn" style={{ listStyle: "none" }}>Envoyer une demande</summary>
             <form action={action} className="stack" style={{ marginTop: 12 }}>
+              <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
               <div className="fld"><label htmlFor="zone">Commune ou ville</label>
                 <select id="zone" name="zone">{zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}</select></div>
               <div className="fld"><label htmlFor="description">Votre besoin</label><textarea id="description" name="description" required minLength={5} maxLength={1000} placeholder="Décrivez le problème ou le travail à faire." /></div>
@@ -63,6 +64,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
               <button className="btn primary" type="submit">Envoyer ma demande</button>
             </form>
           </details>
+          {sp.erreur && <p className="notice err" role="alert">{sp.erreur === "doublon" ? "Vous avez déjà contacté cet artisan il y a moins d’une heure." : sp.erreur === "limite" ? "Trop de demandes aujourd’hui. Réessayez demain." : "Vérifiez votre adresse e-mail et votre message."}</p>}
           {sp.envoye === "1" && <p className="notice ok">Demande envoyée. L’artisan vous répondra par e-mail.</p>}
         </aside>
       </div>

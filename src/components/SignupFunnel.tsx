@@ -1,9 +1,10 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
-import { signupLink, type LinkState } from "@/app/auth-actions";
+import { signupAccount, resendConfirmation, type LinkState } from "@/app/auth-actions";
 import { Progress, useCooldown } from "./Funnel";
 import Flag from "./Flag";
+import PasswordField from "./PasswordField";
 
 type Country = { code: string; name: string; capital: string };
 type Trade = { id: string; name: string };
@@ -19,8 +20,12 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
   const [trade, setTrade] = useState("");
   const [email, setEmail] = useState("");
   const [accept, setAccept] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [resent, setResent] = useState("");
+  const [rBusy, setRBusy] = useState(false);
   const [docsAck, setDocsAck] = useState(false);
-  const [state, action, pending] = useActionState<LinkState, FormData>(signupLink, null);
+  const [state, action, pending] = useActionState<LinkState, FormData>(signupAccount, null);
   const left = useCooldown(state?.ok ? state.sentAt : undefined);
   const [sent, setSent] = useState(false);
   useEffect(() => { if (state?.ok) setSent(true); }, [state]);
@@ -31,24 +36,23 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
   if (sent) {
     return (
       <div className="narrow card pad stack" aria-live="polite">
-        <h1 style={{ fontSize: 32 }}>Vérifiez votre boîte e-mail</h1>
-        <p>Nous avons envoyé un lien de confirmation à <b>{email}</b>. Cliquez dessus pour continuer : il vous restera à compléter votre profil, ajouter votre photo et envoyer votre pièce d’identité (environ 5 minutes).</p>
-        <p className="notice">Ouvrez le lien <b>sur cet appareil et dans ce navigateur</b>, sinon il ne fonctionnera pas.</p>
-        <p className="hint">Pas de message ? Regardez dans les courriers indésirables.</p>
-        {state && !state.ok && <p className="notice err" role="alert">{state.error}</p>}
-        <form action={action} className="row">
-          {(["pays", "trade_id", "name", "email", "account_type", "registration"] as const).map((k) => <input key={k} type="hidden" name={k} value={{ pays, trade_id: trade, name, email, account_type: type, registration }[k]} />)}
-          <input type="hidden" name="accept" value="on" /><input type="hidden" name="docs_ack" value="on" />{type === "entreprise" && <input type="hidden" name="authorized" value="on" />}
-          <button className="btn" type="submit" disabled={left > 0 || pending}>{left > 0 ? `Renvoyer le lien dans ${left} s` : "Renvoyer le lien"}</button>
+        <h1 style={{ fontSize: 32 }}>Confirmez votre adresse e-mail</h1>
+        <p>Votre compte est créé. Nous avons envoyé un message de confirmation à <b>{email}</b> : cliquez sur le lien qu’il contient pour continuer. Il vous restera à compléter votre profil, ajouter votre photo et envoyer votre pièce d’identité (environ 5 minutes).</p>
+        <p className="hint">Pas de message ? Regardez dans les courriers indésirables. Ensuite, vous vous connecterez toujours avec votre e-mail et votre mot de passe.</p>
+        {resent && <p className="notice" role="status">{resent}</p>}
+        <div className="row">
+          <button className="btn" type="button" disabled={left > 0 || rBusy}
+            onClick={async () => { setRBusy(true); const r = await resendConfirmation(email); setResent(r.ok ? "Message renvoyé." : r.error ?? "Erreur."); setRBusy(false); }}>
+            {left > 0 ? `Renvoyer le message dans ${left} s` : "Renvoyer le message"}</button>
           <button className="btn small" type="button" onClick={() => { setSent(false); setStep(4); }}>Changer d’adresse</button>
-        </form>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="narrow card pad stack">
-      <Progress step={step} total={TOTAL} label={["Votre pays", "Votre statut", type === "entreprise" ? "Votre entreprise" : "Votre activité", "Votre e-mail"][step - 1]} />
+      <Progress step={step} total={TOTAL} label={["Votre pays", "Votre statut", type === "entreprise" ? "Votre entreprise" : "Votre activité", "Votre compte"][step - 1]} />
 
       {step === 1 && (
         <>
@@ -117,14 +121,17 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
 
       {step === 4 && (
         <form action={action} className="stack">
-          <h1 style={{ fontSize: 30 }}>Votre adresse e-mail</h1>
-          <p className="muted">Aucun mot de passe : nous vous envoyons un lien de confirmation.</p>
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
+          <h1 style={{ fontSize: 30 }}>Votre compte</h1>
+          <p className="muted">Elle servira à vous connecter, avec le mot de passe que vous choisissez ci-dessous.</p>
           <p className="hint">{name} · {type === "entreprise" ? "Entreprise" : "Individuel"} · {trades.find((t) => t.id === trade)?.name} · {country?.name}</p>
           <input type="hidden" name="pays" value={pays} /><input type="hidden" name="trade_id" value={trade} /><input type="hidden" name="name" value={name} />
           <input type="hidden" name="account_type" value={type} /><input type="hidden" name="registration" value={registration} /><input type="hidden" name="docs_ack" value="on" />
           {state?.error && <p className="notice err" role="alert">{state.error}</p>}
           <div className="fld"><label htmlFor="email">Adresse e-mail</label>
             <input id="email" type="email" name="email" required autoComplete="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <PasswordField id="password" name="password" label="Mot de passe" autoComplete="new-password" hint="8 caractères minimum, avec au moins une lettre et un chiffre." value={pw} onChange={setPw} />
+          <PasswordField id="password2" name="password2" label="Confirmez le mot de passe" autoComplete="new-password" value={pw2} onChange={setPw2} />
           {type === "entreprise" && (
             <label className="check"><input type="checkbox" name="authorized" checked={authorized} onChange={(e) => setAuthorized(e.target.checked)} required />
               <span>Je confirme être habilité(e) à créer ce profil et à engager l’entreprise <b>{name}</b>.</span></label>
@@ -133,7 +140,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
             <span>J’ai lu et j’accepte les <Link href="/conditions-utilisation" target="_blank">conditions d’utilisation</Link> et la <Link href="/confidentialite" target="_blank">politique de confidentialité</Link>.</span></label>
           <div className="row">
             <button className="btn" type="button" onClick={() => setStep(3)}>Retour</button>
-            <button className="btn primary" type="submit" disabled={pending || !accept || !email || (type === "entreprise" && !authorized)}>{pending ? "Envoi…" : "Recevoir mon lien"}</button>
+            <button className="btn primary" type="submit" disabled={pending || !accept || !email || pw.length < 8 || pw !== pw2 || (type === "entreprise" && !authorized)}>{pending ? "Création…" : "Créer mon compte"}</button>
           </div>
         </form>
       )}

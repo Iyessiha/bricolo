@@ -204,3 +204,7 @@ h1 .flag{margin-inline:2px}
 .avatar.pic{object-fit:cover;background:var(--surface-sunken)}
 .linkbtn{background:none;border:0;padding:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit}
 .curphoto{flex:none}
+
+/* Champ mot de passe */
+.pw{position:relative;display:flex}.pw input{flex:1;padding-right:92px}
+.pwtoggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:36px;padding:0 12px;border:0;border-radius:var(--radius-md);background:transparent;color:var(--brand);font-weight:600;cursor:pointer}

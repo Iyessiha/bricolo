@@ -81,7 +81,7 @@ export default async function Review({ params, searchParams }: { params: Promise
         <h2 style={{ fontSize: 20 }}>Pièce d’identité</h2>
         {ident ? (
           <>
-            <p className="meta">{DOC[ident.doc_type] ?? ident.doc_type} · envoyée le {when(ident.submitted_at)}{ident.status === "approved" ? " · acceptée" : ident.status === "rejected" ? " · refusée" : ""}</p>
+            <p className="meta">{DOC[ident.doc_type] ?? ident.doc_type}{ident.doc_last4 ? ` · n° …${ident.doc_last4}` : ""} · envoyée le {when(ident.submitted_at)}{ident.status === "approved" ? " · acceptée" : ident.status === "rejected" ? " · refusée" : ""}</p>
             <div className="docs"><Doc label="Recto" path={ident.front_path} /><Doc label="Verso" path={ident.back_path} /><Doc label="Selfie avec la pièce" path={ident.selfie_path} /></div>
             <div className="notice"><b>À contrôler :</b> le nom sur la pièce correspond au nom du profil · la pièce est valide et lisible · le visage du selfie correspond à la photo de la pièce · la photo de profil montre bien la personne.</div>
           </>
