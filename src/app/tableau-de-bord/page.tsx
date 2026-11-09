@@ -59,29 +59,50 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
-  const sec = (["apercu", "demandes", "profil", "horaires", "diplomes", "visibilite"] as const).find((k) => k === sp.s) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "horaires", "boosts"] as const).find((k) => k === sp.s) ?? "apercu";
+  const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
+  const hasHours = !!(artisan as any).open_24_7 || Object.keys(cleanHours((artisan as any).hours)).length > 0;
+  const checks = [
+    { ok: true, l: "Adresse e-mail confirmée", s: "apercu" },
+    { ok: ident.status === "approved", l: "Identité vérifiée", s: "apercu" },
+    { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
+    { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
+    { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil" },
+    { ok: hasHours, l: "Renseigner vos horaires", s: "horaires" },
+    { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", s: "profil" },
+  ];
+  const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
+  const todo = checks.filter((c) => !c.ok);
+  const statusTag = approved ? ["ok", "● En ligne"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["horaires", "🕒", "Horaires"], ["boosts", "🚀", "Boosts"]] as const;
   return (
-    <section className="inner sec stack">
-      <div className="sec-head" style={{ margin: 0 }}>
-        <div className="row" style={{ flexWrap: "nowrap", gap: 14 }}>
-          {artisan.photo_url ? <img className="curphoto" style={{ width: 64, height: 64 }} src={artisan.photo_url} alt="" /> : <span className="avatar" style={{ width: 64, height: 64 }}>{initials(artisan.name)}</span>}
-          <div style={{ minWidth: 0 }}>
-            <p className="eyebrow fl">Espace artisan · <Flag code={country} size={20} />{countryName(country)}</p>
-            <h1 style={{ fontSize: "clamp(24px,4.5vw,36px)" }}>Bonjour, {artisan.name}</h1>
+    <section className="inner dash">
+      <aside className="dside">
+        <div className="dme">
+          {artisan.photo_url ? <img className="curphoto" src={artisan.photo_url} alt="" /> : <span className="avatar">{initials(artisan.name)}</span>}
+          <div className="dme-t">
+            <b>{artisan.name}</b>
+            <span className="meta fl">{tradeName} · <Flag code={country} size={16} /></span>
+            <span className={`tag ${statusTag[0]}`}>{statusTag[1]}</span>
           </div>
+          <form action={signOut}><button className="dout" type="submit" aria-label="Se déconnecter" title="Se déconnecter">⎋</button></form>
         </div>
-        <form action={signOut}><button className="btn small" type="submit">Se déconnecter</button></form>
-      </div>
+        {approved && <Link className="btn small dview" href={`/artisan/${artisan.id}`}>Voir ma fiche publique</Link>}
+        <nav className="dnav" aria-label="Sections">
+          {NAV.map(([k, ic, l]) => (
+            <Link key={k} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
+              <span aria-hidden="true">{ic}</span><span>{l}</span>{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}
+            </Link>
+          ))}
+        </nav>
+      </aside>
 
-      <nav className="subnav" aria-label="Sections">
-        {([["apercu", "Aperçu"], ["demandes", `Demandes${newReqs ? ` (${newReqs})` : ""}`], ["profil", "Profil"], ["horaires", "Horaires"], ["diplomes", "Diplômes"], ["visibilite", "Visibilité"]] as const).map(([k, l]) => (
-          <Link key={k} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>{l}</Link>
-        ))}
-      </nav>
-      {sp.ok && <p className="notice ok">Profil enregistré.</p>}
-      {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
+      <main className="dmain stack">
+        {sp.ok && <p className="notice ok">Modifications enregistrées.</p>}
+        {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 
-      <div id="apercu" className="stack" hidden={sec !== "apercu"}>
+        <div className="stack" hidden={sec !== "apercu"}>
+          <h1 className="dtitle">Bonjour 👋</h1>
         {approved && <div className="notice ok row" style={{ justifyContent: "space-between" }}><span><b>Votre profil est en ligne.</b> Les clients peuvent vous trouver.</span><Link className="btn small" href={`/artisan/${artisan.id}`}>Voir ma fiche</Link></div>}
         {!approved && !rejected && (
           <div className="notice"><b>Dossier en cours de vérification.</b> Envoyé le {day(ident.submitted_at)}. Nous répondons en général sous 24 à 48 heures, par e-mail. Votre profil sera visible des clients dès sa validation.</div>
@@ -93,6 +114,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <div><Link className="btn primary" href="/activation">Corriger mon dossier</Link></div>
           </div>
         )}
+          <div className="card pad stack dcomplete">
+            <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}><h2 style={{ fontSize: 18 }}>Votre profil est complet à {pct} %</h2><b className="num dpct">{pct}%</b></div>
+            <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Complétude du profil"><i style={{ width: `${pct}%` }} /></div>
+            {todo.length ? (
+              <ul className="dtodo">{todo.map((c) => <li key={c.l}><Link href={`/tableau-de-bord?s=${c.s}`} scroll={false}>{c.l} <span aria-hidden="true">→</span></Link></li>)}</ul>
+            ) : <p className="meta">Bravo, votre fiche est au top. Les profils complets reçoivent plus de demandes.</p>}
+          </div>
         <div className="tags">
           <span className="tag ok">E-mail confirmé</span>
           <span className={`tag ${DOC_STATUS[ident.status as keyof typeof DOC_STATUS][0]}`}>Identité : {DOC_STATUS[ident.status as keyof typeof DOC_STATUS][1].replace("✓ ", "")}</span>
@@ -101,32 +129,43 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {artisan.experience_years != null && <span className="tag mute">{artisan.experience_years} an{artisan.experience_years > 1 ? "s" : ""} d’expérience</span>}
           {artisan.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
         </div>
-        {approved && (
-          <div className="stats">
-            <div className="card stat"><b>{stats.vues}</b><span>Vues du profil, 7 jours</span></div>
-            <div className="card stat"><b>{stats.appels}</b><span>Clics sur Appeler</span></div>
-            <div className="card stat"><b>{stats.wa}</b><span>Clics sur WhatsApp</span></div>
-            <div className="card stat"><b>{stats.demandes}</b><span>Demandes reçues</span></div>
+          {approved && (
+            <div className="stats">
+              <div className="card stat"><span aria-hidden="true">👁</span><b>{stats.vues}</b><span>Vues, 7 jours</span></div>
+              <div className="card stat"><span aria-hidden="true">📞</span><b>{stats.appels}</b><span>Appels</span></div>
+              <div className="card stat"><span aria-hidden="true">💬</span><b>{stats.wa}</b><span>WhatsApp</span></div>
+              <div className="card stat"><span aria-hidden="true">📩</span><b>{stats.demandes}</b><span>Demandes</span></div>
+            </div>
+          )}
+          <div className="card pad stack">
+            <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Dernières demandes</h2>{(reqs?.length ?? 0) > 0 && <Link href="/tableau-de-bord?s=demandes" scroll={false}>Tout voir</Link>}</div>
+            {reqs?.length ? reqs.slice(0, 3).map((r) => (
+              <div key={r.id} className="req"><div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" && <span className="tag wait">Nouvelle</span>}<span className="meta">{day(r.created_at)}</span></div><p><b>{r.client_name || "Client"}</b> — {r.description.slice(0, 90)}{r.description.length > 90 ? "…" : ""}</p></div>
+            )) : <p className="empty">Aucune demande pour le moment. Elles arriveront ici et par e-mail.</p>}
           </div>
-        )}
-      </div>
+          {approved && <div className="card pad dboost"><div><b>Passez devant les autres artisans</b><p className="meta">Un boost place votre profil en tête des résultats ou sur l’accueil.</p></div><Link className="btn boost" href="/tableau-de-bord?s=boosts" scroll={false}>Voir les boosts</Link></div>}
+        </div>
 
-      <div id="demandes" className="card pad stack" hidden={sec !== "demandes"}>
-        <h2 style={{ fontSize: 20 }}>Demandes des clients</h2>
+        <div className="stack" hidden={sec !== "demandes"}>
+          <h1 className="dtitle">Demandes des clients</h1>
+          <div className="stack">
         {reqs?.length ? reqs.map((r) => (
-          <div key={r.id} className="req">
+          <div key={r.id} className="req card pad">
             <div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" ? <span className="tag wait">Nouvelle</span> : <span className="tag mute">Traitée</span>}<span className="meta">{day(r.created_at)}</span></div>
             <p><b>{r.client_name || "Client"}</b> · <a href={`mailto:${r.client_email}`}>{r.client_email}</a></p>
             <p>{r.description}</p>
             {r.status === "new" && <form action={markAnswered}><input type="hidden" name="id" value={r.id} /><button className="btn small" type="submit">Marquer comme traitée</button></form>}
           </div>
         )) : <p className="empty">Aucune demande pour le moment. Elles apparaîtront ici et vous seront aussi envoyées par e-mail.</p>}
-      </div>
+          </div>
+        </div>
 
-      <div id="profil" className="stack" hidden={sec !== "profil"}>
+        <div className="stack" hidden={sec !== "profil"}>
+          <h1 className="dtitle">Mon profil</h1>
         <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil</h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
         <form action={saveProfile} className="card pad stack">
-          <h2 style={{ fontSize: 20 }}>Modifier mon profil</h2>
+          <h2 style={{ fontSize: 20 }}>Mon profil</h2>
+          <h3 className="fh">Votre activité</h3>
           <div className="fld"><span className="lbl" id="statut-l">Vous exercez</span>
             <div className="chips" role="radiogroup" aria-labelledby="statut-l">
               <label className="chip"><input type="radio" name="account_type" value="individuel" defaultChecked={artisan.account_type === "individuel"} />À titre individuel</label>
@@ -138,23 +177,18 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><label htmlFor="trade_id">Métier principal</label>
             <select id="trade_id" name="trade_id" required defaultValue={artisan.trade_id}>{trades?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
           <div className="fld"><label htmlFor="experience_years">Années d’expérience</label><input type="number" inputMode="numeric" min={0} max={60} id="experience_years" name="experience_years" required defaultValue={artisan.experience_years ?? ""} /></div>
+          <h3 className="fh">Où intervenez-vous ?</h3>
           <div className="fld"><span className="lbl">Zones couvertes ({countryName(country)})</span>
             <div className="chips">{zones?.map((z) => (<label className="chip" key={z.id}><input type="checkbox" name="zones" value={z.id} defaultChecked={myZones.has(z.id)} />{z.name}</label>))}</div></div>
+          <h3 className="fh">Tarif et contact</h3>
           <div className="fld"><label htmlFor="price_label">Tarif indicatif (FCFA)</label><input type="text" id="price_label" name="price_label" defaultValue={artisan.price_label ?? ""} placeholder="Dès 5 000 F" /></div>
           <div className="fld"><label htmlFor="phone">Téléphone</label><input type="tel" id="phone" name="phone" required defaultValue={artisan.phone ?? ""} /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp (si différent)</label><input type="tel" id="whatsapp" name="whatsapp" defaultValue={artisan.whatsapp ?? ""} /></div>
+          <h3 className="fh">Présentation</h3>
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           <button className="btn primary" type="submit">Enregistrer</button>
         </form>
-      </div>
-
-      <div id="horaires" className="card pad stack" hidden={sec !== "horaires"}>
-        <h2 style={{ fontSize: 20 }}>Jours et heures de disponibilité</h2>
-        <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
-        <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
-      </div>
-
-      <div id="diplomes" className="card pad stack" hidden={sec !== "diplomes"}>
+      <div className="card pad stack">
         <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
         {diplomas?.map((d) => (
@@ -166,7 +200,16 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {(diplomas?.filter((d) => d.status !== "rejected").length ?? 0) < 3 && <DiplomaAdd uid={user.id} />}
       </div>
 
-      <div id="visibilite" className="card pad stack" hidden={sec !== "visibilite"}>
+        </div>
+
+      <div id="horaires" className="card pad stack" hidden={sec !== "horaires"}>
+        <h2 style={{ fontSize: 20 }}>Jours et heures de disponibilité</h2>
+        <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
+        <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
+      </div>
+
+
+      <div id="visibilite" className="card pad stack" hidden={sec !== "boosts"}>
         <h2 style={{ fontSize: 20 }}>Visibilité</h2>
         <h3 style={{ fontSize: 16 }}>Boosts actifs</h3>
         {act?.length ? act.map((b) => (<p key={b.id}><b>{BOOST_TYPES[b.type].name}</b> <span className="meta">· reste {timeLeft(b.ends_at)}</span></p>)) : <p className="meta">Aucun boost actif. Votre profil apparaît parmi les résultats naturels.</p>}
@@ -186,8 +229,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
         ) : <p className="hint">Les boosts sont disponibles une fois votre profil validé.</p>}
       </div>
+      </main>
     </section>
   );
 }
-
-export const dynamic = "force-dynamic";

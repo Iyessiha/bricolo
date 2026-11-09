@@ -244,3 +244,37 @@ h1 .flag{margin-inline:2px}
 .hours{display:grid;gap:6px}.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;flex-wrap:wrap}
 .hrow .check{min-width:120px}.hrange{display:flex;align-items:center;gap:8px}.hrange input[type=time]{width:auto;min-width:112px}
 .hours-tbl{border-collapse:collapse;font-size:13px;width:100%}.hours-tbl th{font-weight:500;text-align:left;color:var(--ink-muted);padding:2px 0}.hours-tbl td{text-align:right;padding:2px 0}
+
+/* ── Espace artisan : menu latéral (ordinateur) / barre du bas (téléphone) ── */
+.dash{display:grid;gap:16px;padding-block:16px 96px}
+.dside{display:grid;gap:10px}
+.dme{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface-raised);border:1px solid var(--line);border-radius:var(--radius-lg)}
+.dme .curphoto,.dme .avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none}
+.dme-t{display:grid;gap:3px;min-width:0;flex:1;justify-items:start}.dme-t b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}
+.dout{border:0;background:transparent;font-size:20px;min-width:44px;min-height:44px;cursor:pointer;color:var(--ink-muted);border-radius:var(--radius-md)}.dout:hover{background:var(--surface-sunken)}
+.dview{justify-content:center;width:100%}
+.dnav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface-raised);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(19,32,58,.08)}
+.dnav a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:58px;font-size:11.5px;font-weight:600;color:var(--ink-muted);text-decoration:none}
+.dnav a span:first-child{font-size:20px;line-height:1}
+.dnav a[aria-current=page]{color:var(--brand)}.dnav a[aria-current=page]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--brand)}
+.dnav em{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--boost);color:var(--on-boost);font:700 11px/18px var(--font-sans);text-align:center;font-style:normal}
+.dmain{min-width:0}
+.dtitle{font-size:clamp(22px,4vw,30px)}
+.fh{font:700 12px var(--font-sans);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);padding-top:14px;border-top:1px solid var(--line);margin-top:4px}
+.fh:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.bar{height:10px;border-radius:999px;background:var(--surface-sunken);overflow:hidden}.bar i{display:block;height:100%;border-radius:999px;background:var(--ok);transition:width .4s}
+.dpct{font:800 24px var(--font-display);color:var(--ok)}
+.dtodo{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.dtodo a{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-weight:600;font-size:14px;text-decoration:none}
+.dash .stat{align-content:start;gap:0}.dash .stat>span:first-child{font-size:20px}
+.dboost{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--boost-soft);border-color:var(--boost)}
+.dash .req.card{background:var(--surface-raised)}
+@media (min-width:900px){
+  .dash{grid-template-columns:260px minmax(0,1fr);gap:28px;align-items:start;padding-block:28px}
+  .dside{position:sticky;top:84px}
+  .dnav{position:static;display:grid;grid-template-columns:1fr;gap:2px;padding:6px;border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:none}
+  .dnav a{flex-direction:row;justify-content:flex-start;gap:12px;min-height:46px;padding:0 12px;border-radius:var(--radius-md);font-size:15px}
+  .dnav a[aria-current=page]{background:var(--brand-soft)}.dnav a[aria-current=page]::before{display:none}
+  .dnav a:hover{background:var(--surface-sunken)}.dnav a[aria-current=page]:hover{background:var(--brand-soft)}
+  .dnav em{position:static;margin-left:auto}
+}
