@@ -9,7 +9,7 @@ import SetupNotice from "@/components/SetupNotice";
 export const metadata: Metadata = { title: "Forfait Pro" };
 export const dynamic = "force-dynamic";
 const ROWS: [string, string, string][] = [
-  ["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Couverture en paysage", "✓", "✓"],
+  ["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3", "illimitées"], ["Couverture en paysage", "✓", "✓"],
   ["Badge « Pro » sur ma fiche et mes cartes", "—", "✓"], ["Visible dans les recherches", "✓", "✓"],
 ];
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import { composeHeadline, priceLabel } from "@/lib/compose";
+import { PRO_LIMITS } from "@/lib/boost";
 
 const PHONE_USED = "Ce numéro de téléphone ou WhatsApp est déjà utilisé par un autre profil.";
 export type SaveResult = { ok: true; created: boolean; artisanId: string } | { ok: false; error: string };
@@ -43,6 +44,21 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
 
   if (fields.headline === null && !formData.has("headline_rest")) delete (fields as any).headline;
   const { data: existing } = await db.from("artisans").select("id").eq("user_id", user.id).maybeSingle();
+  // Forfait gratuit : 3 zones maximum. Les artisans qui en avaient davantage avant la règle les conservent (sans en ajouter).
+  {
+    const uniq = [...new Set(zoneIds)];
+    let allowed: number = PRO_LIMITS.free.zones;
+    if (existing?.id) {
+      const [{ data: sub }, { count }] = await Promise.all([
+        db.from("subscriptions").select("id").eq("artisan_id", existing.id).eq("status", "active").gt("ends_at", new Date().toISOString()).limit(1),
+        db.from("artisan_zones").select("zone_id", { count: "exact", head: true }).eq("artisan_id", existing.id),
+      ]);
+      if ((sub?.length ?? 0) > 0) allowed = Infinity;
+      else allowed = Math.max(allowed, count ?? 0);
+    }
+    if (uniq.length > allowed) return { ok: false, error: `Le forfait gratuit permet ${PRO_LIMITS.free.zones} zones d’intervention. Retirez-en ou passez au Forfait Pro.` };
+    zoneIds.splice(0, zoneIds.length, ...uniq);
+  }
   let artisanId = existing?.id as string | undefined, created = false;
   if (artisanId) {
     const { error } = await db.from("artisans").update(fields).eq("id", artisanId);

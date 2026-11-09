@@ -52,7 +52,7 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
   return { ok: true as const, already: false };
 }
 
-export const PRO_LIMITS = { free: { services: 1, photos: 8 }, pro: { services: 10, photos: 20 } } as const;
+export const PRO_LIMITS = { free: { services: 1, photos: 8, zones: 3 }, pro: { services: 10, photos: 20, zones: Infinity } } as const;
 export async function isPro(db: Admin, artisanId: string) {
   const { data } = await db.from("subscriptions").select("id").eq("artisan_id", artisanId).eq("status", "active").gt("ends_at", new Date().toISOString()).limit(1);
   return (data?.length ?? 0) > 0;

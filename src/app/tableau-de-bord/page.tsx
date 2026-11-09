@@ -11,6 +11,7 @@ import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import ZonePicker from "@/components/ZonePicker";
+import { PRO_LIMITS } from "@/lib/boost";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
 import { addService, markAnswered, removeService, saveHours, saveProfile } from "./actions";
@@ -51,6 +52,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     db.from("subscriptions").select("ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const pro = !!proSub, maxServices = pro ? 10 : 1, maxPhotos = pro ? 20 : 8;
+  const zonesCount = (((artisan as any).zones ?? []) as any[]).length;
+  const maxZones = pro ? Infinity : Math.max(PRO_LIMITS.free.zones, zonesCount);
   if (!ident) redirect("/activation");
 
   const approved = artisan.status === "approved", rejected = artisan.status === "rejected", suspended = artisan.status === "suspended";
@@ -178,6 +181,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="limits">
             <div className={`lim${(services?.length ?? 0) >= maxServices ? " full" : ""}`}><b><span>Prestations</span><span>{services?.length ?? 0} / {maxServices}</span></b><div className="bar"><i style={{ width: `${Math.min(100, ((services?.length ?? 0) / maxServices) * 100)}%` }} /></div></div>
             <div className={`lim${(shots?.length ?? 0) >= maxPhotos ? " full" : ""}`}><b><span>Photos de réalisations</span><span>{shots?.length ?? 0} / {maxPhotos}</span></b><div className="bar"><i style={{ width: `${Math.min(100, ((shots?.length ?? 0) / maxPhotos) * 100)}%` }} /></div></div>
+            <div className={`lim${!pro && zonesCount >= maxZones ? " full" : ""}`}><b><span>Zones d’intervention</span><span>{zonesCount}{pro ? " · illimité" : ` / ${PRO_LIMITS.free.zones}`}</span></b>{!pro && <div className="bar"><i style={{ width: `${Math.min(100, (zonesCount / PRO_LIMITS.free.zones) * 100)}%` }} /></div>}</div>
             <div className="lim"><b><span>Couverture</span><span>{(artisan as any).cover_url ? "✓ ajoutée" : "à ajouter"}</span></b><small>Format paysage 1600 × 600 px</small></div>
             <div className="lim"><b><span>Badge Pro</span><span>{pro ? "✓ actif" : "—"}</span></b><small>Affiché sur votre fiche et vos cartes</small></div>
           </div>
@@ -216,7 +220,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
           <div className="card pad stack psec"><h2>Où j’interviens</h2>
-            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} />
+            <p className="sub">{pro ? "Forfait Pro : zones illimitées." : `Forfait gratuit : jusqu’à ${PRO_LIMITS.free.zones} zones. Passez Pro pour couvrir davantage de villes et quartiers.`}</p>
+            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} max={pro ? undefined : maxZones} />
+            {!pro && <Link className="btn small boost" href="/forfait" style={{ justifySelf: "start" }}>Couvrir plus de zones avec le Pro</Link>}
           </div>
           <div className="card pad stack psec"><h2>Prix et contact</h2>
           <PriceField value={artisan.price_label} label="Prix affiché sur votre carte" />
