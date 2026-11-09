@@ -10,6 +10,7 @@ import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
+import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
 import { markAnswered, saveHours, saveProfile } from "./actions";
 import HoursEditor from "@/components/HoursEditor";
@@ -67,6 +68,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const checks = [
     { ok: true, l: "Adresse e-mail confirmée", s: "apercu" },
     { ok: ident.status === "approved", l: "Identité vérifiée", s: "apercu" },
+    { ok: !!(artisan as any).headline, l: "Écrire votre promesse « Je vais… »", s: "profil" },
     { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
     { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
     { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil" },
@@ -166,6 +168,16 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
+        <details className="card pad tips"><summary><b>💡 Comment réussir ma fiche ?</b></summary>
+          <ol>
+            <li><b>Couverture en paysage</b> : une belle photo horizontale de votre travail, nette, en pleine lumière, sans texte.</li>
+            <li><b>3 à 8 réalisations</b> : avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.</li>
+            <li><b>Une promesse « Je vais… »</b> : « Je vais installer votre climatisation ».</li>
+            <li><b>Une description concrète</b> : ce que vous faites, votre expérience, vos garanties.</li>
+            <li><b>Un tarif de départ</b> : « À partir de … FCFA » avec l’unité. Le prix final se discute avec le client.</li>
+            <li><b>Horaires et zones</b> : plus vous couvrez de zones, plus vous apparaissez dans les recherches.</li>
+            <li><b>Répondez vite</b> : dans l’heure, c’est ce qui fait décrocher les chantiers.</li>
+          </ol></details>
         <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Couverture et réalisations</h2><Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} /></div>
         <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil <span className="hint">(pour vous identifier)</span></h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
         <form action={saveProfile} className="card pad stack">
@@ -186,10 +198,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><span className="lbl">Zones couvertes ({countryName(country)})</span>
             <div className="chips">{zones?.map((z) => (<label className="chip" key={z.id}><input type="checkbox" name="zones" value={z.id} defaultChecked={myZones.has(z.id)} />{z.name}</label>))}</div></div>
           <h3 className="fh">Tarif et contact</h3>
-          <div className="fld"><label htmlFor="price_label">Tarif indicatif (FCFA)</label><input type="text" id="price_label" name="price_label" defaultValue={artisan.price_label ?? ""} placeholder="Dès 5 000 F" /></div>
+          <PriceField value={artisan.price_label} />
           <div className="fld"><label htmlFor="phone">Téléphone</label><input type="tel" id="phone" name="phone" required defaultValue={artisan.phone ?? ""} /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp (si différent)</label><input type="tel" id="whatsapp" name="whatsapp" defaultValue={artisan.whatsapp ?? ""} /></div>
           <h3 className="fh">Présentation</h3>
+          <HeadlineField value={(artisan as any).headline} />
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           <button className="btn primary" type="submit">Enregistrer</button>
         </form>

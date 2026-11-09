@@ -35,13 +35,30 @@ function layout(o: { subject: string; pre: string; title: string; body: string; 
   return { subject: o.subject, html, text };
 }
 
+
+/** Guide de démarrage : ce qui fait la différence entre une fiche qui reçoit des appels et une fiche ignorée. */
+const guide = (intro: string, max = 7) => {
+  const steps: [string, string][] = [
+    ["Une couverture en paysage", "Première chose que voit le client. Une belle photo horizontale de votre travail, nette, en pleine lumière, sans texte ni logo. Tournez le téléphone avant de photographier."],
+    ["3 à 8 photos de vos réalisations", "Avant/après, chantier terminé, détails soignés. Une fiche avec des photos reçoit beaucoup plus d'appels. Pas de photos de personnes ni de documents."],
+    ["Une promesse qui commence par « Je vais… »", "Exemples : « Je vais installer votre climatisation », « Je vais construire votre portail métallique ». Le client comprend en une seconde ce que vous faites pour lui."],
+    ["Une description concrète", "3 ou 4 phrases : ce que vous faites, depuis combien de temps, vos garanties, le matériel que vous utilisez, votre rapidité. Écrivez comme vous parleriez à un client."],
+    ["Un tarif de départ clair", "Choisissez « À partir de … FCFA » avec l'unité (par intervention, par heure, par m²…). Un prix visible rassure, le prix final se discute ensuite. Vous pouvez aussi choisir « Sur devis gratuit »."],
+    ["Vos horaires et vos zones", "Indiquez vos jours et heures de disponibilité, et toutes les villes ou communes où vous vous déplacez : vous apparaissez dans plus de recherches."],
+    ["Répondre vite", "Répondez aux appels et aux messages WhatsApp dans l'heure : c'est le critère n° 1 pour décrocher le chantier."],
+  ];
+  const rows = steps.slice(0, max).map(([h, d], i) => `<tr><td valign="top" style="padding:0 12px 14px 0;width:26px"><div style="width:26px;height:26px;border-radius:13px;background:${BLUE};color:#fff;font-weight:700;font-size:13px;line-height:26px;text-align:center">${i + 1}</div></td><td style="padding:0 0 14px;line-height:1.55"><b>${esc(h)}</b><br><span style="color:${MUTED}">${esc(d)}</span></td></tr>`).join("");
+  return p(intro) + `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 12px;width:100%">${rows}</table>`;
+};
+
 /* ───────── Transactionnels ───────── */
 export const profileReceived = (name: string) => layout({
   subject: "Votre dossier Bricolo est en cours de vérification", pre: "Nous vérifions votre identité, réponse sous 24 à 48 h.",
   title: `Merci ${name}, votre dossier est bien reçu`,
   body: p("Notre équipe vérifie votre pièce d'identité et votre profil. Vous recevrez un e-mail dès que votre profil est en ligne, en général sous 24 à 48 heures.") +
     p("Vos documents ne sont jamais montrés aux clients : seule l'administration peut les consulter.") +
-    btn("Voir mon espace", `${siteUrl()}/tableau-de-bord`),
+    guide("En attendant, préparez votre fiche : c'est elle qui vous fera gagner des clients. Voici comment la réussir.") +
+    btn("Compléter ma fiche", `${siteUrl()}/tableau-de-bord#profil`),
 });
 
 export const profileDecision = (name: string, approved: boolean, artisanId: string, reason?: string) => approved
@@ -50,7 +67,9 @@ export const profileDecision = (name: string, approved: boolean, artisanId: stri
     title: `${name}, votre profil est validé`,
     body: p("Votre identité est vérifiée et votre profil est visible dans les résultats de recherche. Les clients peuvent vous appeler, vous écrire sur WhatsApp ou vous envoyer une demande.") +
       btn("Voir ma fiche", `${siteUrl()}/artisan/${artisanId}`) +
-      p("Pour apparaître en tête des résultats de votre métier, vous pouvez activer un boost depuis votre tableau de bord."),
+      guide("Dernier conseil avant les premiers appels : les 3 choses qui font choisir votre fiche.", 3) +
+      btn("Améliorer ma fiche", `${siteUrl()}/tableau-de-bord#profil`) +
+      p("Quand votre fiche est complète, vous pouvez aussi apparaître en tête des résultats de votre métier avec un boost, depuis votre tableau de bord."),
   })
   : layout({
     subject: "Votre profil Bricolo n'a pas pu être validé", pre: "Quelques informations sont à corriger.",

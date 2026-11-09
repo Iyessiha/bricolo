@@ -21,7 +21,7 @@ export default async function ActivationPage() {
   const [{ data: trades }, { data: zones }, { data: a }] = await Promise.all([
     db.from("trades").select("id, name").order("name"),
     db.from("zones").select("id, name").eq("country_code", country).order("name"),
-    db.from("artisans").select("id, name, trade_id, description, price_label, phone, whatsapp, experience_years, account_type, company_name, photo_url, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
+    db.from("artisans").select("id, name, trade_id, description, headline, price_label, phone, whatsapp, experience_years, account_type, company_name, photo_url, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
   ]);
   const { data: ident } = a ? await db.from("artisan_identity").select("status").eq("artisan_id", a.id).maybeSingle() : { data: null };
   if (a && ident && ident.status !== "rejected") redirect("/tableau-de-bord");
@@ -38,7 +38,7 @@ export default async function ActivationPage() {
         defaults={{
           name: a?.name ?? meta.business_name ?? "", trade_id: a?.trade_id ?? meta.trade_id ?? "",
           zones: ((a as any)?.zones ?? []).map((z: any) => z.zone_id), phone: a?.phone ?? "", whatsapp: a?.whatsapp ?? "",
-          price_label: a?.price_label ?? "", description: a?.description ?? "", experience_years: a?.experience_years != null ? String(a.experience_years) : "",
+          price_label: a?.price_label ?? "", description: a?.description ?? "", headline: a?.headline ?? "", experience_years: a?.experience_years != null ? String(a.experience_years) : "",
           account_type: type, company_name: a?.company_name ?? meta.business_name ?? "", registration_number: company?.registration_number ?? meta.company_registration ?? "",
         }}
       />

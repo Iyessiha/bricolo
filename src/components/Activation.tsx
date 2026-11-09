@@ -2,6 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Progress } from "./Funnel";
+import { HeadlineField, PriceField } from "./ProfileFields";
 import ImagePick from "./ImagePick";
 import { prepareImage, IMAGE_ERRORS } from "@/lib/images";
 import { supabaseBrowser } from "@/lib/supabase/browser";
@@ -11,7 +12,7 @@ type Opt = { id: string; name: string };
 export type ActivationProps = {
   uid: string; countryName: string; trades: Opt[]; zones: Opt[]; initialStep: number; photoUrl: string | null;
   defaults: {
-    name: string; trade_id: string; zones: string[]; phone: string; whatsapp: string; price_label: string; description: string;
+    name: string; trade_id: string; zones: string[]; phone: string; whatsapp: string; price_label: string; description: string; headline?: string;
     experience_years: string; account_type: "individuel" | "entreprise"; company_name: string; registration_number: string;
   };
 };
@@ -149,8 +150,9 @@ export default function Activation(p: ActivationProps) {
           </div>
           <div className="fld"><label htmlFor="phone">Téléphone</label><input id="phone" name="phone" type="tel" required defaultValue={d.phone} placeholder="+225 07 00 00 00 00" autoComplete="tel" /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp <span className="hint">(si différent)</span></label><input id="whatsapp" name="whatsapp" type="tel" defaultValue={d.whatsapp} /></div>
-          <div className="fld"><label htmlFor="price_label">Tarif indicatif <span className="hint">(facultatif)</span></label><input id="price_label" name="price_label" defaultValue={d.price_label} placeholder="Dès 5 000 F" /></div>
-          <div className="fld"><label htmlFor="description">Description <span className="hint">(facultatif)</span></label><textarea id="description" name="description" maxLength={1000} defaultValue={d.description} placeholder="Vos services en deux ou trois phrases." /></div>
+          <PriceField value={d.price_label} />
+          <HeadlineField value={(d as any).headline} />
+          <div className="fld"><label htmlFor="description">Description <span className="hint">(facultatif)</span></label><textarea id="description" name="description" maxLength={1000} defaultValue={d.description} placeholder="Vos services, votre méthode, vos garanties : 3 ou 4 phrases." /></div>
           {nav(null, <button className="btn primary" type="submit" disabled={pending}>{pending ? "Enregistrement…" : "Continuer"}</button>)}
         </form>
       )}

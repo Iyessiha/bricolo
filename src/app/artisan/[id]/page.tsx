@@ -18,7 +18,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, headline, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
@@ -52,6 +52,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
                 {(a as any).takes_urgent && <span className="tag boost">🚨 Urgences</span>}
               </div>
               <h1>{a.name}</h1>
+              {(a as any).headline && <p className="pfhl">{(a as any).headline}</p>}
               <p className="pftrade">{trade?.name}{whoLine ? ` · ${whoLine}` : ""}</p>
               <p className="meta fl"><Flag code={a.country_code} size={16} />{zones.length ? zones.map((z) => z.name).join(", ") : countryName(a.country_code)}</p>
             </div>

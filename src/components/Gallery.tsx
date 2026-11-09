@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { prepareImage, IMAGE_ERRORS } from "@/lib/images";
+import { prepareImage, checkLandscape, IMAGE_ERRORS } from "@/lib/images";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { addPortfolio, removeCover, removePortfolio, saveCover } from "@/app/tableau-de-bord/actions";
 
@@ -15,9 +15,9 @@ export default function Gallery({ uid, cover, shots }: { uid: string; cover: str
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const coverRef = useRef<HTMLInputElement>(null), shotRef = useRef<HTMLInputElement>(null);
 
-  async function up(file: File, side: number) {
+  async function up(file: File, side: number, maxBytes: number) {
     const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jpg`;
-    const { error } = await supabaseBrowser().storage.from("realisations").upload(path, await prepareImage(file, side), { contentType: "image/jpeg" });
+    const { error } = await supabaseBrowser().storage.from("realisations").upload(path, await prepareImage(file, side, 0.85, maxBytes), { contentType: "image/jpeg" });
     if (error) throw new Error("upload");
     return path;
   }
@@ -27,11 +27,11 @@ export default function Gallery({ uid, cover, shots }: { uid: string; cover: str
     catch (e) { setMsg({ ok: false, t: (e instanceof Error && (IMAGE_ERRORS[e.message] || (!/^(upload|format|lecture)$/.test(e.message) && e.message))) || "L’envoi a échoué. Réessayez." }); }
     finally { setBusy(false); }
   }
-  const onCover = (f?: File) => f && run(async () => { const r = await saveCover(await up(f, 1600)); if (!r.ok) throw new Error(r.error); return "Couverture mise à jour."; });
+  const onCover = (f?: File) => f && run(async () => { await checkLandscape(f); const r = await saveCover(await up(f, 1600, 900_000)); if (!r.ok) throw new Error(r.error); return "Couverture mise à jour."; });
   const onShots = (files: FileList | null) => files && run(async () => {
     const list = [...files].slice(0, MAX - shots.length);
     if (!list.length) throw new Error("Vous avez atteint 8 photos. Supprimez-en une pour en ajouter.");
-    for (const f of list) { const r = await addPortfolio(await up(f, 1400), ""); if (!r.ok) throw new Error(r.error); }
+    for (const f of list) { const r = await addPortfolio(await up(f, 1400, 700_000), ""); if (!r.ok) throw new Error(r.error); }
     return list.length > 1 ? `${list.length} photos ajoutées.` : "Photo ajoutée.";
   });
 
@@ -39,7 +39,8 @@ export default function Gallery({ uid, cover, shots }: { uid: string; cover: str
     <div className="stack" style={{ gap: 18 }}>
       <div className="stack" style={{ gap: 8 }}>
         <h3 className="fh">Photo de couverture</h3>
-        <div className="covprev">{cover ? <img src={cover} alt="Votre couverture" /> : <span>Aucune couverture : c’est la première chose que voient les clients. Choisissez une belle photo de votre travail, en format paysage.</span>}</div>
+        <div className="covprev">{cover ? <img src={cover} alt="Votre couverture" /> : <span>Aucune couverture : c’est la première chose que voient les clients. Choisissez une belle photo de votre travail, en format paysage (horizontale).</span>}</div>
+        <p className="hint">Photo en paysage, nette, en pleine lumière, sans texte ni logo. 900 px de large minimum. Elle sera automatiquement allégée.</p>
         <input ref={coverRef} type="file" accept="image/*" hidden onChange={(e) => { onCover(e.target.files?.[0]); e.target.value = ""; }} />
         <div className="row"><button type="button" className="btn small primary" disabled={busy} onClick={() => coverRef.current?.click()}>{cover ? "Changer la couverture" : "Ajouter une couverture"}</button>
           {cover && <button type="button" className="btn small ghost" disabled={busy} onClick={() => run(async () => { await removeCover(); return "Couverture retirée."; })}>Retirer</button>}</div>
