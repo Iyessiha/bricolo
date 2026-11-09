@@ -8,7 +8,7 @@ import { initials } from "@/lib/format";
 import Flag from "@/components/Flag";
 import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
-import { deleteArtisan, giftBoost, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
+import { removeMedia, deleteArtisan, giftBoost, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
 import { fcfa } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Examen du dossier", robots: { index: false } };
@@ -52,13 +52,14 @@ export default async function Review({ params, searchParams }: { params: Promise
   const canDecide = !!ident && a.status !== "approved" && a.status !== "suspended";
   const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
   const cnt = (q: any) => q.then((r: any) => r.count ?? 0);
-  const [views, calls, wa, reqs, { data: boosts }, { data: revs }] = await Promise.all([
+  const [views, calls, wa, reqs, { data: boosts }, { data: revs }, { data: shots }] = await Promise.all([
     cnt(db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", id).eq("type", "view").gte("created_at", since30)),
     cnt(db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", id).eq("type", "call").gte("created_at", since30)),
     cnt(db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", id).eq("type", "whatsapp").gte("created_at", since30)),
     cnt(db.from("service_requests").select("id", { count: "exact", head: true }).eq("artisan_id", id)),
     db.from("boosts").select("id, type, duration_hours, amount, status, ends_at, created_at").eq("artisan_id", id).order("created_at", { ascending: false }).limit(10),
     db.from("reviews").select("id, author_name, rating, comment, status").eq("artisan_id", id).order("created_at", { ascending: false }).limit(10),
+    db.from("portfolio_photos").select("id, url").eq("artisan_id", id).order("created_at"),
   ]);
   const susp = a.status === "suspended";
 
@@ -100,6 +101,14 @@ export default async function Review({ params, searchParams }: { params: Promise
           <select name="hours" aria-label="Durée"><option value="24">24 h</option><option value="72">3 jours</option><option value="168">7 jours</option></select>
           <button className="btn small" type="submit">Offrir</button></form>
       </div>
+
+      {(((a as any).cover_url) || shots?.length) ? (
+        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photos publiées</h2><p className="hint">Retirez toute photo inappropriée (personnes, documents, contenu choquant).</p>
+          <div className="shotgrid">
+            {(a as any).cover_url && <figure style={{ gridColumn: "span 2", aspectRatio: "16/6" }}><img src={(a as any).cover_url} alt="Couverture" /><form action={removeMedia}><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="cover" /><button aria-label="Retirer la couverture">×</button></form></figure>}
+            {shots?.map((p) => <figure key={p.id}><img src={p.url} alt="Réalisation" /><form action={removeMedia}><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="photo" /><input type="hidden" name="photo" value={p.id} /><button aria-label="Retirer cette photo">×</button></form></figure>)}
+          </div></div>
+      ) : null}
 
       <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Boosts et avis</h2>
         {boosts?.length ? <table className="tbl"><tbody>{boosts.map((b) => <tr key={b.id}><td>{b.type} · {b.duration_hours / 24} j</td><td><span className={`tag ${b.status === "active" ? "ok" : "mute"}`}>{b.status}</span></td><td className="num">{b.amount ? fcfa(b.amount) : "Offert"}</td></tr>)}</tbody></table> : <p className="empty">Aucun boost.</p>}

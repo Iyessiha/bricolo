@@ -356,3 +356,20 @@ h1 .flag{margin-inline:2px}
   .a-foot{display:flex;gap:8px;flex-wrap:wrap}
 }
 .agrid>.card{align-content:start}
+
+/* ── Couverture et réalisations ── */
+.covprev{aspect-ratio:16/6;border-radius:var(--radius-lg);overflow:hidden;background:var(--surface-sunken);display:grid;place-items:center;text-align:center;padding:12px;color:var(--ink-muted);font-size:14px;border:1px dashed var(--border-strong)}
+.covprev img{width:100%;height:100%;object-fit:cover;display:block;margin:-12px}
+.covprev:has(img){padding:0;border-style:solid}.covprev img{margin:0}
+.shotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.shotgrid figure{position:relative;margin:0;aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;background:var(--surface-sunken)}
+.shotgrid img{width:100%;height:100%;object-fit:cover;display:block}
+.shotgrid button{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:16px;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.pfcover{margin:-20px -20px 0;aspect-ratio:16/6;overflow:hidden;border-radius:var(--radius-lg) var(--radius-lg) 0 0;background:var(--surface-sunken)}.pfcover img{width:100%;height:100%;object-fit:cover;display:block}
+.pfhead.hascover{padding-top:0;overflow:hidden}.pfhead.hascover .pfcover{flex:0 0 calc(100% + 40px);margin-bottom:0}
+.pfhead.hascover .pfphoto{margin-top:-52px;border:4px solid var(--surface-raised);box-shadow:var(--shadow-sm,0 2px 8px rgba(0,0,0,.15))}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.gal a{display:block;aspect-ratio:4/3;border-radius:var(--radius-md);overflow:hidden;background:var(--surface-sunken)}.gal img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}.gal a:hover img{transform:scale(1.04)}
+.acard-media.cov .acard-badges{right:62px}
+.acard-media .acard-av{position:absolute;right:10px;bottom:-14px;width:44px;height:44px;border-radius:50%;border:3px solid var(--surface-raised);overflow:hidden;background:var(--brand-soft);display:grid;place-items:center;font:700 15px var(--font-display);color:var(--brand);z-index:2}
+.acard-media .acard-av img{position:static;width:100%;height:100%}
+.acard-media.cov{aspect-ratio:3/2;overflow:visible}.acard-media.cov>img{border-radius:var(--radius-lg) var(--radius-lg) 0 0}.acard-media.cov~.acard-body{padding-top:20px}

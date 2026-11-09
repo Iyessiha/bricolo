@@ -6,7 +6,7 @@ export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
   photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
-  hours?: unknown; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string;
+  hours?: unknown; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string;
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
@@ -15,8 +15,9 @@ export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: s
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
   return (
     <article className={`acard${a.sponsored ? " sp" : ""}`}>
-      <div className="acard-media">
-        {a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
+      <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
+        {a.cover_url ? <img src={a.cover_url} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
+        {a.cover_url && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
         {a.sponsored && <span className="acard-flag">Sponsorisé</span>}
         <div className="acard-badges">
           {a.verified && <span className="tag ok">✓ Vérifié</span>}

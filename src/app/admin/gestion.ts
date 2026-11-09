@@ -118,3 +118,21 @@ export async function setRole(f: FormData) {
   await audit(ctx, role === "admin" ? "equipe.ajouter" : "equipe.retirer", { type: "profil", id: p!.id, label: p!.email });
   revalidatePath("/admin/equipe"); back("/admin/equipe", "ok", role === "admin" ? "Administrateur ajouté." : "Accès administrateur retiré.");
 }
+
+/** Retire une photo jugée inappropriée (couverture ou réalisation). */
+export async function removeMedia(f: FormData) {
+  const { ctx, a, page } = await target(f);
+  const kind = s(f, "kind", 8), pid = s(f, "photo", 40);
+  const key = (u?: string | null) => u?.split("/object/public/realisations/")[1];
+  if (kind === "cover") {
+    const { data } = await ctx.db.from("artisans").select("cover_url").eq("id", a.id).single();
+    await ctx.db.from("artisans").update({ cover_url: null }).eq("id", a.id);
+    if (key(data?.cover_url)) await ctx.db.storage.from("realisations").remove([key(data!.cover_url)!]);
+  } else if (UUID.test(pid)) {
+    const { data } = await ctx.db.from("portfolio_photos").select("path").eq("id", pid).eq("artisan_id", a.id).maybeSingle();
+    await ctx.db.from("portfolio_photos").delete().eq("id", pid).eq("artisan_id", a.id);
+    if (data?.path) await ctx.db.storage.from("realisations").remove([data.path]);
+  }
+  await audit(ctx, "photo.retirer", { type: "artisan", id: a.id, label: a.name }, { kind });
+  refresh(a.id); back(page, "ok", "Photo retirée.");
+}

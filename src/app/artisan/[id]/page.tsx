@@ -18,10 +18,11 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, account_type, company_name, description, price_label, photo_url, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
+  const { data: shots } = await db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", id).order("created_at");
   const { data: reviews } = await db.from("reviews").select("id, author_name, rating, comment").eq("artisan_id", id).eq("status", "published").order("created_at", { ascending: false }).limit(10);
   try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view" }); } catch { /* statistiques non bloquantes */ }
 
@@ -40,7 +41,8 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
       <p><Link href="/resultats">← Retour aux résultats</Link></p>
       <div className="pgrid">
         <div className="stack">
-          <header className="card pfhead">
+          <header className={`card pfhead${(a as any).cover_url ? " hascover" : ""}`}>
+            {(a as any).cover_url && <div className="pfcover"><img src={(a as any).cover_url} alt={`Réalisations de ${a.name}`} /></div>}
             <div className="pfphoto">{a.photo_url ? <img src={a.photo_url} alt={`Photo de ${a.name}`} /> : <span aria-hidden="true">{initials(a.name)}</span>}</div>
             <div className="pfid">
               <div className="tags">
@@ -63,6 +65,8 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           </div>
 
           {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p className="pfabout">{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
+
+          {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><div className="gal">{shots.map((s) => <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={s.caption ?? `Réalisation de ${a.name}`} loading="lazy" /></a>)}</div></div>}
 
           {zones.length > 0 && <div className="card pad stack"><h2>Zones d’intervention</h2><div className="chips">{zones.map((z) => <span className="chip" key={z.id}>📍 {z.name}</span>)}</div></div>}
 

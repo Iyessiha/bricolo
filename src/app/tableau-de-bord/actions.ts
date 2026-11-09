@@ -51,3 +51,52 @@ export async function saveHours(formData: FormData) {
   revalidatePath("/tableau-de-bord");
   redirect("/tableau-de-bord?s=horaires&ok=1");
 }
+
+async function me() {
+  const db = await supabaseServer();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const { data: a } = await db.from("artisans").select("id, cover_url").eq("user_id", user.id).maybeSingle();
+  return a ? { db, user, a } : null;
+}
+const okPath = (p: string, uid: string) => p.startsWith(`${uid}/`) && !p.includes("..") && p.length < 200;
+const keyOf = (url: string | null | undefined) => url?.split("/object/public/realisations/")[1] ?? null;
+
+/** Photo de couverture (paysage) : le fichier est déjà dans le stockage public, on enregistre son adresse. */
+export async function saveCover(path: string): Promise<{ ok: boolean; error?: string }> {
+  const c = await me(); if (!c) return { ok: false, error: "Session expirée. Reconnectez-vous." };
+  if (!okPath(path, c.user.id)) return { ok: false, error: "Fichier invalide." };
+  const { data } = c.db.storage.from("realisations").getPublicUrl(path);
+  const old = keyOf(c.a.cover_url);
+  const { error } = await c.db.from("artisans").update({ cover_url: data.publicUrl }).eq("id", c.a.id);
+  if (error) return { ok: false, error: "L’enregistrement a échoué." };
+  if (old) await c.db.storage.from("realisations").remove([old]);
+  revalidatePath("/tableau-de-bord");
+  return { ok: true };
+}
+export async function removeCover(): Promise<{ ok: boolean }> {
+  const c = await me(); if (!c) return { ok: false };
+  const old = keyOf(c.a.cover_url);
+  await c.db.from("artisans").update({ cover_url: null }).eq("id", c.a.id);
+  if (old) await c.db.storage.from("realisations").remove([old]);
+  revalidatePath("/tableau-de-bord"); return { ok: true };
+}
+export async function addPortfolio(path: string, caption: string): Promise<{ ok: boolean; error?: string }> {
+  const c = await me(); if (!c) return { ok: false, error: "Session expirée. Reconnectez-vous." };
+  if (!okPath(path, c.user.id)) return { ok: false, error: "Fichier invalide." };
+  const { data } = c.db.storage.from("realisations").getPublicUrl(path);
+  const { error } = await c.db.from("portfolio_photos").insert({ artisan_id: c.a.id, path, url: data.publicUrl, caption: caption.trim().slice(0, 80) || null });
+  if (error) {
+    await c.db.storage.from("realisations").remove([path]);
+    return { ok: false, error: /portfolio_plein/.test(error.message) ? "Vous avez atteint 8 photos. Supprimez-en une pour en ajouter." : "L’enregistrement a échoué." };
+  }
+  revalidatePath("/tableau-de-bord"); return { ok: true };
+}
+export async function removePortfolio(id: string): Promise<{ ok: boolean }> {
+  const c = await me(); if (!c || !/^[0-9a-f-]{36}$/i.test(id)) return { ok: false };
+  const { data: p } = await c.db.from("portfolio_photos").select("path").eq("id", id).eq("artisan_id", c.a.id).maybeSingle();
+  if (!p) return { ok: false };
+  await c.db.from("portfolio_photos").delete().eq("id", id).eq("artisan_id", c.a.id);
+  await c.db.storage.from("realisations").remove([p.path]);
+  revalidatePath("/tableau-de-bord"); return { ok: true };
+}

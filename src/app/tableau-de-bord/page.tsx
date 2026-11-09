@@ -9,6 +9,7 @@ import Flag from "@/components/Flag";
 import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
+import Gallery from "@/components/Gallery";
 import DiplomaAdd from "@/components/DiplomaAdd";
 import { markAnswered, saveHours, saveProfile } from "./actions";
 import HoursEditor from "@/components/HoursEditor";
@@ -38,10 +39,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ]);
   // Le dossier doit être complet (profil, photo, pièce d'identité) : sinon on reprend le tunnel d'activation.
   if (!artisan || !artisan.photo_url) redirect("/activation");
-  const [{ data: ident }, { data: diplomas }, { data: company }] = await Promise.all([
+  const [{ data: ident }, { data: diplomas }, { data: company }, { data: shots }] = await Promise.all([
     db.from("artisan_identity").select("status, reject_reason, submitted_at").eq("artisan_id", artisan.id).maybeSingle(),
     db.from("artisan_diplomas").select("id, title, status, reject_reason, submitted_at").eq("artisan_id", artisan.id).order("submitted_at", { ascending: false }),
     db.from("artisan_companies").select("registration_number").eq("artisan_id", artisan.id).maybeSingle(),
+    db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", artisan.id).order("created_at"),
   ]);
   if (!ident) redirect("/activation");
 
@@ -68,6 +70,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
     { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
     { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil" },
+    { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", s: "profil" },
     { ok: hasHours, l: "Renseigner vos horaires", s: "horaires" },
     { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", s: "profil" },
   ];
@@ -163,7 +166,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
-        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil</h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
+        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Couverture et réalisations</h2><Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} /></div>
+        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil <span className="hint">(pour vous identifier)</span></h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
         <form action={saveProfile} className="card pad stack">
           <h2 style={{ fontSize: 20 }}>Mon profil</h2>
           <h3 className="fh">Votre activité</h3>
