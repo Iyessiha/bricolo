@@ -58,16 +58,18 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
         <>
           <h1 style={{ fontSize: 30 }}>Dans quel pays travaillez-vous ?</h1>
           <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
-          <div className="notice stack" style={{ gap: 8 }}>
-            <b>Avant de commencer : préparez vos documents</b>
-            <p>Pour protéger les clients, votre identité est vérifiée avant l’activation du profil. Ayez sous la main :</p>
-            <ul className="ticks">
-              <li>une <b>pièce d’identité valide</b> (carte d’identité, passeport, permis ou carte consulaire)</li>
-              <li>de quoi vous <b>prendre en photo</b> : un portrait, et un selfie avec votre pièce</li>
-              <li>vos <b>années d’expérience</b>, et votre diplôme si vous en avez un (facultatif)</li>
-            </ul>
-            <p className="hint">Comptez 5 minutes, depuis votre téléphone. Vos documents ne sont jamais montrés aux clients.</p>
-          </div>
+          <details className="notice">
+            <summary><b>Avant de commencer : préparez vos documents</b></summary>
+            <div className="stack" style={{ gap: 8, marginTop: 8 }}>
+              <p>Votre identité est vérifiée avant l’activation du profil, pour protéger les clients. Ayez sous la main :</p>
+              <ul className="ticks">
+                <li>une <b>pièce d’identité valide</b> (carte d’identité, passeport, permis ou carte consulaire)</li>
+                <li>de quoi vous <b>prendre en photo</b> : un portrait, et un selfie avec votre pièce</li>
+                <li>vos <b>années d’expérience</b>, et votre diplôme si vous en avez un (facultatif)</li>
+              </ul>
+              <p className="hint">Comptez 5 minutes, depuis votre téléphone. Vos documents ne sont jamais montrés aux clients.</p>
+            </div>
+          </details>
           <div className="opts two">
             {countries.map((c) => (
               <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b><span>{c.capital}</span></label>

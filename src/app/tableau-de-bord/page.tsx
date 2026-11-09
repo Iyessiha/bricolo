@@ -57,6 +57,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
+  const sec = (["apercu", "demandes", "profil", "diplomes", "visibilite"] as const).find((k) => k === sp.s) ?? "apercu";
   return (
     <section className="inner sec stack">
       <div className="sec-head" style={{ margin: 0 }}>
@@ -71,12 +72,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </div>
 
       <nav className="subnav" aria-label="Sections">
-        <a href="#apercu">Aperçu</a><a href="#demandes">Demandes{newReqs ? ` (${newReqs})` : ""}</a><a href="#profil">Profil</a><a href="#diplomes">Diplômes</a><a href="#visibilite">Visibilité</a>
+        {([["apercu", "Aperçu"], ["demandes", `Demandes${newReqs ? ` (${newReqs})` : ""}`], ["profil", "Profil"], ["diplomes", "Diplômes"], ["visibilite", "Visibilité"]] as const).map(([k, l]) => (
+          <Link key={k} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>{l}</Link>
+        ))}
       </nav>
       {sp.ok && <p className="notice ok">Profil enregistré.</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 
-      <div id="apercu" className="stack">
+      <div id="apercu" className="stack" hidden={sec !== "apercu"}>
         {approved && <div className="notice ok row" style={{ justifyContent: "space-between" }}><span><b>Votre profil est en ligne.</b> Les clients peuvent vous trouver.</span><Link className="btn small" href={`/artisan/${artisan.id}`}>Voir ma fiche</Link></div>}
         {!approved && !rejected && (
           <div className="notice"><b>Dossier en cours de vérification.</b> Envoyé le {day(ident.submitted_at)}. Nous répondons en général sous 24 à 48 heures, par e-mail. Votre profil sera visible des clients dès sa validation.</div>
@@ -106,7 +109,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         )}
       </div>
 
-      <div id="demandes" className="card pad stack">
+      <div id="demandes" className="card pad stack" hidden={sec !== "demandes"}>
         <h2 style={{ fontSize: 20 }}>Demandes des clients</h2>
         {reqs?.length ? reqs.map((r) => (
           <div key={r.id} className="req">
@@ -118,7 +121,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         )) : <p className="empty">Aucune demande pour le moment. Elles apparaîtront ici et vous seront aussi envoyées par e-mail.</p>}
       </div>
 
-      <div id="profil" className="stack">
+      <div id="profil" className="stack" hidden={sec !== "profil"}>
         <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil</h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
         <form action={saveProfile} className="card pad stack">
           <h2 style={{ fontSize: 20 }}>Modifier mon profil</h2>
@@ -143,7 +146,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </form>
       </div>
 
-      <div id="diplomes" className="card pad stack">
+      <div id="diplomes" className="card pad stack" hidden={sec !== "diplomes"}>
         <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
         {diplomas?.map((d) => (
@@ -155,7 +158,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {(diplomas?.filter((d) => d.status !== "rejected").length ?? 0) < 3 && <DiplomaAdd uid={user.id} />}
       </div>
 
-      <div id="visibilite" className="card pad stack">
+      <div id="visibilite" className="card pad stack" hidden={sec !== "visibilite"}>
         <h2 style={{ fontSize: 20 }}>Visibilité</h2>
         <h3 style={{ fontSize: 16 }}>Boosts actifs</h3>
         {act?.length ? act.map((b) => (<p key={b.id}><b>{BOOST_TYPES[b.type].name}</b> <span className="meta">· reste {timeLeft(b.ends_at)}</span></p>)) : <p className="meta">Aucun boost actif. Votre profil apparaît parmi les résultats naturels.</p>}
