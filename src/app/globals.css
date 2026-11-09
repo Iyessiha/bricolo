@@ -162,3 +162,10 @@ a,button,summary,label{-webkit-tap-highlight-color:transparent}
 .brand{min-height:44px}
 @media (max-width:860px){.hint a{display:inline-block;padding-block:13px}}
 @media (max-width:860px){.dcall{display:none}}
+/* Section clients */
+.cband{background:var(--surface-raised);border-block:1px solid var(--line);padding-block:44px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.cbenefit{display:grid;gap:8px;align-content:start;padding:18px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-100)}
+.cbenefit b{font:700 19px/1.25 var(--font-display)}.cbenefit p{color:var(--ink-muted)}
+.cico{display:grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--brand-soft);color:var(--brand)}
+@media (max-width:860px){.cband{padding-block:32px}}
