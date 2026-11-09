@@ -11,8 +11,10 @@ const FAQ = [
   ["Est-ce payant pour un client ?", "Non. Chercher un artisan, voir son profil et lui envoyer une demande est gratuit, sans compte. Vous réglez l’artisan directement, après avoir convenu du prix avec lui."],
   ["Comment contacter un artisan ?", "Depuis sa fiche : un bouton pour l’appeler, un bouton WhatsApp, ou un formulaire de demande. Vous parlez directement à l’artisan, sans intermédiaire."],
   ["Pourquoi certains artisans sont-ils en tête ?", "Certains profils sont mis en avant par leurs propriétaires. Ils portent toujours la mention « Sponsorisé ». Les autres sont classés selon leur badge Vérifié, leurs avis et la qualité de leur profil."],
-  ["Comment devenir artisan sur Bricolo ?", "Créez votre profil en quatre étapes : pays, statut (individuel ou entreprise), activité, e-mail. Pas de mot de passe, pas de frais. Après validation par notre équipe, les clients de votre pays peuvent vous trouver."],
-  ["Mes informations sont-elles protégées ?", "Seules les informations de votre fiche (activité, zones, téléphone, description) sont visibles des clients. Votre e-mail et les informations de votre entreprise restent privés."],
+  ["Comment sont vérifiés les artisans ?", "Chaque artisan envoie une pièce d’identité et un selfie avec cette pièce. Notre équipe les contrôle avant la mise en ligne. Les artisans validés reçoivent le badge « Vérifié ». Vos documents ne sont jamais montrés aux clients."],
+  ["Comment devenir artisan sur Bricolo ?", "Créez votre compte avec votre e-mail et un mot de passe, remplissez votre profil (métier, zones, tarif, photo), puis envoyez votre pièce d’identité. Après validation par notre équipe, en général sous 24 à 48 heures, les clients de votre pays peuvent vous trouver."],
+  ["Combien coûte Bricolo pour un artisan ?", "Le profil est gratuit. Des options sont disponibles si vous voulez aller plus loin : les boosts pour apparaître en tête des résultats, et le Forfait Pro pour afficher plus de prestations et de photos. Bricolo ne prend aucune commission sur vos travaux."],
+  ["Mes informations sont-elles protégées ?", "Seules les informations de votre fiche (activité, zones, téléphone, description, photos) sont visibles des clients. Votre e-mail, vos documents d’identité et les informations de votre entreprise restent privés."],
 ] as const;
 
 export default async function Home() {
@@ -29,6 +31,13 @@ export default async function Home() {
   const { data: featured } = ids.length
     ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, cover_url, headline, experience_years, diploma_verified, hours, open_24_7, takes_urgent, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").limit(6)
     : { data: [] };
+  const have = new Set((featured ?? []).map((f: any) => f.id));
+  const { data: top } = await db.rpc("search_artisans", { p_country: country, p_trade: null, p_zone: null, p_verified: false, p_seed: String(Math.floor(Date.now() / 3600000)) });
+  const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
+  const shown: any[] = [
+    ...(featured ?? []).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
+    ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).slice(0, 6).map((a) => ({ ...a, trade: tradeName(a.trade_id) })),
+  ].slice(0, 6);
   return (
     <>
       <section className="inner hero2">
@@ -53,46 +62,11 @@ export default async function Home() {
         </form>
         <ul className="trust">
           <li>Contact direct, sans intermédiaire</li>
-          <li>Profils contrôlés, badge Vérifié</li>
+          <li>Identité vérifiée par notre équipe (badge Vérifié)</li>
           <li>7 pays d’Afrique de l’Ouest</li>
         </ul>
       </section>
       <div className="ruler" aria-hidden="true" />
-
-      <section className="band cl">
-        <div className="inner bandin">
-          <div className="stack" style={{ gap: 14 }}>
-            <p className="eyebrow" style={{ color: "inherit", opacity: .8 }}>Pour les clients</p>
-            <h2 style={{ fontSize: "clamp(26px,4vw,36px)" }}>Un artisan de confiance, sans courir partout.</h2>
-            <ul className="ticks">
-              <li>Trouvez par métier et par commune, en quelques secondes</li>
-              <li>Profils clairs : zones, avis, badge Vérifié et tarif indicatif</li>
-              <li>Appelez ou écrivez sur WhatsApp, même en urgence</li>
-              <li>Sans intermédiaire ni commission sur vos travaux</li>
-            </ul>
-            <div className="row"><Link className="btn" href="/resultats">Trouver un artisan</Link><span className="hint" style={{ color: "inherit", opacity: .8 }}>Gratuit · sans inscription</span></div>
-          </div>
-          <div className="offer" style={{ display: "grid", gap: 6 }}>
-            <b>Fini la recherche au hasard</b>
-            <span>Vous comparez les profils avant de décider, vous convenez du prix directement avec l’artisan, et vous n’avez pas besoin de compte pour chercher ou contacter.</span>
-          </div>
-        </div>
-      </section>
-
-      {featured?.length ? <section className="inner sec">
-        <div className="sec-head"><h2>Artisans à la une</h2><span className="tag boost">Sponsorisé</span></div>
-        <div className="cards">{featured.map((a: any) => <ArtisanCard country={country} key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
-      </section> : null}
-
-
-      <section className="inner sec">
-        <div className="sec-head"><h2>Comment ça marche</h2></div>
-        <ol className="steps">
-          <li><span className="n">1</span><b>Cherchez</b><p>Choisissez un métier et votre commune. Les artisans de votre pays s’affichent.</p></li>
-          <li><span className="n">2</span><b>Comparez</b><p>Description, tarif indicatif, zones couvertes, avis et badge Vérifié.</p></li>
-          <li><span className="n">3</span><b>Contactez</b><p>Appelez, écrivez sur WhatsApp ou envoyez une demande. Convenez du prix avec l’artisan.</p></li>
-        </ol>
-      </section>
 
       <section className="inner sec">
         <div className="sec-head"><h2>Chercher par métier</h2></div>
@@ -103,6 +77,19 @@ export default async function Home() {
         </div>
       </section>
 
+      {shown.length ? <section className="inner sec">
+        <div className="sec-head"><h2>Des artisans près de chez vous</h2><Link href="/resultats">Voir tous →</Link></div>
+        <div className="cards">{shown.map((a: any) => <ArtisanCard country={country} key={a.id} a={a} />)}</div>
+      </section> : null}
+
+      <section className="inner sec">
+        <div className="sec-head"><h2>Comment ça marche</h2></div>
+        <ol className="steps">
+          <li><span className="n">1</span><b>Cherchez</b><p>Choisissez un métier et votre commune. Les artisans de votre pays s’affichent.</p></li>
+          <li><span className="n">2</span><b>Comparez</b><p>Description, tarif indicatif, zones couvertes, avis et badge Vérifié.</p></li>
+          <li><span className="n">3</span><b>Contactez</b><p>Appelez, écrivez sur WhatsApp ou envoyez une demande. Convenez du prix avec l’artisan.</p></li>
+        </ol>
+      </section>
 
       <section className="band">
         <div className="inner bandin">
