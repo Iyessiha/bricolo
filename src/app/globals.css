@@ -164,3 +164,10 @@ a,button,summary,label{-webkit-tap-highlight-color:transparent}
 @media (max-width:860px){.dcall{display:none}}
 /* Section clients */
 
+
+/* Drapeaux */
+.flag{display:inline-block;vertical-align:-.18em;border-radius:3px;box-shadow:0 0 0 1px rgb(0 0 0/.14);flex:none}
+.fl{display:inline-flex;align-items:center;gap:8px}
+h1 .flag{margin-inline:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface-100);font-size:14px;font-weight:600}

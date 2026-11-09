@@ -31,7 +31,7 @@ export default async function Header() {
                 {!signedIn && <Link href="/inscription">Devenir artisan</Link>}
                 <form action={setCountry} className="ctry">
                   <label className="lbl" htmlFor="pays">Pays</label>
-                  <CountrySelect value={country} options={COUNTRIES.map((c) => ({ code: c.code, name: c.name }))} />
+                  <CountrySelect value={country} options={COUNTRIES.map((c) => ({ code: c.code, name: `${c.emoji} ${c.name}` }))} />
                 </form>
                 {signedIn ? (
                   <Link className="btn primary navbtn" href="/tableau-de-bord">Mon espace</Link>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import { countryName } from "@/lib/countries";
+import Flag from "@/components/Flag";
 import { BOOST_TYPES, fcfa, timeLeft } from "@/lib/format";
 import { BOOST_TERMS_LINK } from "@/lib/company";
 import SetupNotice from "@/components/SetupNotice";
@@ -51,7 +52,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   return (
     <section className="inner sec stack">
       <div className="sec-head" style={{ margin: 0 }}>
-        <div><p className="eyebrow">Espace artisan · {countryName(country)}</p><h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{artisan ? `Bonjour, ${artisan.name}` : "Créez votre profil"}</h1></div>
+        <div><p className="eyebrow fl">Espace artisan · <Flag code={country} size={20} />{countryName(country)}</p><h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{artisan ? `Bonjour, ${artisan.name}` : "Créez votre profil"}</h1></div>
         <form action={signOut}><button className="btn small" type="submit">Se déconnecter</button></form>
       </div>
       {sp.ok && <p className="notice ok">Profil enregistré.</p>}

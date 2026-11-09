@@ -40,7 +40,7 @@ export default async function Campagnes({ searchParams }: { searchParams: Promis
         <label className="stack">Message<textarea name="body" rows={8} maxLength={5000} required placeholder={"Bonjour {{nom}},\n\nSéparez les paragraphes par une ligne vide."} /></label>
         <p className="hint">{"{{nom}}"} est remplacé par le nom de chaque artisan. Un lien de désabonnement est ajouté automatiquement.</p>
         <div className="row">
-          <label>Pays <select name="country"><option value="">Tous</option>{COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></label>
+          <label>Pays <select name="country"><option value="">Tous</option>{COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.emoji} {c.name}</option>)}</select></label>
           <label>Métier <select name="trade"><option value="">Tous</option>{trades?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
           <label className="row"><input type="checkbox" name="noBoost" /> Sans boost actif</label>
         </div>

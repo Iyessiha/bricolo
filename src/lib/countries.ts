@@ -1,11 +1,11 @@
 export const COUNTRIES = [
-  { code: "ci", name: "Côte d’Ivoire", capital: "Abidjan" },
-  { code: "sn", name: "Sénégal", capital: "Dakar" },
-  { code: "bf", name: "Burkina Faso", capital: "Ouagadougou" },
-  { code: "ml", name: "Mali", capital: "Bamako" },
-  { code: "ne", name: "Niger", capital: "Niamey" },
-  { code: "bj", name: "Bénin", capital: "Cotonou" },
-  { code: "tg", name: "Togo", capital: "Lomé" },
+  { code: "ci", emoji: "🇨🇮", name: "Côte d’Ivoire", capital: "Abidjan" },
+  { code: "sn", emoji: "🇸🇳", name: "Sénégal", capital: "Dakar" },
+  { code: "bf", emoji: "🇧🇫", name: "Burkina Faso", capital: "Ouagadougou" },
+  { code: "ml", emoji: "🇲🇱", name: "Mali", capital: "Bamako" },
+  { code: "ne", emoji: "🇳🇪", name: "Niger", capital: "Niamey" },
+  { code: "bj", emoji: "🇧🇯", name: "Bénin", capital: "Cotonou" },
+  { code: "tg", emoji: "🇹🇬", name: "Togo", capital: "Lomé" },
 ] as const;
 
 export type CountryCode = (typeof COUNTRIES)[number]["code"];
@@ -19,4 +19,7 @@ export function countryName(code: string) {
 }
 export function countryCapital(code: string) {
   return COUNTRIES.find((c) => c.code === code)?.capital ?? "";
+}
+export function countryEmoji(code: string) {
+  return COUNTRIES.find((c) => c.code === code)?.emoji ?? "";
 }

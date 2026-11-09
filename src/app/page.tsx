@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCountry } from "@/lib/country";
 import { COUNTRIES, countryCapital, countryName } from "@/lib/countries";
+import Flag from "@/components/Flag";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import ArtisanCard from "@/components/ArtisanCard";
@@ -32,7 +33,7 @@ export default async function Home() {
     <>
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>
-          <p className="eyebrow">{countryCapital(country)} · {countryName(country)}</p>
+          <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
         </div>
@@ -140,7 +141,7 @@ export default async function Home() {
       <section className="inner sec">
         <div className="card pad stack" style={{ textAlign: "center", justifyItems: "center" }}>
           <h2>Disponible dans 7 pays</h2>
-          <p className="muted">{COUNTRIES.map((c) => c.name).join(" · ")}</p>
+          <div className="chips">{COUNTRIES.map((c) => <span key={c.code} className="chip"><Flag code={c.code} size={20} />{c.name}</span>)}</div>
           <div className="row" style={{ justifyContent: "center" }}>
             <Link className="btn primary" href="/resultats">Trouver un artisan</Link>
             <Link className="btn" href="/inscription">Je suis artisan</Link>

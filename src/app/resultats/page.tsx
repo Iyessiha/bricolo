@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCountry } from "@/lib/country";
 import { countryName } from "@/lib/countries";
+import Flag from "@/components/Flag";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import ArtisanCard from "@/components/ArtisanCard";
@@ -31,7 +32,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
   return (
     <section className="inner sec">
       <div className="sec-head">
-        <h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{trade ? trade.plural : "Tous les artisans"}{zone ? ` à ${zone.name}` : ` · ${countryName(country)}`}</h1>
+        <h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{trade ? trade.plural : "Tous les artisans"}{zone ? ` à ${zone.name}` : <> · <Flag code={country} size={26} /> {countryName(country)}</>}</h1>
         <p className="meta num">{list.length} résultat{list.length > 1 ? "s" : ""}</p>
       </div>
       <form className="card filters" action="/resultats">

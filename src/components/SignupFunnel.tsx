@@ -3,6 +3,7 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { signupLink, type LinkState } from "@/app/auth-actions";
 import { Progress, useCooldown } from "./Funnel";
+import Flag from "./Flag";
 
 type Country = { code: string; name: string; capital: string };
 type Trade = { id: string; name: string };
@@ -54,7 +55,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
           <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
           <div className="opts two">
             {countries.map((c) => (
-              <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b>{c.name}</b><span>{c.capital}</span></label>
+              <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b><span>{c.capital}</span></label>
             ))}
           </div>
           <div className="row"><button className="btn primary" type="button" onClick={() => setStep(2)}>Continuer</button></div>
