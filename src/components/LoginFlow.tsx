@@ -15,7 +15,7 @@ export default function LoginFlow({ linkError }: { linkError: boolean }) {
       {state?.error && <p className="notice err" role="alert">{state.error}</p>}
       <form action={action} className="stack">
         <div className="fld"><label htmlFor="email">Adresse e-mail</label>
-          <input id="email" type="email" name="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <input id="email" type="email" name="email" required autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <PasswordField id="password" name="password" label="Mot de passe" autoComplete="current-password" />
         <button className="btn primary" type="submit" disabled={pending || !email}>{pending ? "Connexion…" : "Me connecter"}</button>
       </form>

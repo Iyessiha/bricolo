@@ -1,3 +1,4 @@
+import AutoSubmitForm from "@/components/AutoSubmitForm";
 import type { Metadata } from "next";
 import { getCountry } from "@/lib/country";
 import { countryName } from "@/lib/countries";
@@ -35,7 +36,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
         <h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{trade ? trade.plural : "Tous les artisans"}{zone ? ` à ${zone.name}` : ""}</h1>
         <p className="meta num"><Flag code={country} size={18} /> {countryName(country)} · {list.length} résultat{list.length > 1 ? "s" : ""}</p>
       </div>
-      <form className="card filters" action="/resultats">
+      <AutoSubmitForm className="card filters" action="/resultats">
         <div className="fld"><label htmlFor="metier">Métier</label>
           <select id="metier" name="metier" defaultValue={trade?.slug ?? ""}>
             <option value="">Tous les métiers</option>
@@ -50,7 +51,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
           <input type="checkbox" id="verifie" name="verifie" value="1" defaultChecked={sp.verifie === "1"} /> Artisans vérifiés uniquement
         </label>
         <button className="btn primary" type="submit">Filtrer</button>
-      </form>
+      </AutoSubmitForm>
       {list.some((a) => a.sponsored) && <p className="hint" style={{ marginBottom: 12 }}>Les résultats sponsorisés passent en premier. Leur ordre change régulièrement pour rester équitable.</p>}
       {list.length ? (
         <div className="list">{list.map((a) => <ArtisanCard key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
