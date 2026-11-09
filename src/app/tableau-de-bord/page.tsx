@@ -10,7 +10,7 @@ import { BOOST_TERMS_LINK } from "@/lib/company";
 import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import DiplomaAdd from "@/components/DiplomaAdd";
-import { markAnswered, requestVerification, saveProfile } from "./actions";
+import { markAnswered, saveProfile } from "./actions";
 import { signOut } from "../auth-actions";
 
 export const metadata: Metadata = { title: "Mon espace" };
@@ -174,8 +174,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <p className="hint">Durées : 24 h, 3 jours ou 7 jours, payables en Mobile Money. Emplacements limités. <Link href={BOOST_TERMS_LINK}>Conditions de vente</Link></p>
             <div className="row">
               <Link className="btn boost" href="/boosts">Booster mon profil</Link>
-              {!artisan.verified && !artisan.verification_requested && <form action={requestVerification}><button className="btn" type="submit">Demander le badge Vérifié</button></form>}
-              {artisan.verification_requested && !artisan.verified && <span className="tag wait">Badge en cours d’examen</span>}
             </div>
           </div>
         ) : <p className="hint">Les boosts sont disponibles une fois votre profil validé.</p>}
