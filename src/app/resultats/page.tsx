@@ -32,8 +32,8 @@ export default async function Results({ searchParams }: { searchParams: Promise<
   return (
     <section className="inner sec">
       <div className="sec-head">
-        <h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{trade ? trade.plural : "Tous les artisans"}{zone ? ` à ${zone.name}` : <> · <Flag code={country} size={26} /> {countryName(country)}</>}</h1>
-        <p className="meta num">{list.length} résultat{list.length > 1 ? "s" : ""}</p>
+        <h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{trade ? trade.plural : "Tous les artisans"}{zone ? ` à ${zone.name}` : ""}</h1>
+        <p className="meta num"><Flag code={country} size={18} /> {countryName(country)} · {list.length} résultat{list.length > 1 ? "s" : ""}</p>
       </div>
       <form className="card filters" action="/resultats">
         <div className="fld"><label htmlFor="metier">Métier</label>
@@ -46,7 +46,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
             <option value="">Toutes les zones</option>
             {zones?.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select></div>
-        <label className="row" htmlFor="verifie" style={{ minHeight: 44 }}>
+        <label className="check" htmlFor="verifie" style={{ minHeight: 44, alignItems: "center" }}>
           <input type="checkbox" id="verifie" name="verifie" value="1" defaultChecked={sp.verifie === "1"} /> Artisans vérifiés uniquement
         </label>
         <button className="btn primary" type="submit">Filtrer</button>

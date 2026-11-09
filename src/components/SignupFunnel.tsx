@@ -73,11 +73,11 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
               <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b><span>{c.capital}</span></label>
             ))}
           </div>
-          <label className="row" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
-            <input type="checkbox" checked={docsAck} onChange={(e) => setDocsAck(e.target.checked)} style={{ marginTop: 4 }} />
+          <label className="check">
+            <input type="checkbox" checked={docsAck} onChange={(e) => setDocsAck(e.target.checked)} />
             <span>Je comprends que mon profil ne sera activé qu’après la vérification de mon identité.</span>
           </label>
-          <div className="row"><button className="btn primary" type="button" disabled={!docsAck} onClick={() => setStep(2)}>Continuer</button></div>
+          <div className="row"><button className="btn primary" type="button" disabled={!docsAck} onClick={() => setStep(2)}>Continuer</button>{!docsAck && <span className="hint">Cochez la case ci-dessus pour continuer.</span>}</div>
         </>
       )}
 
