@@ -54,7 +54,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
       </AutoSubmitForm>
       {list.some((a) => a.sponsored) && <p className="hint" style={{ marginBottom: 12 }}>Les résultats sponsorisés passent en premier. Leur ordre change régulièrement pour rester équitable.</p>}
       {list.length ? (
-        <div className="list">{list.map((a) => <ArtisanCard key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
+        <div className="cards">{list.map((a) => <ArtisanCard key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
       ) : (
         <p className="empty">Aucun artisan pour cette recherche. Essayez une autre zone ou retirez le filtre Vérifié.</p>
       )}

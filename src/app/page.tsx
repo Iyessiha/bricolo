@@ -81,7 +81,7 @@ export default async function Home() {
 
       {featured?.length ? <section className="inner sec">
         <div className="sec-head"><h2>Artisans à la une</h2><span className="tag boost">Sponsorisé</span></div>
-        <div className="list">{featured.map((a: any) => <ArtisanCard key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
+        <div className="cards">{featured.map((a: any) => <ArtisanCard key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
       </section> : null}
 
 
