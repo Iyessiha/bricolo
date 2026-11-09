@@ -25,6 +25,8 @@ Sans clés Supabase, l'application s'ouvre et affiche un bandeau « configuratio
    - `supabase/migrations/0001_init.sql` (13 tables, RLS, fonctions, déclencheurs)
    - `supabase/seed.sql` (7 pays, métiers, zones, grille de prix)
    - `supabase/migrations/0002_emails.sql` (journal d'e-mails, désabonnement, campagnes)
+   - `supabase/migrations/0003_entreprise.sql` (statut individuel / entreprise)
+   - `supabase/migrations/0004_identite.sql` (vérification d'identité, photo de profil, expérience, diplômes ; crée les buckets de stockage `avatars` public et `kyc` privé)
 3. **Authentication → URL Configuration** : Site URL = l'URL de production, et ajouter `https://<domaine>/auth/callback` (et `http://localhost:3000/auth/callback`) dans Redirect URLs.
 4. **Authentication → SMTP** : configurer un SMTP (Resend, Brevo…) pour que les liens magiques partent de votre domaine, le SMTP par défaut de Supabase est très limité.
 5. Se connecter une première fois sur le site, puis promouvoir votre compte administrateur :
@@ -111,3 +113,10 @@ supabase/           migration SQL et données initiales
 ```
 
 Charte : bleu `#27489a`, orange `#ff6a13` réservé au boost, Bricolage Grotesque + Instrument Sans.
+
+## 8. Vérification d'identité et rôles
+
+- Parcours artisan : inscription (4 étapes) → lien e-mail → **tunnel d'activation** (`/activation`, 5 étapes : profil, photo, pièce d'identité, selfie avec la pièce, envoi avec diplôme facultatif). Le profil n'est publié qu'après validation par l'administration (`review_artisan`, contrôlé aussi par un déclencheur en base).
+- Les pièces sont dans le bucket privé `kyc` (dossier = identifiant de l'utilisateur, lecture par l'artisan et les admins uniquement ; liens signés de 10 minutes dans `/admin/artisan/<id>`). Les photos de profil sont dans le bucket public `avatars`.
+- Administration : `/admin` (dossiers, artisans, prix). Un compte devient admin avec `update public.profiles set role = 'admin' where ...`.
+- La connexion par mot de passe (`/connexion`) fonctionne pour les comptes qui en ont un (ex. comptes de démonstration créés en SQL). Supprimez les comptes de démonstration avant le lancement.

@@ -37,18 +37,18 @@ function layout(o: { subject: string; pre: string; title: string; body: string; 
 
 /* ───────── Transactionnels ───────── */
 export const profileReceived = (name: string) => layout({
-  subject: "Votre profil Bricolo est en cours de validation", pre: "Nous vérifions votre profil, réponse sous 24 h.",
-  title: `Merci ${name}, votre profil est bien reçu`,
-  body: p("Notre équipe vérifie votre profil. Vous recevrez un e-mail dès qu'il est validé, en général sous 24 heures.") +
-    p("En attendant, vous pouvez compléter vos zones d'intervention, votre description et vos numéros de téléphone et WhatsApp.") +
-    btn("Compléter mon profil", `${siteUrl()}/tableau-de-bord`),
+  subject: "Votre dossier Bricolo est en cours de vérification", pre: "Nous vérifions votre identité, réponse sous 24 à 48 h.",
+  title: `Merci ${name}, votre dossier est bien reçu`,
+  body: p("Notre équipe vérifie votre pièce d'identité et votre profil. Vous recevrez un e-mail dès que votre profil est en ligne, en général sous 24 à 48 heures.") +
+    p("Vos documents ne sont jamais montrés aux clients : seule l'administration peut les consulter.") +
+    btn("Voir mon espace", `${siteUrl()}/tableau-de-bord`),
 });
 
-export const profileDecision = (name: string, approved: boolean, artisanId: string) => approved
+export const profileDecision = (name: string, approved: boolean, artisanId: string, reason?: string) => approved
   ? layout({
-    subject: "Votre profil Bricolo est en ligne", pre: "Les clients peuvent maintenant vous trouver.",
+    subject: "Votre profil Bricolo est en ligne", pre: "Votre identité est vérifiée, les clients peuvent vous trouver.",
     title: `${name}, votre profil est validé`,
-    body: p("Votre profil est visible dans les résultats de recherche. Les clients peuvent vous appeler, vous écrire sur WhatsApp ou vous envoyer une demande.") +
+    body: p("Votre identité est vérifiée et votre profil est visible dans les résultats de recherche. Les clients peuvent vous appeler, vous écrire sur WhatsApp ou vous envoyer une demande.") +
       btn("Voir ma fiche", `${siteUrl()}/artisan/${artisanId}`) +
       p("Pour apparaître en tête des résultats de votre métier, vous pouvez activer un boost depuis votre tableau de bord."),
   })
@@ -56,8 +56,9 @@ export const profileDecision = (name: string, approved: boolean, artisanId: stri
     subject: "Votre profil Bricolo n'a pas pu être validé", pre: "Quelques informations sont à corriger.",
     title: "Votre profil n'a pas pu être validé",
     body: p(`Bonjour ${name}, nous n'avons pas pu valider votre profil pour le moment.`) +
-      p("Vérifiez que votre nom, votre métier, vos zones et votre numéro de téléphone sont corrects et complets, puis enregistrez à nouveau votre fiche. Vous pouvez aussi répondre à ce message pour en discuter.") +
-      btn("Modifier mon profil", `${siteUrl()}/tableau-de-bord`),
+      (reason ? `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${ORANGE};line-height:1.6"><b>Motif :</b> ${esc(reason)}</blockquote>` : "") +
+      p("Corrigez le point indiqué et renvoyez votre dossier : cela prend quelques minutes. Vous pouvez aussi répondre à ce message pour en discuter.") +
+      btn("Corriger mon dossier", `${siteUrl()}/activation`),
   });
 
 export const badgeGranted = (name: string, artisanId: string) => layout({
@@ -102,6 +103,13 @@ export const boostExpiring = (name: string, label: string, endsAt: string) => la
   body: p(`Bonjour ${name}, votre ${label.toLowerCase()} prend fin le ${when(endsAt)}.`) +
     p("Renouvelez-le maintenant pour garder votre place en tête des résultats : la durée s'ajoute à celle qui reste, rien n'est perdu.") +
     btn("Renouveler mon boost", `${siteUrl()}/boosts`, true),
+});
+
+export const documentsReminder = (name: string) => layout({
+  subject: "Finalisez votre profil Bricolo : il manque vos documents", pre: "Photo et pièce d'identité requises pour être en ligne.",
+  title: `${name}, votre profil n'est pas encore en ligne`,
+  body: p("Pour activer votre profil, nous devons vérifier votre identité : une photo de vous, votre pièce d'identité et un selfie avec cette pièce. Comptez cinq minutes, depuis votre téléphone.") +
+    btn("Envoyer mes documents", `${siteUrl()}/activation`),
 });
 
 /* ───────── Marketing (avec désabonnement) ───────── */

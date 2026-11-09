@@ -15,6 +15,8 @@ export default function Privacy() {
       <h2>2. Données collectées</h2>
       <ul>
         <li><b>Artisans</b> : adresse e-mail, pays, statut (individuel ou entreprise), nom de l’activité ou de l’entreprise, numéro d’immatriculation de l’entreprise (jamais publié), métier, zones couvertes, description, tarif indicatif, numéros de téléphone et WhatsApp, et le moment où vous avez accepté les conditions.</li>
+        <li><b>Vérification d’identité (artisans)</b> : photo de profil (affichée sur la fiche), photo recto (et verso) d’une pièce d’identité, selfie de contrôle tenant cette pièce, type de pièce, et, si vous en envoyez, intitulé et photo de diplômes. Ces documents sont stockés dans un espace privé : ils ne sont jamais publiés et seuls les administrateurs de {B} peuvent les consulter.</li>
+        <li><b>Années d’expérience</b> : indiquées par l’artisan et affichées sur sa fiche.</li>
         <li><b>Clients</b> (sans compte) : adresse e-mail, nom (facultatif) et contenu de la demande envoyée à un artisan.</li>
         <li><b>Paiements des boosts</b> : référence de transaction, montant, statut et date. Les identifiants de paiement Mobile Money sont traités par GeniusPay et ne sont pas conservés par {C}.</li>
         <li><b>Statistiques de fiche</b> : nombre de vues, de clics sur « Appeler » et « WhatsApp » et de demandes, communiqués à l’artisan concerné. Ils ne sont pas rattachés à l’identité du visiteur.</li>
@@ -24,6 +26,7 @@ export default function Privacy() {
 
       <h2>3. Pourquoi nous les utilisons</h2>
       <ul>
+        <li>Vérifier l’identité des artisans avant d’activer leur profil, afin de protéger les clients et de prévenir la fraude et l’usurpation d’identité (intérêt légitime et exécution du service).</li>
         <li>Créer et gérer votre compte, publier votre profil, mettre en relation clients et artisans (exécution du service).</li>
         <li>Traiter les paiements de boosts et envoyer les reçus (exécution du contrat, obligations comptables).</li>
         <li>Envoyer les messages liés au service : connexion, validation du profil, demandes reçues, rappels de fin de boost (exécution du service).</li>
@@ -41,7 +44,7 @@ export default function Privacy() {
       <p>Nous ne vendons pas vos données. Certains prestataires sont situés hors de votre pays ; ils sont tenus par contrat de protéger vos données et de ne les utiliser que pour notre compte.</p>
 
       <h2>5. Durée de conservation</h2>
-      <p>Les données d’un compte sont conservées tant que le compte est actif. À la suppression du compte, elles sont effacées ou anonymisées, sauf celles que la loi nous oblige à garder (par exemple les justificatifs de paiement). Les demandes envoyées par les clients ne sont conservées que le temps nécessaire à la mise en relation.</p>
+      <p>Les documents d’identité et diplômes sont conservés tant que le compte est actif, pour permettre le contrôle du profil, et supprimés sur demande ou à la clôture du compte. Les données d’un compte sont conservées tant que le compte est actif. À la suppression du compte, elles sont effacées ou anonymisées, sauf celles que la loi nous oblige à garder (par exemple les justificatifs de paiement). Les demandes envoyées par les clients ne sont conservées que le temps nécessaire à la mise en relation.</p>
 
       <h2>6. Vos droits</h2>
       <p>Vous pouvez demander l’accès à vos données, leur rectification, leur suppression, la limitation ou l’opposition à leur traitement, et leur portabilité. Vous pouvez aussi retirer à tout moment votre consentement et vous désabonner des messages marketing en un clic. Écrivez à <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> ; nous répondons dans un délai d’un mois. Une pièce d’identité peut vous être demandée pour vérifier votre identité.</p>

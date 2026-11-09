@@ -14,7 +14,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, account_type, company_name, description, price_label, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, photo_url, experience_years, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
@@ -31,15 +31,15 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
       <div className="pgrid">
         <div className="stack">
           <div className="card pad row" style={{ gap: 20 }}>
-            <div className="avatar" style={{ width: 80, height: 80, fontSize: 28 }} aria-hidden="true">{initials(a.name)}</div>
+            {a.photo_url ? <img className="avatar pic" style={{ width: 96, height: 96 }} src={a.photo_url} alt={`Photo de ${a.name}`} /> : <div className="avatar" style={{ width: 80, height: 80, fontSize: 28 }} aria-hidden="true">{initials(a.name)}</div>}
             <div className="stack" style={{ gap: 8 }}>
-              <div className="tags">{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified ? <span className="tag ok">✓ Vérifié</span> : <span className="tag mute">Non vérifié</span>}</div>
+              <div className="tags">{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified ? <span className="tag ok">✓ Vérifié</span> : <span className="tag mute">Non vérifié</span>}{a.diploma_verified && <span className="tag ok">🎓 Diplôme vérifié</span>}{a.experience_years ? <span className="tag mute">{a.experience_years} an{a.experience_years > 1 ? "s" : ""} d’expérience</span> : null}</div>
               <h1 style={{ fontSize: "clamp(26px,4.5vw,36px)" }}>{a.name}</h1>
               <p className="meta">{a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? `${a.company_name} · ` : ""}{trade?.name} · {zones.map((z) => z.name).join(", ")}</p>
               <p>{a.review_count ? <b className="num">★ {String(a.avg_rating).replace(".", ",")} ({a.review_count} avis)</b> : <span className="tag mute">Nouveau</span>}</p>
             </div>
           </div>
-          {a.description && <div className="card pad stack"><h2>À propos</h2><p>{a.description}</p></div>}
+          {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p>{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
           <div className="card pad stack">
             <h2>Avis clients</h2>
             {reviews?.length ? reviews.map((r) => (

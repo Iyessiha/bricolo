@@ -19,6 +19,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
   const [trade, setTrade] = useState("");
   const [email, setEmail] = useState("");
   const [accept, setAccept] = useState(false);
+  const [docsAck, setDocsAck] = useState(false);
   const [state, action, pending] = useActionState<LinkState, FormData>(signupLink, null);
   const left = useCooldown(state?.ok ? state.sentAt : undefined);
   const [sent, setSent] = useState(false);
@@ -31,13 +32,13 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
     return (
       <div className="narrow card pad stack" aria-live="polite">
         <h1 style={{ fontSize: 32 }}>Vérifiez votre boîte e-mail</h1>
-        <p>Nous avons envoyé un lien de confirmation à <b>{email}</b>. Cliquez dessus pour créer votre profil : il vous reste à indiquer vos zones et votre téléphone.</p>
+        <p>Nous avons envoyé un lien de confirmation à <b>{email}</b>. Cliquez dessus pour continuer : il vous restera à compléter votre profil, ajouter votre photo et envoyer votre pièce d’identité (environ 5 minutes).</p>
         <p className="notice">Ouvrez le lien <b>sur cet appareil et dans ce navigateur</b>, sinon il ne fonctionnera pas.</p>
         <p className="hint">Pas de message ? Regardez dans les courriers indésirables.</p>
         {state && !state.ok && <p className="notice err" role="alert">{state.error}</p>}
         <form action={action} className="row">
           {(["pays", "trade_id", "name", "email", "account_type", "registration"] as const).map((k) => <input key={k} type="hidden" name={k} value={{ pays, trade_id: trade, name, email, account_type: type, registration }[k]} />)}
-          <input type="hidden" name="accept" value="on" />{type === "entreprise" && <input type="hidden" name="authorized" value="on" />}
+          <input type="hidden" name="accept" value="on" /><input type="hidden" name="docs_ack" value="on" />{type === "entreprise" && <input type="hidden" name="authorized" value="on" />}
           <button className="btn" type="submit" disabled={left > 0 || pending}>{left > 0 ? `Renvoyer le lien dans ${left} s` : "Renvoyer le lien"}</button>
           <button className="btn small" type="button" onClick={() => { setSent(false); setStep(4); }}>Changer d’adresse</button>
         </form>
@@ -53,12 +54,26 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
         <>
           <h1 style={{ fontSize: 30 }}>Dans quel pays travaillez-vous ?</h1>
           <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
+          <div className="notice stack" style={{ gap: 8 }}>
+            <b>Avant de commencer : préparez vos documents</b>
+            <p>Pour protéger les clients, votre identité est vérifiée avant l’activation du profil. Ayez sous la main :</p>
+            <ul className="ticks">
+              <li>une <b>pièce d’identité valide</b> (carte d’identité, passeport, permis ou carte consulaire)</li>
+              <li>de quoi vous <b>prendre en photo</b> : un portrait, et un selfie avec votre pièce</li>
+              <li>vos <b>années d’expérience</b>, et votre diplôme si vous en avez un (facultatif)</li>
+            </ul>
+            <p className="hint">Comptez 5 minutes, depuis votre téléphone. Vos documents ne sont jamais montrés aux clients.</p>
+          </div>
           <div className="opts two">
             {countries.map((c) => (
               <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b><span>{c.capital}</span></label>
             ))}
           </div>
-          <div className="row"><button className="btn primary" type="button" onClick={() => setStep(2)}>Continuer</button></div>
+          <label className="row" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
+            <input type="checkbox" checked={docsAck} onChange={(e) => setDocsAck(e.target.checked)} style={{ marginTop: 4 }} />
+            <span>Je comprends que mon profil ne sera activé qu’après la vérification de mon identité.</span>
+          </label>
+          <div className="row"><button className="btn primary" type="button" disabled={!docsAck} onClick={() => setStep(2)}>Continuer</button></div>
         </>
       )}
 
@@ -106,7 +121,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
           <p className="muted">Aucun mot de passe : nous vous envoyons un lien de confirmation.</p>
           <p className="hint">{name} · {type === "entreprise" ? "Entreprise" : "Individuel"} · {trades.find((t) => t.id === trade)?.name} · {country?.name}</p>
           <input type="hidden" name="pays" value={pays} /><input type="hidden" name="trade_id" value={trade} /><input type="hidden" name="name" value={name} />
-          <input type="hidden" name="account_type" value={type} /><input type="hidden" name="registration" value={registration} />
+          <input type="hidden" name="account_type" value={type} /><input type="hidden" name="registration" value={registration} /><input type="hidden" name="docs_ack" value="on" />
           {state?.error && <p className="notice err" role="alert">{state.error}</p>}
           <div className="fld"><label htmlFor="email">Adresse e-mail</label>
             <input id="email" type="email" name="email" required autoComplete="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>

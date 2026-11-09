@@ -27,9 +27,9 @@ export const notifyProfileReceived = (artisanId: string) => safe(async () => {
   await sendOnce("profile_received", c.artisanId, mail(c.email, T.profileReceived(c.name)));
 });
 
-export const notifyDecision = (artisanId: string, approved: boolean) => safe(async () => {
+export const notifyDecision = (artisanId: string, approved: boolean, reason?: string) => safe(async () => {
   const c = await contactOf(artisanId); if (!c) return;
-  await sendOnce(approved ? "profile_approved" : "profile_rejected", `${c.artisanId}:${Date.now()}`, mail(c.email, T.profileDecision(c.name, approved, c.artisanId)));
+  await sendOnce(approved ? "profile_approved" : "profile_rejected", `${c.artisanId}:${Date.now()}`, mail(c.email, T.profileDecision(c.name, approved, c.artisanId, reason)));
 });
 
 export const notifyBadge = (artisanId: string) => safe(async () => {
@@ -71,7 +71,7 @@ const DAY = 864e5;
 export async function runReminders() {
   const db = supabaseAdmin();
   const now = Date.now();
-  const out = { expiring: 0, completeProfile: 0, firstBoost: 0 };
+  const out = { expiring: 0, completeProfile: 0, firstBoost: 0, documents: 0 };
   let marketingBudget = 40; // plan gratuit Resend : 100 e-mails/jour au total
 
   // 1. Boost qui se termine dans les 30 prochaines heures (transactionnel). Les boosts de 24 h sont ignorés.
@@ -107,6 +107,19 @@ export async function runReminders() {
       const c = await contactOf(a.id); if (!c || c.optOut) continue;
       const r = await sendOnce("nudge_first_boost", a.id, mail(c.email, T.firstBoostNudge(c.name, unsubPage(c.userId)), mk(c.userId)));
       if (r.ok) { out.firstBoost++; marketingBudget--; }
+    }
+  }
+
+  // 4. Profil créé depuis 2 à 14 jours mais dossier d'identité jamais envoyé (rappel de service, une seule fois)
+  const { data: waiting } = await db.from("artisans").select("id").eq("status", "pending")
+    .lt("created_at", new Date(now - 2 * DAY).toISOString()).gt("created_at", new Date(now - 14 * DAY).toISOString()).limit(100);
+  if (waiting?.length) {
+    const { data: ids } = await db.from("artisan_identity").select("artisan_id").in("artisan_id", waiting.map((x) => x.id));
+    const sent = new Set((ids ?? []).map((x) => x.artisan_id));
+    for (const a of waiting.filter((x) => !sent.has(x.id)).slice(0, 30)) {
+      const c = await contactOf(a.id); if (!c) continue;
+      const r = await sendOnce("nudge_documents", a.id, mail(c.email, T.documentsReminder(c.name)));
+      if (r.ok) out.documents++;
     }
   }
   return out;

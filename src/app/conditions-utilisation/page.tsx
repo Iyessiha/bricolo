@@ -18,10 +18,12 @@ export default function Cgu() {
       <h2>3. Compte artisan</h2>
       <ul>
         <li>Vous devez être majeur et exercer une activité professionnelle ou artisanale réelle.</li>
-        <li>L’accès se fait par un lien envoyé à votre adresse e-mail, sans mot de passe. Vous êtes responsable de l’accès à cette boîte e-mail.</li>
+        <li>L’accès se fait par un lien envoyé à votre adresse e-mail (ou par mot de passe si un a été défini pour votre compte). Vous êtes responsable de l’accès à cette boîte e-mail et de la confidentialité de vos identifiants.</li>
         <li>Vous choisissez votre pays à l’inscription ; votre profil est affiché aux clients de ce pays.</li>
         <li>Si vous créez le profil au nom d’une entreprise, vous déclarez être habilité(e) à l’engager et à accepter ces conditions pour elle ; l’entreprise est alors responsable du profil.</li>
         <li>Un compte correspond à un profil. Les informations fournies doivent être exactes et à jour.</li>
+        <li><b>Vérification d’identité obligatoire</b> : avant toute activation, vous devez envoyer une photo de profil, une pièce d’identité valide et un selfie tenant cette pièce. Le profil n’est publié qu’après leur contrôle par {C}. Vous certifiez que ces documents sont authentiques et vous appartiennent ; l’envoi de faux documents entraîne la suppression du compte.</li>
+        <li>Les années d’expérience que vous indiquez doivent être exactes. Un diplôme peut être soumis à vérification ; la mention « Diplôme vérifié » indique seulement que le document a été examiné.</li>
         <li>Tout profil est examiné avant publication. {C} peut refuser, suspendre ou supprimer un profil qui ne respecte pas ces conditions.</li>
       </ul>
 

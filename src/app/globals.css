@@ -169,5 +169,38 @@ a,button,summary,label{-webkit-tap-highlight-color:transparent}
 .flag{display:inline-block;vertical-align:-.18em;border-radius:3px;box-shadow:0 0 0 1px rgb(0 0 0/.14);flex:none}
 .fl{display:inline-flex;align-items:center;gap:8px}
 h1 .flag{margin-inline:2px}
-.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chips.ctr{justify-content:center}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface-100);font-size:14px;font-weight:600}
+
+/* Tunnel d'activation, sélecteur de photo */
+.btn.ghost{background:transparent}
+.pick{display:grid;gap:8px}
+.pickbox{display:flex;gap:14px;align-items:center;padding:12px;border:1px dashed var(--border-strong);border-radius:var(--radius-lg);background:var(--surface-100)}
+.pickprev{display:grid;place-items:center;width:84px;height:84px;border-radius:var(--radius-md);background:var(--surface-sunken);color:var(--ink-muted);overflow:hidden;flex:none;border:1px solid var(--line)}
+.pickprev.round{border-radius:50%}.pickprev img{width:100%;height:100%;object-fit:cover}
+.curphoto{width:96px;height:96px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
+.recap{display:flex;flex-wrap:wrap;gap:8px}
+.fnav{justify-content:space-between}.fnav .btn.primary{margin-left:auto}
+.fnav:has(.btn:only-child){justify-content:flex-end}
+@media (max-width:560px){.fnav .btn{flex:1 1 0}.fnav .btn.primary{flex:2 1 0}}
+
+/* Tableau de bord */
+.subnav{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.subnav::-webkit-scrollbar{display:none}
+.subnav a{flex:none;padding:8px 14px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface-raised);color:var(--ink);font-weight:600;font-size:14px;text-decoration:none}
+.subnav a:hover{border-color:var(--brand);color:var(--brand)}
+.req{display:grid;gap:6px;padding:14px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-100)}
+[id=apercu],[id=demandes],[id=profil],[id=diplomes],[id=visibilite]{scroll-margin-top:72px}
+.subnav a.on{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.stat.hot b{color:var(--boost-ink)}
+.arow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-100);color:inherit;text-decoration:none}
+.arow:hover{border-color:var(--brand)}
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.docfig{margin:0;display:grid;gap:6px}.docfig img{width:100%;max-height:360px;object-fit:contain;background:var(--surface-sunken);border:1px solid var(--line);border-radius:var(--radius-md)}
+.docfig figcaption{font-size:13px;color:var(--ink-muted)}
+.dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:0}.dl dt{color:var(--ink-muted);font-weight:600;font-size:14px}.dl dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media (max-width:560px){.dl{grid-template-columns:1fr;gap:2px}.dl dd{margin-bottom:8px}.arow{grid-template-columns:auto minmax(0,1fr)}.arow .btn{grid-column:1/-1}}
+
+.avatar.pic{object-fit:cover;background:var(--surface-sunken)}
+.linkbtn{background:none;border:0;padding:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit}
+.curphoto{flex:none}

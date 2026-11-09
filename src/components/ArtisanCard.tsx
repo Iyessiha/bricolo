@@ -4,22 +4,24 @@ import { initials } from "@/lib/format";
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
+  photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
 };
 
 export default function ArtisanCard({ a }: { a: ArtisanRow }) {
   return (
     <article className={`card result${a.sponsored ? " sponsored" : ""}`}>
-      <div className="avatar" aria-hidden="true">{initials(a.name)}</div>
+      {a.photo_url ? <img className="avatar pic" src={a.photo_url} alt="" loading="lazy" /> : <div className="avatar" aria-hidden="true">{initials(a.name)}</div>}
       <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
         <div className="tags">
           {a.sponsored && <span className="tag boost">Sponsorisé</span>}
           {a.verified && <span className="tag ok">✓ Vérifié</span>}
+          {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
         </div>
         <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link></h3>
         <p className="meta">{[a.trade, a.zones?.join(", ")].filter(Boolean).join(" · ")}</p>
         <p className="meta">
           {a.review_count ? <><b className="num">★ {String(a.avg_rating).replace(".", ",")}</b> ({a.review_count} avis)</> : <span className="tag mute">Nouveau</span>}
-          {a.price_label ? ` · ${a.price_label}` : ""}
+          {a.experience_years ? ` · ${a.experience_years} an${a.experience_years > 1 ? "s" : ""} d’expérience` : ""}{a.price_label ? ` · ${a.price_label}` : ""}
         </p>
       </div>
       <div className="row">

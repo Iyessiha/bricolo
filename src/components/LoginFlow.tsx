@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
-import { loginLink, type LinkState } from "@/app/auth-actions";
+import { loginLink, loginPassword, type LinkState } from "@/app/auth-actions";
 import { useCooldown } from "./Funnel";
 
 export default function LoginFlow({ linkError }: { linkError: boolean }) {
@@ -10,6 +10,8 @@ export default function LoginFlow({ linkError }: { linkError: boolean }) {
   const left = useCooldown(state?.ok ? state.sentAt : undefined);
 
   const [sent, setSent] = useState(false);
+  const [usePw, setUsePw] = useState(false);
+  const [pwState, pwAction, pwPending] = useActionState<LinkState, FormData>(loginPassword, null);
   useEffect(() => { if (state?.ok) setSent(true); }, [state]);
 
   if (sent) {
@@ -24,6 +26,21 @@ export default function LoginFlow({ linkError }: { linkError: boolean }) {
       </div>
     );
   }
+  if (usePw) {
+    return (
+      <div className="narrow card pad stack">
+        <h1 style={{ fontSize: 32 }}>Connexion</h1>
+        <p className="muted">Entrez votre adresse e-mail et votre mot de passe.</p>
+        {pwState?.error && <p className="notice err" role="alert">{pwState.error}</p>}
+        <form action={pwAction} className="stack">
+          <div className="fld"><label htmlFor="email">Adresse e-mail</label><input id="email" type="email" name="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div className="fld"><label htmlFor="password">Mot de passe</label><input id="password" type="password" name="password" required autoComplete="current-password" /></div>
+          <button className="btn primary" type="submit" disabled={pwPending || !email}>{pwPending ? "Connexion…" : "Me connecter"}</button>
+        </form>
+        <p className="hint"><button type="button" className="linkbtn" onClick={() => setUsePw(false)}>Recevoir plutôt un lien par e-mail</button></p>
+      </div>
+    );
+  }
   return (
     <div className="narrow card pad stack">
       <h1 style={{ fontSize: 32 }}>Connexion</h1>
@@ -35,6 +52,7 @@ export default function LoginFlow({ linkError }: { linkError: boolean }) {
           <input id="email" type="email" name="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <button className="btn primary" type="submit" disabled={pending || !email}>{pending ? "Envoi…" : "Recevoir mon lien de connexion"}</button>
       </form>
+      <p className="hint"><button type="button" className="linkbtn" onClick={() => setUsePw(true)}>Se connecter avec un mot de passe</button></p>
       <p className="hint">Pas encore de profil ? <Link href="/inscription">Devenir artisan</Link></p>
     </div>
   );

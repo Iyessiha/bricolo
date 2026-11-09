@@ -27,7 +27,7 @@ export default async function Home() {
   ]);
   const ids = [...new Set((boosts ?? []).map((b) => b.artisan_id))];
   const { data: featured } = ids.length
-    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").limit(6)
+    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, experience_years, diploma_verified, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").limit(6)
     : { data: [] };
   return (
     <>
@@ -141,7 +141,7 @@ export default async function Home() {
       <section className="inner sec">
         <div className="card pad stack" style={{ textAlign: "center", justifyItems: "center" }}>
           <h2>Disponible dans 7 pays</h2>
-          <div className="chips">{COUNTRIES.map((c) => <span key={c.code} className="chip"><Flag code={c.code} size={20} />{c.name}</span>)}</div>
+          <div className="chips ctr">{COUNTRIES.map((c) => <span key={c.code} className="chip"><Flag code={c.code} size={20} />{c.name}</span>)}</div>
           <div className="row" style={{ justifyContent: "center" }}>
             <Link className="btn primary" href="/resultats">Trouver un artisan</Link>
             <Link className="btn" href="/inscription">Je suis artisan</Link>
