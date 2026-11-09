@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveArtisanProfile } from "@/lib/artisan-save";
 import { composeHeadline, priceLabel } from "@/lib/compose";
+import sharp from "sharp";
+import { coverProblem, shotProblem } from "@/lib/cover-rules";
 import { cleanHours } from "@/lib/hours";
 
 /** Formulaire « Modifier mon profil » du tableau de bord. */
@@ -61,12 +63,25 @@ async function me() {
   return a ? { db, user, a } : null;
 }
 const okPath = (p: string, uid: string) => p.startsWith(`${uid}/`) && !p.includes("..") && p.length < 200;
+/** Contrôle définitif côté serveur : un fichier envoyé en contournant le navigateur est supprimé s'il n'a pas le bon format. */
+async function badFormat(db: Awaited<ReturnType<typeof supabaseServer>>, path: string, kind: "cover" | "shot"): Promise<string | null> {
+  try {
+    const { data } = await db.storage.from("realisations").download(path);
+    if (!data) return "Fichier introuvable.";
+    const m = await sharp(Buffer.from(await data.arrayBuffer())).metadata();
+    const p = kind === "cover" ? coverProblem(m.width ?? 0, m.height ?? 0) : shotProblem(m.width ?? 0, m.height ?? 0);
+    if (!p) return null;
+    await db.storage.from("realisations").remove([path]);
+    return p === "paysage" ? "Cette image n’a pas le bon format : la couverture doit être large et horizontale (idéalement 1600 × 600 px)." : "Cette image est trop petite pour rester nette.";
+  } catch { await db.storage.from("realisations").remove([path]); return "Image illisible. Essayez-en une autre."; }
+}
 const keyOf = (url: string | null | undefined) => url?.split("/object/public/realisations/")[1] ?? null;
 
 /** Photo de couverture (paysage) : le fichier est déjà dans le stockage public, on enregistre son adresse. */
 export async function saveCover(path: string): Promise<{ ok: boolean; error?: string }> {
   const c = await me(); if (!c) return { ok: false, error: "Session expirée. Reconnectez-vous." };
   if (!okPath(path, c.user.id)) return { ok: false, error: "Fichier invalide." };
+  const bad = await badFormat(c.db, path, "cover"); if (bad) return { ok: false, error: bad };
   const { data } = c.db.storage.from("realisations").getPublicUrl(path);
   const old = keyOf(c.a.cover_url);
   const { error } = await c.db.from("artisans").update({ cover_url: data.publicUrl }).eq("id", c.a.id);
@@ -85,6 +100,7 @@ export async function removeCover(): Promise<{ ok: boolean }> {
 export async function addPortfolio(path: string, caption: string): Promise<{ ok: boolean; error?: string }> {
   const c = await me(); if (!c) return { ok: false, error: "Session expirée. Reconnectez-vous." };
   if (!okPath(path, c.user.id)) return { ok: false, error: "Fichier invalide." };
+  const bad = await badFormat(c.db, path, "shot"); if (bad) return { ok: false, error: bad };
   const { data } = c.db.storage.from("realisations").getPublicUrl(path);
   const { error } = await c.db.from("portfolio_photos").insert({ artisan_id: c.a.id, path, url: data.publicUrl, caption: caption.trim().slice(0, 80) || null });
   if (error) {
