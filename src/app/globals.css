@@ -231,7 +231,7 @@ h1 .flag{margin-inline:2px}
 .acard h3 a::after{content:"";position:absolute;inset:0;z-index:1}
 .acard-trade{color:var(--brand);font-weight:600;font-size:13px}
 .acard-meta{color:var(--ink-muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.acard-price{margin-top:4px;font-weight:700;font-size:13px;color:var(--boost-ink)}
+.acard-price{margin-top:4px;font-weight:700;font-size:14px;color:var(--ink)}
 .acard-cta{position:relative;z-index:2;display:flex;gap:6px;padding:0 10px 10px}
 .acard-cta .btn{min-height:40px;padding:0 10px;font-size:14px}
 .acard-cta .wa{flex:1;background:#1f9d57;border-color:#1f9d57;color:#fff}

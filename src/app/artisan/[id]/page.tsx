@@ -1,3 +1,4 @@
+import { priceText } from "@/lib/format";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { hasSupabase } from "@/lib/env";
@@ -48,7 +49,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           </div>
         </div>
         <aside className="card aside">
-          <div><p className="lbl">Tarif indicatif</p><p className="price">{a.price_label ?? "Sur devis"}</p></div>
+          <div><p className="lbl">Tarif indicatif</p><p className="price">{priceText(a.price_label) ?? "Sur devis"}</p></div>
           <a className="btn primary dcall" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
           <a className="btn dcall" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>
           <details open={sp.envoye !== "1"}>

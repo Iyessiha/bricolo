@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { initials } from "@/lib/format";
+import { initials, priceText } from "@/lib/format";
 
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
@@ -28,7 +28,7 @@ export default function ArtisanCard({ a }: { a: ArtisanRow }) {
           {a.review_count ? <><b className="num">★ {String(a.avg_rating).replace(".", ",")}</b> ({a.review_count})</> : <span className="tag mute">Nouveau</span>}
           {a.experience_years ? <span> · {a.experience_years} an{a.experience_years > 1 ? "s" : ""}</span> : null}
         </p>
-        {a.price_label && <p className="acard-price">{a.price_label}</p>}
+        {priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
       </div>
       <div className="acard-cta">
         <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>
