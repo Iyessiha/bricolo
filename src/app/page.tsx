@@ -14,22 +14,6 @@ const FAQ = [
   ["Mes informations sont-elles protégées ?", "Seules les informations de votre fiche (activité, zones, téléphone, description) sont visibles des clients. Votre e-mail et les informations de votre entreprise restent privés."],
 ] as const;
 
-const I = (d: React.ReactNode) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
-const BENEFITS = [
-  { t: "Fini la recherche au hasard", d: "Choisissez un métier et votre commune : les artisans qui interviennent chez vous s’affichent en quelques secondes, au lieu de dépendre du bouche-à-oreille.",
-    i: I(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>) },
-  { t: "Savoir à qui vous avez affaire", d: "Description, zones couvertes, avis de clients et badge Vérifié : vous comparez les profils avant de décider, pas après.",
-    i: I(<><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /><path d="M8.5 12l2.5 2.5 4.5-5" /></>) },
-  { t: "Un tarif en tête avant d’appeler", d: "Chaque artisan indique un tarif indicatif sur sa fiche. Moins de mauvaises surprises : vous convenez du prix final directement avec lui.",
-    i: I(<><path d="M3 12V4h8l10 10-8 8z" /><circle cx="7.5" cy="8.5" r="1.2" /></>) },
-  { t: "Une panne ? Contactez-le tout de suite", d: "Un clic pour l’appeler ou lui écrire sur WhatsApp, ou envoyez une demande en signalant que c’est urgent. Pas de formulaire interminable.",
-    i: I(<path d="M13 3L5 14h6l-1 7 8-11h-6z" />) },
-  { t: "Vous parlez à l’artisan, pas à un intermédiaire", d: "Pas de standard, pas de commission sur vos travaux : le contact et le paiement de la prestation se font directement entre vous et l’artisan.",
-    i: I(<path d="M4 5h16v11H9l-5 4z" />) },
-  { t: "Gratuit, sans compte", d: "Chercher, comparer et contacter ne coûte rien et ne demande aucune inscription. Vous gardez le choix, à chaque étape.",
-    i: I(<><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.5 2.5L16 9.5" /></>) },
-] as const;
-
 export default async function Home() {
   if (!hasSupabase()) return <SetupNotice />;
   const country = await getCountry();
@@ -74,21 +58,38 @@ export default async function Home() {
       </section>
       <div className="ruler" aria-hidden="true" />
 
-      <section className="cband">
-        <div className="inner stack" style={{ gap: 22 }}>
-          <div className="stack" style={{ gap: 10, maxWidth: 640 }}>
-            <p className="eyebrow">Pour les clients</p>
+      <section className="band cl">
+        <div className="inner bandin">
+          <div className="stack" style={{ gap: 14 }}>
+            <p className="eyebrow" style={{ color: "inherit", opacity: .8 }}>Pour les clients</p>
             <h2 style={{ fontSize: "clamp(26px,4vw,36px)" }}>Un artisan de confiance, sans courir partout.</h2>
-            <p className="lead">Trouver un bon frigoriste, électricien ou plombier ne devrait pas dépendre du hasard. Bricolo réunit les artisans de votre ville au même endroit, avec de quoi choisir en confiance.</p>
+            <ul className="ticks">
+              <li>Trouvez par métier et par commune, en quelques secondes</li>
+              <li>Profils clairs : zones, avis, badge Vérifié et tarif indicatif</li>
+              <li>Appelez ou écrivez sur WhatsApp, même en urgence</li>
+              <li>Sans intermédiaire ni commission sur vos travaux</li>
+            </ul>
+            <div className="row"><Link className="btn" href="/resultats">Trouver un artisan</Link><span className="hint" style={{ color: "inherit", opacity: .8 }}>Gratuit · sans inscription</span></div>
           </div>
-          <div className="cgrid">
-            {BENEFITS.map((b) => (
-              <div key={b.t} className="cbenefit"><span className="cico">{b.i}</span><b>{b.t}</b><p>{b.d}</p></div>
-            ))}
+          <div className="offer" style={{ display: "grid", gap: 6 }}>
+            <b>Fini la recherche au hasard</b>
+            <span>Vous comparez les profils avant de décider, vous convenez du prix directement avec l’artisan, et vous n’avez pas besoin de compte pour chercher ou contacter.</span>
           </div>
-          <div className="row"><Link className="btn primary" href="/resultats">Trouver un artisan maintenant</Link><span className="hint">Gratuit · sans inscription</span></div>
         </div>
       </section>
+
+      <section className="inner sec">
+        <div className="sec-head"><h2>Artisans à la une</h2><span className="tag boost">Sponsorisé</span></div>
+        {featured?.length ? (
+          <div className="list">{featured.map((a: any) => <ArtisanCard key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
+        ) : (
+          <div className="empty stack" style={{ gap: 10 }}>
+            <p>Les premiers artisans de {countryName(country)} arrivent. Soyez parmi les premiers à apparaître ici.</p>
+            <div><Link className="btn" href="/inscription">Créer mon profil gratuit</Link></div>
+          </div>
+        )}
+      </section>
+
 
       <section className="inner sec">
         <div className="sec-head"><h2>Comment ça marche</h2></div>
@@ -108,17 +109,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="inner sec">
-        <div className="sec-head"><h2>Artisans à la une</h2><span className="tag boost">Sponsorisé</span></div>
-        {featured?.length ? (
-          <div className="list">{featured.map((a: any) => <ArtisanCard key={a.id} a={{ ...a, sponsored: true, trade: a.trade?.name }} />)}</div>
-        ) : (
-          <div className="empty stack" style={{ gap: 10 }}>
-            <p>Les premiers artisans de {countryName(country)} arrivent. Soyez parmi les premiers à apparaître ici.</p>
-            <div><Link className="btn" href="/inscription">Créer mon profil gratuit</Link></div>
-          </div>
-        )}
-      </section>
 
       <section className="band">
         <div className="inner bandin">
