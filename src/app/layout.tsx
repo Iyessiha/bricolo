@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { COMPANY } from "@/lib/company";
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#27489a" }, { media: "(prefers-color-scheme: dark)", color: "#0e1525" }] };
 
 export const metadata: Metadata = {
   authors: [{ name: COMPANY.name }],

@@ -26,7 +26,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const action = sendRequest.bind(null, id);
 
   return (
-    <section className="inner sec stack">
+    <section className="inner sec stack has-mbar">
       <p><Link href="/resultats">← Retour aux résultats</Link></p>
       <div className="pgrid">
         <div className="stack">
@@ -49,8 +49,8 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
         </div>
         <aside className="card aside">
           <div><p className="lbl">Tarif indicatif</p><p className="price">{a.price_label ?? "Sur devis"}</p></div>
-          <a className="btn primary" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
-          <a className="btn" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>
+          <a className="btn primary dcall" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
+          <a className="btn dcall" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>
           <details open={sp.envoye !== "1"}>
             <summary className="btn" style={{ listStyle: "none" }}>Envoyer une demande</summary>
             <form action={action} className="stack" style={{ marginTop: 12 }}>
@@ -65,6 +65,10 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           </details>
           {sp.envoye === "1" && <p className="notice ok">Demande envoyée. L’artisan vous répondra par e-mail.</p>}
         </aside>
+      </div>
+      <div className="mbar">
+        <a className="btn primary" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
+        <a className="btn" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>
       </div>
     </section>
   );

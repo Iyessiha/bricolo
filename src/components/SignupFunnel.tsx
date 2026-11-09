@@ -52,7 +52,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
         <>
           <h1 style={{ fontSize: 30 }}>Dans quel pays travaillez-vous ?</h1>
           <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
-          <div className="opts">
+          <div className="opts two">
             {countries.map((c) => (
               <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b>{c.name}</b><span>{c.capital}</span></label>
             ))}

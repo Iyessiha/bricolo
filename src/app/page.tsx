@@ -31,17 +31,12 @@ export default async function Home() {
   return (
     <>
       <section className="inner hero2">
-        <div className="stack" style={{ gap: 18 }}>
+        <div className="heroin stack" style={{ gap: 14 }}>
           <p className="eyebrow">{countryCapital(country)} · {countryName(country)}</p>
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
-          <ul className="trust">
-            <li>Contact direct, sans intermédiaire</li>
-            <li>Profils contrôlés, badge Vérifié</li>
-            <li>7 pays d’Afrique de l’Ouest</li>
-          </ul>
         </div>
-        <form className="card pad stack" action="/resultats">
+        <form className="card pad stack heroform" action="/resultats">
           <h2 style={{ fontSize: 20 }}>Trouver un artisan</h2>
           <div className="fld"><label htmlFor="metier">Métier</label>
             <select id="metier" name="metier" defaultValue="">
@@ -55,6 +50,11 @@ export default async function Home() {
             </select></div>
           <button className="btn primary" type="submit">Rechercher</button>
         </form>
+        <ul className="trust">
+          <li>Contact direct, sans intermédiaire</li>
+          <li>Profils contrôlés, badge Vérifié</li>
+          <li>7 pays d’Afrique de l’Ouest</li>
+        </ul>
       </section>
       <div className="ruler" aria-hidden="true" />
 
