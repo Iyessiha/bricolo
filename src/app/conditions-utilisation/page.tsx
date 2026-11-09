@@ -13,13 +13,14 @@ export default function Cgu() {
       <p>{B} est un annuaire d’artisans (frigoristes, mécaniciens, menuisiers, électriciens, plombiers, etc.) présents dans les pays francophones de la zone FCFA. Il permet aux clients de trouver un artisan et de le contacter, et aux artisans de présenter leur activité. {B} est un intermédiaire de mise en relation : {C} n’est ni l’employeur, ni le mandataire, ni le garant des artisans.</p>
 
       <h2>2. Accès et gratuité</h2>
-      <p>La consultation de l’annuaire et l’envoi d’une demande à un artisan sont gratuits pour les clients, sans compte. La création d’un profil artisan est gratuite. Seuls les services optionnels de mise en avant (« boosts ») sont payants, selon les <Link href="/conditions-boosts">conditions des boosts</Link>.</p>
+      <p>La consultation de l’annuaire et l’envoi d’une demande à un artisan sont gratuits pour les clients, sans compte. La création d’un profil artisan est gratuite. Seuls les services optionnels de mise en avant, proposés aux artisans dans leur espace personnel, sont payants, selon leurs <Link href="/conditions-boosts">conditions de vente</Link>.</p>
 
       <h2>3. Compte artisan</h2>
       <ul>
         <li>Vous devez être majeur et exercer une activité professionnelle ou artisanale réelle.</li>
         <li>L’accès se fait par un lien envoyé à votre adresse e-mail, sans mot de passe. Vous êtes responsable de l’accès à cette boîte e-mail.</li>
         <li>Vous choisissez votre pays à l’inscription ; votre profil est affiché aux clients de ce pays.</li>
+        <li>Si vous créez le profil au nom d’une entreprise, vous déclarez être habilité(e) à l’engager et à accepter ces conditions pour elle ; l’entreprise est alors responsable du profil.</li>
         <li>Un compte correspond à un profil. Les informations fournies doivent être exactes et à jour.</li>
         <li>Tout profil est examiné avant publication. {C} peut refuser, suspendre ou supprimer un profil qui ne respecte pas ces conditions.</li>
       </ul>

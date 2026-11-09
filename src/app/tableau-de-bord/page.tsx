@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import { countryName } from "@/lib/countries";
-import { BOOST_TYPES, timeLeft } from "@/lib/format";
+import { BOOST_TYPES, fcfa, timeLeft } from "@/lib/format";
+import { BOOST_TERMS_LINK } from "@/lib/company";
 import SetupNotice from "@/components/SetupNotice";
 import { requestVerification, saveProfile } from "./actions";
 import { signOut } from "../auth-actions";
@@ -28,9 +29,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     db.from("artisans").select("*, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
   ]);
   // Prérempli depuis le tunnel d’inscription tant que la fiche n’existe pas.
-  const meta = (user.user_metadata ?? {}) as { business_name?: string; trade_id?: string };
+  const meta = (user.user_metadata ?? {}) as { business_name?: string; trade_id?: string; account_type?: string; company_registration?: string };
+  const accountType = artisan?.account_type ?? (meta.account_type === "entreprise" ? "entreprise" : "individuel");
+  const { data: company } = artisan ? await db.from("artisan_companies").select("registration_number").eq("artisan_id", artisan.id).maybeSingle() : { data: null };
   const myZones = new Set(((artisan as any)?.zones ?? []).map((z: any) => z.zone_id));
 
+  const { data: grid } = artisan ? await db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", country) : { data: null };
+  const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   let stats = { vues: 0, appels: 0, wa: 0, demandes: 0 };
   let boosts: any[] = [];
   if (artisan) {
@@ -72,6 +77,18 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             {boosts.length ? boosts.map((b) => (
               <p key={b.id}><b>{BOOST_TYPES[b.type].name}</b> <span className="meta">· reste {timeLeft(b.ends_at)}</span></p>
             )) : <p className="meta">Aucun boost actif. Votre profil apparaît parmi les résultats naturels.</p>}
+            {artisan.status === "approved" && (
+              <div className="stack" style={{ gap: 8 }}>
+                <p className="lbl">Options de mise en avant</p>
+                {(["recherche", "accueil", "urgence"] as const).map((t) => (
+                  <div key={t} className="offer" style={{ background: "var(--surface-sunken)" }}>
+                    <div><b>{BOOST_TYPES[t].name}</b><span>{BOOST_TYPES[t].text}</span></div>
+                    {from(t) && <span className="tag boost">dès {fcfa(from(t)!)}</span>}
+                  </div>
+                ))}
+                <p className="hint">Durées : 24 h, 3 jours ou 7 jours, payables en Mobile Money. Emplacements limités. <Link href={BOOST_TERMS_LINK}>Conditions de vente</Link></p>
+              </div>
+            )}
             <div className="row">
               {artisan.status === "approved" ? <Link className="btn boost" href="/boosts">Booster mon profil</Link> : <p className="hint">Les boosts sont disponibles une fois votre profil validé.</p>}
               {artisan.status === "approved" && !artisan.verified && !artisan.verification_requested && (
@@ -85,7 +102,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
       <form action={saveProfile} className="card pad stack">
         <h2 style={{ fontSize: 20 }}>{artisan ? "Modifier mon profil" : "Votre profil"}</h2>
-        <div className="fld"><label htmlFor="name">Nom ou nom de l’atelier</label><input type="text" id="name" name="name" required defaultValue={artisan?.name ?? meta.business_name ?? ""} /></div>
+        <div className="fld"><span className="lbl" id="statut-l">Vous exercez</span>
+          <div className="chips" role="radiogroup" aria-labelledby="statut-l">
+            <label className="chip"><input type="radio" name="account_type" value="individuel" defaultChecked={accountType === "individuel"} />À titre individuel</label>
+            <label className="chip"><input type="radio" name="account_type" value="entreprise" defaultChecked={accountType === "entreprise"} />Au nom d’une entreprise</label>
+          </div></div>
+        <div className="fld when-ent"><label htmlFor="company_name">Nom officiel de l’entreprise</label><input type="text" id="company_name" name="company_name" maxLength={120} defaultValue={artisan?.company_name ?? meta.business_name ?? ""} /></div>
+        <div className="fld when-ent"><label htmlFor="registration_number">Numéro d’immatriculation (RCCM, IFU, NIF ou NINEA)</label><input type="text" id="registration_number" name="registration_number" maxLength={60} defaultValue={company?.registration_number ?? meta.company_registration ?? ""} /><span className="hint">Jamais affiché aux clients. Il sert à valider votre profil et à obtenir le badge Vérifié.</span></div>
+        <div className="fld"><label htmlFor="name">Nom affiché aux clients</label><input type="text" id="name" name="name" required defaultValue={artisan?.name ?? meta.business_name ?? ""} /></div>
         <div className="fld"><label htmlFor="trade_id">Métier principal</label>
           <select id="trade_id" name="trade_id" required defaultValue={artisan?.trade_id ?? meta.trade_id ?? ""}>
             <option value="" disabled>Choisir…</option>

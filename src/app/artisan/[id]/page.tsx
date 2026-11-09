@@ -14,7 +14,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, description, price_label, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
@@ -33,9 +33,9 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <div className="card pad row" style={{ gap: 20 }}>
             <div className="avatar" style={{ width: 80, height: 80, fontSize: 28 }} aria-hidden="true">{initials(a.name)}</div>
             <div className="stack" style={{ gap: 8 }}>
-              <div className="tags">{a.verified ? <span className="tag ok">✓ Vérifié</span> : <span className="tag mute">Non vérifié</span>}</div>
+              <div className="tags">{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified ? <span className="tag ok">✓ Vérifié</span> : <span className="tag mute">Non vérifié</span>}</div>
               <h1 style={{ fontSize: "clamp(26px,4.5vw,36px)" }}>{a.name}</h1>
-              <p className="meta">{trade?.name} · {zones.map((z) => z.name).join(", ")}</p>
+              <p className="meta">{a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? `${a.company_name} · ` : ""}{trade?.name} · {zones.map((z) => z.name).join(", ")}</p>
               <p>{a.review_count ? <b className="num">★ {String(a.avg_rating).replace(".", ",")} ({a.review_count} avis)</b> : <span className="tag mute">Nouveau</span>}</p>
             </div>
           </div>

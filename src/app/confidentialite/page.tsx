@@ -14,7 +14,7 @@ export default function Privacy() {
 
       <h2>2. Données collectées</h2>
       <ul>
-        <li><b>Artisans</b> : adresse e-mail, pays, nom de l’activité, métier, zones couvertes, description, tarif indicatif, numéros de téléphone et WhatsApp, et le moment où vous avez accepté les conditions.</li>
+        <li><b>Artisans</b> : adresse e-mail, pays, statut (individuel ou entreprise), nom de l’activité ou de l’entreprise, numéro d’immatriculation de l’entreprise (jamais publié), métier, zones couvertes, description, tarif indicatif, numéros de téléphone et WhatsApp, et le moment où vous avez accepté les conditions.</li>
         <li><b>Clients</b> (sans compte) : adresse e-mail, nom (facultatif) et contenu de la demande envoyée à un artisan.</li>
         <li><b>Paiements des boosts</b> : référence de transaction, montant, statut et date. Les identifiants de paiement Mobile Money sont traités par GeniusPay et ne sont pas conservés par {C}.</li>
         <li><b>Statistiques de fiche</b> : nombre de vues, de clics sur « Appeler » et « WhatsApp » et de demandes, communiqués à l’artisan concerné. Ils ne sont pas rattachés à l’identité du visiteur.</li>

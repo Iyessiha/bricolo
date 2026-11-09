@@ -124,3 +124,4 @@ textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-mu
 .faq summary::-webkit-details-marker{display:none}.faq summary::after{content:"+";font-size:20px;color:var(--brand)}
 .faq details[open] summary::after{content:"–"}.faq details p{padding:0 16px 16px;color:var(--ink-muted)}
 @media (max-width:860px){.hero2,.bandin{grid-template-columns:1fr;gap:24px}.hero2{padding-block:28px 24px}.bandin{padding-block:32px}}
+.when-ent{display:none}form:has(input[name=account_type][value=entreprise]:checked) .when-ent{display:grid}

@@ -19,7 +19,11 @@ export async function saveProfile(formData: FormData) {
     price_label: String(formData.get("price_label") ?? "").trim() || null,
     phone: String(formData.get("phone") ?? "").trim() || null,
     whatsapp: String(formData.get("whatsapp") ?? "").trim() || null,
+    account_type: formData.get("account_type") === "entreprise" ? "entreprise" : "individuel",
+    company_name: null as string | null,
   };
+  if (fields.account_type === "entreprise") fields.company_name = String(formData.get("company_name") ?? "").trim().slice(0, 120) || fields.name;
+  const registration = String(formData.get("registration_number") ?? "").trim().slice(0, 60);
   const zoneIds = formData.getAll("zones").map(String);
   if (fields.name.length < 2 || !fields.trade_id || !zoneIds.length) redirect("/tableau-de-bord?erreur=champs");
 
@@ -34,6 +38,8 @@ export async function saveProfile(formData: FormData) {
     const newId = data.id as string;
     after(() => notifyProfileReceived(newId));
   }
+  if (fields.account_type === "entreprise" && registration) await db.from("artisan_companies").upsert({ artisan_id: artisanId!, registration_number: registration, updated_at: new Date().toISOString() });
+  else await db.from("artisan_companies").delete().eq("artisan_id", artisanId!);
   await db.from("artisan_zones").delete().eq("artisan_id", artisanId!);
   await db.from("artisan_zones").insert(zoneIds.map((zone_id) => ({ artisan_id: artisanId!, zone_id })));
   revalidatePath("/tableau-de-bord");

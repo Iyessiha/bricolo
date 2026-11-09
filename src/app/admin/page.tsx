@@ -21,7 +21,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Re
 
   const pays = COUNTRIES.some((c) => c.code === sp.pays) ? sp.pays! : "ci";
   const [{ data: pending }, { data: toVerify }, { data: grid }, { data: all }, { data: active }] = await Promise.all([
-    db.from("artisans").select("id, name, country_code, trade:trades(name), created_at").eq("status", "pending").order("created_at"),
+    db.from("artisans").select("id, name, country_code, account_type, company_name, company:artisan_companies(registration_number), trade:trades(name), created_at").eq("status", "pending").order("created_at"),
     db.from("artisans").select("id, name, country_code").eq("status", "approved").eq("verification_requested", true).eq("verified", false),
     db.from("price_grid").select("id, boost_type, duration_hours, amount").eq("country_code", pays).order("boost_type").order("duration_hours"),
     db.from("artisans").select("id, country_code").eq("status", "approved"),
@@ -39,9 +39,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Re
       </div>
 
       <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Profils à valider</h2>
-        {pending?.length ? <div className="tw"><table className="tbl"><thead><tr><th>Artisan</th><th>Métier</th><th>Pays</th><th></th></tr></thead><tbody>
+        {pending?.length ? <div className="tw"><table className="tbl"><thead><tr><th>Artisan</th><th>Statut</th><th>Métier</th><th>Pays</th><th></th></tr></thead><tbody>
           {pending.map((p: any) => (
-            <tr key={p.id}><td><b>{p.name}</b></td><td>{p.trade?.name}</td><td>{countryName(p.country_code)}</td>
+            <tr key={p.id}><td><b>{p.name}</b></td><td>{p.account_type === "entreprise" ? <>Entreprise{p.company_name ? ` · ${p.company_name}` : ""}<br /><span className="meta">{(Array.isArray(p.company) ? p.company[0] : p.company)?.registration_number ?? "N° non renseigné"}</span></> : "Individuel"}</td><td>{p.trade?.name}</td><td>{countryName(p.country_code)}</td>
               <td><form action={decide} className="row" style={{ flexWrap: "nowrap" }}>
                 <input type="hidden" name="id" value={p.id} />
                 <button className="btn small primary" name="decision" value="approve">Valider</button>

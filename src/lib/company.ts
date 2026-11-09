@@ -18,7 +18,9 @@ export const LEGAL_UPDATED = "9 novembre 2026";
 export const LEGAL_LINKS = [
   { href: "/mentions-legales", label: "Mentions légales" },
   { href: "/conditions-utilisation", label: "Conditions d’utilisation" },
-  { href: "/conditions-boosts", label: "Conditions des boosts" },
   { href: "/confidentialite", label: "Confidentialité" },
   { href: "/cookies", label: "Cookies" },
 ] as const;
+
+/** Conditions de vente des boosts : accessibles aux artisans depuis leur espace, pas listées dans le pied de page public. */
+export const BOOST_TERMS_LINK = "/conditions-boosts";

@@ -13,7 +13,6 @@ export default function Footer() {
           <b>Service</b>
           <Link href="/resultats">Trouver un artisan</Link>
           <Link href="/inscription">Devenir artisan</Link>
-          <Link href="/boosts">Les boosts</Link>
           <Link href="/connexion">Connexion</Link>
         </nav>
         <nav aria-label="Informations légales" className="footcol">

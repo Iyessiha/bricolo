@@ -20,17 +20,20 @@ export async function signupLink(_prev: LinkState, fd: FormData): Promise<LinkSt
   const pays = String(fd.get("pays") ?? "");
   const tradeId = String(fd.get("trade_id") ?? "");
   const name = String(fd.get("name") ?? "").trim();
+  const type = fd.get("account_type") === "entreprise" ? "entreprise" : "individuel";
+  const registration = String(fd.get("registration") ?? "").trim().slice(0, 60);
   if (!isCountry(pays)) return fail("Choisissez votre pays.");
   if (name.length < 2 || name.length > 80 || !UUID.test(tradeId)) return fail("Indiquez le nom de votre activité et votre métier.");
   if (!EMAIL.test(email)) return fail("Cette adresse e-mail n’est pas valide.");
   if (fd.get("accept") !== "on") return fail("Vous devez accepter les conditions pour continuer.");
+  if (type === "entreprise" && fd.get("authorized") !== "on") return fail("Confirmez que vous êtes habilité(e) à créer ce profil au nom de l’entreprise.");
 
   const db = await supabaseServer();
   const { error } = await db.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true, emailRedirectTo: `${siteUrl()}/auth/callback`,
-      data: { country_code: pays, business_name: name, trade_id: tradeId, terms_accepted_at: new Date().toISOString() },
+      data: { country_code: pays, business_name: name, trade_id: tradeId, account_type: type, company_registration: registration, terms_accepted_at: new Date().toISOString() },
     },
   });
   if (error) return fail(reason(error));
