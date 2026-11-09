@@ -6,6 +6,8 @@ import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { initials } from "@/lib/format";
+import Flag from "@/components/Flag";
+import { countryName } from "@/lib/countries";
 import SetupNotice from "@/components/SetupNotice";
 import { sendRequest } from "./actions";
 
@@ -27,40 +29,65 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const trade = (a as any).trade as { id: string; name: string };
   const action = sendRequest.bind(null, id);
 
+  const hrs = cleanHours((a as any).hours);
+  const st = openStatus((a as any).hours, (a as any).open_24_7, a.country_code);
+  const price = priceText(a.price_label);
+  const rating = a.review_count ? String(a.avg_rating).replace(".", ",") : null;
+  const whoLine = a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? a.company_name : null;
+
   return (
     <section className="inner sec stack has-mbar">
       <p><Link href="/resultats">← Retour aux résultats</Link></p>
       <div className="pgrid">
         <div className="stack">
-          <div className="card pad row" style={{ gap: 20 }}>
-            {a.photo_url ? <img className="avatar pic" style={{ width: 96, height: 96 }} src={a.photo_url} alt={`Photo de ${a.name}`} /> : <div className="avatar" style={{ width: 80, height: 80, fontSize: 28 }} aria-hidden="true">{initials(a.name)}</div>}
-            <div className="stack" style={{ gap: 8 }}>
-              <div className="tags">{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified ? <span className="tag ok">✓ Vérifié</span> : <span className="tag mute">Non vérifié</span>}{a.diploma_verified && <span className="tag ok">🎓 Diplôme vérifié</span>}{a.experience_years ? <span className="tag mute">{a.experience_years} an{a.experience_years > 1 ? "s" : ""} d’expérience</span> : null}</div>
-              <h1 style={{ fontSize: "clamp(26px,4.5vw,36px)" }}>{a.name}</h1>
-              <p className="meta">{a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? `${a.company_name} · ` : ""}{trade?.name} · {zones.map((z) => z.name).join(", ")}</p>
-              <p>{a.review_count ? <b className="num">★ {String(a.avg_rating).replace(".", ",")} ({a.review_count} avis)</b> : <span className="tag mute">Nouveau</span>}</p>
+          <header className="card pfhead">
+            <div className="pfphoto">{a.photo_url ? <img src={a.photo_url} alt={`Photo de ${a.name}`} /> : <span aria-hidden="true">{initials(a.name)}</span>}</div>
+            <div className="pfid">
+              <div className="tags">
+                {a.verified && <span className="tag ok">✓ Identité vérifiée</span>}
+                {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
+                {a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
+                {(a as any).takes_urgent && <span className="tag boost">🚨 Urgences</span>}
+              </div>
+              <h1>{a.name}</h1>
+              <p className="pftrade">{trade?.name}{whoLine ? ` · ${whoLine}` : ""}</p>
+              <p className="meta fl"><Flag code={a.country_code} size={16} />{zones.length ? zones.map((z) => z.name).join(", ") : countryName(a.country_code)}</p>
             </div>
+          </header>
+
+          <div className="pfacts">
+            <div><span aria-hidden="true">⭐</span><b>{rating ? `${rating}/5` : "Nouveau"}</b><small>{rating ? `${a.review_count} avis` : "pas encore d’avis"}</small></div>
+            <div><span aria-hidden="true">🛠</span><b>{a.experience_years ? `${a.experience_years} an${a.experience_years > 1 ? "s" : ""}` : "—"}</b><small>d’expérience</small></div>
+            <div><span aria-hidden="true">💶</span><b>{price ?? "Sur devis"}</b><small>tarif indicatif</small></div>
+            <div><span aria-hidden="true">🕒</span><b className={st.state === "open" ? "pf-open" : undefined}>{st.state === "none" ? "—" : st.state === "open" ? "Ouvert" : "Fermé"}</b><small>{st.state === "none" ? "horaires non précisés" : st.text.replace(/^(Ouvert|Fermé) · ?/, "") || (st.state === "open" ? "maintenant" : "")}</small></div>
           </div>
-          {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p>{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
+
+          {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p className="pfabout">{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
+
+          {zones.length > 0 && <div className="card pad stack"><h2>Zones d’intervention</h2><div className="chips">{zones.map((z) => <span className="chip" key={z.id}>📍 {z.name}</span>)}</div></div>}
+
+          {(Object.keys(hrs).length > 0 || (a as any).open_24_7) && (
+            <div className="card pad stack"><h2>Horaires</h2>
+              {(a as any).open_24_7 ? <p>Disponible 24 h/24, 7 j/7.</p> : <table className="hours-tbl wide"><tbody>{DAYS.map(([d, l]) => <tr key={d}><th scope="row">{l}</th><td>{hrs[d] ? `${timeLabel(hrs[d][0])} – ${timeLabel(hrs[d][1])}` : "Fermé"}</td></tr>)}</tbody></table>}
+              {(a as any).takes_urgent && <p className="meta">🚨 Prend aussi les urgences en dehors de ces heures.</p>}
+            </div>
+          )}
+
           <div className="card pad stack">
             <h2>Avis clients</h2>
             {reviews?.length ? reviews.map((r) => (
-              <div key={r.id}><b>{r.author_name}</b> <span className="meta">· {r.rating}/5</span><p>{r.comment}</p></div>
-            )) : <p className="meta">Pas encore d’avis.</p>}
+              <div key={r.id} className="review"><b>{r.author_name}</b> <span className="meta">· ★ {r.rating}/5</span><p>{r.comment}</p></div>
+            )) : <p className="meta">Pas encore d’avis. Soyez le premier à contacter cet artisan.</p>}
           </div>
         </div>
         <aside className="card aside">
-          {(() => { const st = openStatus((a as any).hours, (a as any).open_24_7, a.country_code); const h = cleanHours((a as any).hours); return st.state === "none" && !(a as any).takes_urgent ? null : (
-            <div className="stack" style={{ gap: 6 }}>
-              <p className="lbl">Disponibilité</p>
-              {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
-              {(a as any).takes_urgent && <p className="meta">🚨 Prend les urgences</p>}
-              {!(a as any).open_24_7 && Object.keys(h).length > 0 && <table className="hours-tbl"><tbody>{DAYS.map(([d, l]) => <tr key={d}><th scope="row">{l}</th><td>{h[d] ? `${timeLabel(h[d][0])} – ${timeLabel(h[d][1])}` : "Fermé"}</td></tr>)}</tbody></table>}
-            </div>); })()}
-          <div><p className="lbl">Tarif indicatif</p><p className="price">{priceText(a.price_label) ?? "Sur devis"}</p></div>
-          <a className="btn primary dcall" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
-          <a className="btn dcall" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>
-          <details open={sp.envoye !== "1"}>
+          <div className="stack" style={{ gap: 4 }}>
+            <p className="lbl">Contacter {a.name.split(" ")[0]}</p>
+            {st.state === "open" && <p className="acard-open open"><i aria-hidden="true" />{st.text}</p>}
+          </div>
+          <a className="btn wa dcall" href={`/api/contact?id=${id}&type=whatsapp`}>💬 Écrire sur WhatsApp</a>
+          <a className="btn dcall" href={`/api/contact?id=${id}&type=call`}>📞 Appeler</a>
+          <details open={!!sp.erreur}>
             <summary className="btn" style={{ listStyle: "none" }}>Envoyer une demande</summary>
             <form action={action} className="stack" style={{ marginTop: 12 }}>
               <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
@@ -75,11 +102,12 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           </details>
           {sp.erreur && <p className="notice err" role="alert">{sp.erreur === "doublon" ? "Vous avez déjà contacté cet artisan il y a moins d’une heure." : sp.erreur === "limite" ? "Trop de demandes aujourd’hui. Réessayez demain." : "Vérifiez votre adresse e-mail et votre message."}</p>}
           {sp.envoye === "1" && <p className="notice ok">Demande envoyée. L’artisan vous répondra par e-mail.</p>}
+          <p className="hint pftrust">🛡 Identité contrôlée par Bricolo. Ne payez jamais à l’avance sans avoir vu le travail.</p>
         </aside>
       </div>
       <div className="mbar">
-        <a className="btn primary" href={`/api/contact?id=${id}&type=call`}>Appeler</a>
-        <a className="btn" href={`/api/contact?id=${id}&type=whatsapp`}>WhatsApp</a>
+        <a className="btn wa" href={`/api/contact?id=${id}&type=whatsapp`}>💬 WhatsApp</a>
+        <a className="btn" href={`/api/contact?id=${id}&type=call`}>📞 Appeler</a>
       </div>
     </section>
   );

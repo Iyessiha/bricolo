@@ -6,7 +6,6 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { countryName } from "@/lib/countries";
 import Flag from "@/components/Flag";
 import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
-import { BOOST_TERMS_LINK } from "@/lib/company";
 import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import DiplomaAdd from "@/components/DiplomaAdd";
@@ -209,25 +208,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </div>
 
 
-      <div id="visibilite" className="card pad stack" hidden={sec !== "boosts"}>
-        <h2 style={{ fontSize: 20 }}>Visibilité</h2>
-        <h3 style={{ fontSize: 16 }}>Boosts actifs</h3>
-        {act?.length ? act.map((b) => (<p key={b.id}><b>{BOOST_TYPES[b.type].name}</b> <span className="meta">· reste {timeLeft(b.ends_at)}</span></p>)) : <p className="meta">Aucun boost actif. Votre profil apparaît parmi les résultats naturels.</p>}
-        {approved ? (
-          <div className="stack" style={{ gap: 8 }}>
-            <p className="lbl">Options de mise en avant</p>
-            {(["recherche", "accueil", "urgence"] as const).map((t) => (
-              <div key={t} className="offer" style={{ background: "var(--surface-sunken)" }}>
-                <div><b>{BOOST_TYPES[t].name}</b><span>{BOOST_TYPES[t].text}</span></div>
-                {from(t) && <span className="tag boost">dès {fcfa(from(t)!)}</span>}
-              </div>
-            ))}
-            <p className="hint">Durées : 24 h, 3 jours ou 7 jours, payables en Mobile Money. Emplacements limités. <Link href={BOOST_TERMS_LINK}>Conditions de vente</Link></p>
-            <div className="row">
-              <Link className="btn boost" href="/boosts">Booster mon profil</Link>
-            </div>
-          </div>
-        ) : <p className="hint">Les boosts sont disponibles une fois votre profil validé.</p>}
+      <div id="visibilite" className="stack" hidden={sec !== "boosts"}>
+        <h1 className="dtitle">Boosts</h1>
+        <div className="card pad dboost big">
+          <div><b>{act?.length ? "Votre boost est en cours" : "Faites-vous voir en premier"}</b>
+            <p className="meta">{act?.length ? "Prolongez-le avant la fin pour garder votre place." : "Placez votre fiche en tête des résultats et recevez plus d’appels."}</p></div>
+          {approved ? <Link className="btn boost" href="/boosts">{act?.length ? "Prolonger ou ajouter un boost" : "Découvrir les boosts"}</Link> : <p className="hint">Disponible une fois votre profil validé.</p>}
+        </div>
+        {act?.length ? <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Boosts actifs</h2>{act.map((b) => (<div key={b.id} className="row" style={{ justifyContent: "space-between" }}><b>{BOOST_TYPES[b.type].name}</b><span className="tag ok">reste {timeLeft(b.ends_at)}</span></div>))}</div> : null}
       </div>
       </main>
     </section>
