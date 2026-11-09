@@ -12,10 +12,11 @@ const T = [["recherche", "Recherche"], ["accueil", "Accueil"], ["urgence", "Urge
 export default async function Prix({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
   const { db } = await requireAdmin();
-  const [{ data: grid }, { data: zones }, { data: arts }] = await Promise.all([
+  const [{ data: grid }, { data: zones }, { data: arts }, { data: plans }] = await Promise.all([
     db.from("price_grid").select("id, country_code, boost_type, duration_hours, amount").order("country_code").order("boost_type").order("duration_hours"),
     db.from("zones").select("id, country_code, name, price_factor").order("country_code").order("name").limit(2000),
     db.from("artisans").select("country_code").eq("status", "approved").limit(10000),
+    db.from("plan_prices").select("country_code, amount"),
   ]);
   const hot = (zones ?? []).filter((z) => Number(z.price_factor) !== 1);
   return (
@@ -34,6 +35,7 @@ export default async function Prix({ searchParams }: { searchParams: Promise<Rec
               {g.length ? <div className="tw"><table className="tbl"><thead><tr><th>Boost</th><th className="num">24 h</th><th className="num">3 jours</th><th className="num">7 jours</th></tr></thead><tbody>
                 {T.map(([k, l]) => <tr key={k}><td><b>{l}</b></td>{[24, 72, 168].map((h) => { const x = g.find((y) => y.boost_type === k && y.duration_hours === h); return <td className="num" key={h}>{x ? <input type="number" min={0} step={100} name={`p:${x.id}`} defaultValue={x.amount} aria-label={`${l} ${h} h`} /> : "—"}</td>; })}</tr>)}
               </tbody></table></div> : <p className="empty">Aucun prix défini pour ce pays.</p>}
+              <div className="fld" style={{ maxWidth: 320 }}><label htmlFor={`plan-${c.code}`}>Forfait Pro, 1 mois (FCFA)</label><input id={`plan-${c.code}`} type="number" min={0} step={100} name={`plan:${c.code}`} defaultValue={(plans ?? []).find((p) => p.country_code === c.code)?.amount ?? 0} /></div>
               <details><summary>Coefficients par zone ({zh.length} ajustée{zh.length > 1 ? "s" : ""})</summary>
                 <p className="hint">Le boost « ciblé » = prix recherche × coefficient de la zone (1 = prix de base). Seules les zones à coefficient ≠ 1 sont affichées ici.</p>
                 <div className="afilters">{zh.length ? zh.map((z) => <label key={z.id} className="fld" style={{ width: 170 }}>{z.name}<input type="number" step="0.05" min="0.1" max="9.99" name={`z:${z.id}`} defaultValue={String(z.price_factor)} /></label>) : <span className="meta">Aucune zone ajustée.</span>}</div>

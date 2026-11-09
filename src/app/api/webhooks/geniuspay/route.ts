@@ -13,6 +13,6 @@ export async function POST(req: NextRequest) {
   if (!evt) return NextResponse.json({ error: "notification inconnue" }, { status: 400 });
   if (!evt.paid) return NextResponse.json({ received: true });
   const res = await activateFromPayment(evt.reference, evt.amount);
-  if (res.ok && !res.already) after(() => notifyBoostPaid(evt.reference));
+  if (res.ok && !res.already) after(() => notifyBoostPaid(evt.reference)); // sans effet pour un forfait (aucun boost lié)
   return NextResponse.json(res.ok ? { received: true } : { error: res.reason }, { status: res.ok ? 200 : 422 });
 }

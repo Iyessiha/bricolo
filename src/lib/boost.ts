@@ -31,6 +31,7 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
   if (pay.status === "paid") return { ok: true as const, already: true };
   if (paidAmount < pay.amount) return { ok: false as const, reason: "montant insuffisant" };
 
+  if (pay.subscription_id) return activateSubscription(db, pay);
   const { data: boost } = await db.from("boosts").select("*").eq("id", pay.boost_id).single();
   if (!boost) return { ok: false as const, reason: "boost introuvable" };
 
@@ -47,6 +48,25 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
   } else {
     await db.from("boosts").update({ status: "active", starts_at: now.toISOString(), ends_at: new Date(now.getTime() + ms).toISOString() }).eq("id", boost.id);
   }
+  await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id);
+  return { ok: true as const, already: false };
+}
+
+export const PRO_LIMITS = { free: { services: 1, photos: 8 }, pro: { services: 10, photos: 20 } } as const;
+export async function isPro(db: Admin, artisanId: string) {
+  const { data } = await db.from("subscriptions").select("id").eq("artisan_id", artisanId).eq("status", "active").gt("ends_at", new Date().toISOString()).limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
+/** Active (ou prolonge) le Forfait Pro payé. Un renouvellement s'ajoute à la fin de la période en cours. */
+async function activateSubscription(db: Admin, pay: { id: string; subscription_id: string }) {
+  const { data: sub } = await db.from("subscriptions").select("*").eq("id", pay.subscription_id).single();
+  if (!sub) return { ok: false as const, reason: "abonnement introuvable" };
+  const now = new Date();
+  const { data: cur } = await db.from("subscriptions").select("id, ends_at").eq("artisan_id", sub.artisan_id).eq("status", "active").gt("ends_at", now.toISOString()).neq("id", sub.id).order("ends_at", { ascending: false }).limit(1).maybeSingle();
+  const start = cur ? new Date(cur.ends_at) : now;
+  const end = new Date(start); end.setUTCMonth(end.getUTCMonth() + sub.months);
+  await db.from("subscriptions").update({ status: "active", starts_at: start.toISOString(), ends_at: end.toISOString() }).eq("id", sub.id);
   await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id);
   return { ok: true as const, already: false };
 }

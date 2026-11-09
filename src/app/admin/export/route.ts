@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     head = ["Nom", "Métier", "Pays", "Statut", "Vérifié", "Type", "E-mail", "Téléphone", "WhatsApp", "Note", "Avis", "Inscrit le"];
     rows = (data ?? []).map((a: any) => [a.name, one(a.trade)?.name, a.country_code, a.status, a.verified ? "oui" : "non", a.account_type, one(a.profile)?.email, a.phone, a.whatsapp, a.avg_rating, a.review_count, a.created_at]);
   } else if (type === "paiements") {
-    const { data } = await ctx.db.from("payments").select("paid_at, created_at, amount, currency, status, provider_ref, boost:boosts(type, duration_hours, artisan:artisans(name, country_code))").order("created_at", { ascending: false }).limit(10000);
+    const { data } = await ctx.db.from("payments").select("paid_at, created_at, amount, currency, status, provider_ref, boost:boosts(type, duration_hours, artisan:artisans(name, country_code)), sub:subscriptions(months, artisan:artisans(name, country_code))").order("created_at", { ascending: false }).limit(10000);
     head = ["Date", "Statut", "Montant", "Devise", "Boost", "Durée (h)", "Artisan", "Pays", "Référence"];
-    rows = (data ?? []).map((x: any) => { const b = one(x.boost), a = one(b?.artisan); return [x.paid_at ?? x.created_at, x.status, x.amount, x.currency, b?.type, b?.duration_hours, a?.name, a?.country_code, x.provider_ref]; });
+    rows = (data ?? []).map((x: any) => { const b = one(x.boost), s = one(x.sub), a = one(b?.artisan) ?? one(s?.artisan); return [x.paid_at ?? x.created_at, x.status, x.amount, x.currency, s ? "forfait_pro" : b?.type, s ? s.months * 720 : b?.duration_hours, a?.name, a?.country_code, x.provider_ref]; });
   } else if (type === "demandes") {
     const { data } = await ctx.db.from("service_requests").select("created_at, country_code, status, urgent, client_name, client_email, description, artisan:artisans(name), trade:trades(name)").order("created_at", { ascending: false }).limit(10000);
     head = ["Date", "Pays", "Statut", "Urgent", "Client", "E-mail", "Métier", "Artisan", "Description"];

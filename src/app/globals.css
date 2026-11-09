@@ -380,3 +380,4 @@ h1 .flag{margin-inline:2px}
 .acard-hl{font-size:13.5px;font-weight:600;line-height:1.3;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:2px 0}
 .pfhl{font:600 clamp(17px,2.6vw,21px)/1.3 var(--font-display);color:var(--ink);margin:2px 0}
 .tips summary{cursor:pointer;font-size:16px}.tips ol{margin:12px 0 0;padding-left:20px;display:grid;gap:8px;line-height:1.5}
+.notice.boostnote{border-color:var(--boost);background:var(--boost-soft,#fff1e8)}

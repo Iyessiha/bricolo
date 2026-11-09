@@ -1,18 +1,8 @@
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
+import { composeHeadline, priceLabel } from "@/lib/compose";
 
 const PHONE_USED = "Ce numéro de téléphone ou WhatsApp est déjà utilisé par un autre profil.";
-const UNIT_LABEL: Record<string, string> = { intervention: "par intervention", heure: "par heure", jour: "par jour", "m²": "par m²", "mètre": "par mètre", "pièce": "par pièce" };
-/** Tarif construit à partir du montant et de l'unité choisis ; l'ancien champ libre reste accepté. */
-function priceLabel(f: FormData): string | null {
-  if (!f.has("price_unit")) return String(f.get("price_label") ?? "").trim().slice(0, 60) || null;
-  const unit = String(f.get("price_unit"));
-  if (unit === "devis") return "Sur devis gratuit";
-  const n = parseInt(String(f.get("price_amount") ?? "").replace(/\D/g, ""), 10);
-  if (!n || n < 100 || n > 10_000_000 || !UNIT_LABEL[unit]) return null;
-  return `Dès ${n} F ${UNIT_LABEL[unit]}`;
-}
-
 export type SaveResult = { ok: true; created: boolean; artisanId: string } | { ok: false; error: string };
 
 /** Enregistre (crée ou met à jour) la fiche de l'utilisateur connecté. Partagé par le tunnel d'activation et le formulaire du tableau de bord. */
@@ -39,10 +29,9 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
   };
   if (fields.account_type === "entreprise") fields.company_name = String(formData.get("company_name") ?? "").trim().slice(0, 120) || fields.name;
   if (formData.has("headline_rest")) {
-    const rest = String(formData.get("headline_rest") ?? "").trim().replace(/^je\s+vais\s+/i, "").replace(/\s+/g, " ");
-    if (rest.length < 8) return { ok: false, error: "Complétez votre promesse : « Je vais … » (8 caractères minimum)." };
-    if (rest.length > 70) return { ok: false, error: "Votre promesse est trop longue (70 caractères maximum)." };
-    fields.headline = `Je vais ${rest.charAt(0).toLowerCase()}${rest.slice(1)}`;
+    const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
+    if (!h.ok) return { ok: false, error: h.error };
+    fields.headline = h.value;
   }
   const registration = String(formData.get("registration_number") ?? "").trim().slice(0, 60);
   const zoneIds = formData.getAll("zones").map(String);

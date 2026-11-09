@@ -12,7 +12,7 @@ export default async function Revenus() {
   const { db } = await requireAdmin();
   const since = new Date(Date.now() - 90 * 864e5).toISOString();
   const [{ data: pays }, { count: giftCount }] = await Promise.all([
-    db.from("payments").select("id, amount, status, paid_at, created_at, provider_ref, boost:boosts(type, duration_hours, artisan:artisans(id, name, country_code))").gte("created_at", since).order("created_at", { ascending: false }).limit(5000),
+    db.from("payments").select("id, amount, status, paid_at, created_at, provider_ref, boost:boosts(type, duration_hours, artisan:artisans(id, name, country_code)), sub:subscriptions(months, artisan:artisans(id, name, country_code))").gte("created_at", since).order("created_at", { ascending: false }).limit(5000),
     db.from("boosts").select("id", { count: "exact", head: true }).eq("amount", 0).eq("status", "active"),
   ]);
   const P = pays ?? [], paid = P.filter((p) => p.status === "paid");
@@ -23,9 +23,11 @@ export default async function Revenus() {
   const rate = P.length ? Math.round((paid.length / P.length) * 100) : 0;
   const basket = paid.length ? Math.round(r90 / paid.length) : 0;
   const by = (f: (p: any) => string) => { const m = new Map<string, { n: number; s: number }>(); for (const p of paid) { const k = f(p); const o = m.get(k) ?? { n: 0, s: 0 }; o.n++; o.s += p.amount; m.set(k, o); } return [...m.entries()].sort((a, b) => b[1].s - a[1].s); };
-  const byType = by((p) => T[one(p.boost as any)?.type] ?? "—");
-  const byCountry = by((p) => { const c = one(one(p.boost as any)?.artisan)?.country_code; return COUNTRIES.find((x) => x.code === c)?.name ?? "—"; });
-  const top = (() => { const m = new Map<string, { name: string; s: number; n: number }>(); for (const p of paid) { const a = one(one(p.boost as any)?.artisan) as any; if (!a) continue; const o = m.get(a.id) ?? { name: a.name, s: 0, n: 0 }; o.s += p.amount; o.n++; m.set(a.id, o); } return [...m.values()].sort((a, b) => b.s - a.s).slice(0, 5); })();
+  const artOf = (p: any) => one(one(p.boost)?.artisan) ?? one(one(p.sub)?.artisan);
+  const kind = (p: any) => (p.sub ? "Forfait Pro" : T[one(p.boost)?.type] ?? "—");
+  const byType = by(kind);
+  const byCountry = by((p) => { const c = artOf(p)?.country_code; return COUNTRIES.find((x) => x.code === c)?.name ?? "—"; });
+  const top = (() => { const m = new Map<string, { name: string; s: number; n: number }>(); for (const p of paid) { const a = artOf(p) as any; if (!a) continue; const o = m.get(a.id) ?? { name: a.name, s: 0, n: 0 }; o.s += p.amount; o.n++; m.set(a.id, o); } return [...m.values()].sort((a, b) => b.s - a.s).slice(0, 5); })();
   const Mini = ({ title, data }: { title: string; data: [string, { n: number; s: number }][] }) => (
     <div className="card pad stack"><h2 style={{ fontSize: 17 }}>{title}</h2>{data.length ? <table className="tbl"><tbody>{data.map(([k, v]) => <tr key={k}><td>{k}</td><td className="num">{v.n} vente{v.n > 1 ? "s" : ""}</td><td className="num"><b>{fcfa(v.s)}</b></td></tr>)}</tbody></table> : <p className="empty">Aucune vente.</p>}</div>);
   return (
@@ -44,7 +46,7 @@ export default async function Revenus() {
         <div className="card pad stack"><h2 style={{ fontSize: 17 }}>Meilleurs clients</h2>{top.length ? <table className="tbl"><tbody>{top.map((t) => <tr key={t.name}><td>{t.name}</td><td className="num">{t.n}×</td><td className="num"><b>{fcfa(t.s)}</b></td></tr>)}</tbody></table> : <p className="empty">Aucune vente.</p>}</div></div>
       <div className="card pad stack"><h2 style={{ fontSize: 17 }}>Dernières transactions</h2>
         {P.length ? <div className="tw"><table className="tbl"><thead><tr><th>Date</th><th>Artisan</th><th>Boost</th><th>Statut</th><th className="num">Montant</th></tr></thead><tbody>
-          {P.slice(0, 30).map((p) => { const b = one(p.boost as any) as any; return <tr key={p.id}><td>{day(p.paid_at ?? p.created_at)}</td><td>{one(b?.artisan as any)?.name ?? "—"}</td><td>{T[b?.type] ?? "—"} · {b ? b.duration_hours / 24 : "?"} j</td><td><span className={`tag ${p.status === "paid" ? "ok" : p.status === "failed" ? "err" : "wait"}`}>{p.status === "paid" ? "Payé" : p.status === "failed" ? "Échoué" : "En attente"}</span></td><td className="num">{fcfa(p.amount)}</td></tr>; })}
+          {P.slice(0, 30).map((p) => { const b = one(p.boost as any) as any; return <tr key={p.id}><td>{day(p.paid_at ?? p.created_at)}</td><td>{(artOf(p) as any)?.name ?? "—"}</td><td>{p.sub ? `Forfait Pro · ${one(p.sub as any).months} mois` : `${T[b?.type] ?? "—"} · ${b ? b.duration_hours / 24 : "?"} j`}</td><td><span className={`tag ${p.status === "paid" ? "ok" : p.status === "failed" ? "err" : "wait"}`}>{p.status === "paid" ? "Payé" : p.status === "failed" ? "Échoué" : "En attente"}</span></td><td className="num">{fcfa(p.amount)}</td></tr>; })}
         </tbody></table></div> : <p className="empty">Aucune transaction pour le moment.</p>}
       </div>
     </>

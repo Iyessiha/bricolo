@@ -22,6 +22,8 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
+  const { data: isPro } = await db.rpc("artisan_is_pro", { a: id });
+  const { data: services } = await db.from("artisan_services").select("id, headline, price_label").eq("artisan_id", id).order("created_at");
   const { data: shots } = await db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", id).order("created_at");
   const { data: reviews } = await db.from("reviews").select("id, author_name, rating, comment").eq("artisan_id", id).eq("status", "published").order("created_at", { ascending: false }).limit(10);
   try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view" }); } catch { /* statistiques non bloquantes */ }
@@ -46,6 +48,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
             <div className="pfphoto">{a.photo_url ? <img src={a.photo_url} alt={`Photo de ${a.name}`} /> : <span aria-hidden="true">{initials(a.name)}</span>}</div>
             <div className="pfid">
               <div className="tags">
+                {isPro && <span className="tag boost">Pro</span>}
                 {a.verified && <span className="tag ok">✓ Identité vérifiée</span>}
                 {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
                 {a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
@@ -67,7 +70,9 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
 
           {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p className="pfabout">{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
 
-          {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><div className="gal">{shots.map((s) => <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={s.caption ?? `Réalisation de ${a.name}`} loading="lazy" /></a>)}</div></div>}
+          {services && services.length > 0 && <div className="card pad stack"><h2>Prestations</h2>{services.slice(0, isPro ? 10 : 1).map((s) => <div key={s.id} className="todo" style={{ cursor: "default" }}><b>{s.headline}</b>{priceText(s.price_label) && <span className="acard-price" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>{priceText(s.price_label)}</span>}</div>)}</div>}
+
+          {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><div className="gal">{shots.slice(0, isPro ? 20 : 8).map((s) => <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={s.caption ?? `Réalisation de ${a.name}`} loading="lazy" /></a>)}</div></div>}
 
           {zones.length > 0 && <div className="card pad stack"><h2>Zones d’intervention</h2><div className="chips">{zones.map((z) => <span className="chip" key={z.id}>📍 {z.name}</span>)}</div></div>}
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveArtisanProfile } from "@/lib/artisan-save";
+import { composeHeadline, priceLabel } from "@/lib/compose";
 import { cleanHours } from "@/lib/hours";
 
 /** Formulaire « Modifier mon profil » du tableau de bord. */
@@ -88,7 +89,7 @@ export async function addPortfolio(path: string, caption: string): Promise<{ ok:
   const { error } = await c.db.from("portfolio_photos").insert({ artisan_id: c.a.id, path, url: data.publicUrl, caption: caption.trim().slice(0, 80) || null });
   if (error) {
     await c.db.storage.from("realisations").remove([path]);
-    return { ok: false, error: /portfolio_plein/.test(error.message) ? "Vous avez atteint 8 photos. Supprimez-en une pour en ajouter." : "L’enregistrement a échoué." };
+    return { ok: false, error: /portfolio_plein/.test(error.message) ? "Limite de photos atteinte. Supprimez-en une, ou passez au Forfait Pro (20 photos)." : "L’enregistrement a échoué." };
   }
   revalidatePath("/tableau-de-bord"); return { ok: true };
 }
@@ -99,4 +100,20 @@ export async function removePortfolio(id: string): Promise<{ ok: boolean }> {
   await c.db.from("portfolio_photos").delete().eq("id", id).eq("artisan_id", c.a.id);
   await c.db.storage.from("realisations").remove([p.path]);
   revalidatePath("/tableau-de-bord"); return { ok: true };
+}
+
+const to = (kind: "ok" | "erreur", msg: string): never => redirect(`/tableau-de-bord?${kind}=${encodeURIComponent(msg)}#profil`);
+export async function addService(formData: FormData) {
+  const c = await me(); if (!c) redirect("/connexion");
+  const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
+  if (!h.ok) return to("erreur", h.error);
+  const { error } = await c.db.from("artisan_services").insert({ artisan_id: c.a.id, headline: h.value, price_label: priceLabel(formData) });
+  if (error) return to("erreur", /prestations_pleines/.test(error.message) ? "Le forfait gratuit permet 1 prestation. Passez au Forfait Pro pour en ajouter jusqu’à 10." : "La prestation n’a pas pu être ajoutée.");
+  revalidatePath("/tableau-de-bord"); return to("ok", "Prestation ajoutée.");
+}
+export async function removeService(formData: FormData) {
+  const c = await me(); if (!c) redirect("/connexion");
+  const id = String(formData.get("id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(id)) await c.db.from("artisan_services").delete().eq("id", id).eq("artisan_id", c.a.id);
+  revalidatePath("/tableau-de-bord"); return to("ok", "Prestation supprimée.");
 }

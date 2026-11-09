@@ -12,7 +12,8 @@ import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
-import { markAnswered, saveHours, saveProfile } from "./actions";
+import { addService, markAnswered, removeService, saveHours, saveProfile } from "./actions";
+import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
@@ -40,12 +41,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ]);
   // Le dossier doit être complet (profil, photo, pièce d'identité) : sinon on reprend le tunnel d'activation.
   if (!artisan || !artisan.photo_url) redirect("/activation");
-  const [{ data: ident }, { data: diplomas }, { data: company }, { data: shots }] = await Promise.all([
+  const [{ data: ident }, { data: diplomas }, { data: company }, { data: shots }, { data: services }, { data: proSub }] = await Promise.all([
     db.from("artisan_identity").select("status, reject_reason, submitted_at").eq("artisan_id", artisan.id).maybeSingle(),
     db.from("artisan_diplomas").select("id, title, status, reject_reason, submitted_at").eq("artisan_id", artisan.id).order("submitted_at", { ascending: false }),
     db.from("artisan_companies").select("registration_number").eq("artisan_id", artisan.id).maybeSingle(),
     db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", artisan.id).order("created_at"),
+    db.from("artisan_services").select("id, headline, price_label").eq("artisan_id", artisan.id).order("created_at"),
+    db.from("subscriptions").select("ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
+  const pro = !!proSub, maxServices = pro ? 10 : 1, maxPhotos = pro ? 20 : 8;
   if (!ident) redirect("/activation");
 
   const approved = artisan.status === "approved", rejected = artisan.status === "rejected", suspended = artisan.status === "suspended";
@@ -178,8 +182,16 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <li><b>Horaires et zones</b> : plus vous couvrez de zones, plus vous apparaissez dans les recherches.</li>
             <li><b>Répondez vite</b> : dans l’heure, c’est ce qui fait décrocher les chantiers.</li>
           </ol></details>
-        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Couverture et réalisations</h2><Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} /></div>
+        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Couverture et réalisations</h2><Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} /></div>
         <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil <span className="hint">(pour vous identifier)</span></h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
+        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Mes prestations <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
+          <p className="hint">Listez ce que vous proposez, chacune avec son prix de départ. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
+          {services?.map((s) => <form key={s.id} action={removeService} className="todo"><input type="hidden" name="id" value={s.id} /><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}</span><button className="btn small ghost" style={{ marginLeft: "auto" }} type="submit">Supprimer</button></form>)}
+          {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/forfait">Découvrir le Forfait Pro</Link></div>}
+          {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
+            <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" />
+            <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
+        </div>
         <form action={saveProfile} className="card pad stack">
           <h2 style={{ fontSize: 20 }}>Mon profil</h2>
           <h3 className="fh">Votre activité</h3>

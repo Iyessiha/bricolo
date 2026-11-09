@@ -6,10 +6,9 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import { addPortfolio, removeCover, removePortfolio, saveCover } from "@/app/tableau-de-bord/actions";
 
 export type Shot = { id: string; url: string; caption: string | null };
-const MAX = 8;
 
 /** Couverture en paysage + photos de réalisations. Les images sont réduites sur le téléphone avant l'envoi. */
-export default function Gallery({ uid, cover, shots }: { uid: string; cover: string | null; shots: Shot[] }) {
+export default function Gallery({ uid, cover, shots, max = 8, pro = false }: { uid: string; cover: string | null; shots: Shot[]; max?: number; pro?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
@@ -29,8 +28,8 @@ export default function Gallery({ uid, cover, shots }: { uid: string; cover: str
   }
   const onCover = (f?: File) => f && run(async () => { await checkLandscape(f); const r = await saveCover(await up(f, 1600, 900_000)); if (!r.ok) throw new Error(r.error); return "Couverture mise à jour."; });
   const onShots = (files: FileList | null) => files && run(async () => {
-    const list = [...files].slice(0, MAX - shots.length);
-    if (!list.length) throw new Error("Vous avez atteint 8 photos. Supprimez-en une pour en ajouter.");
+    const list = [...files].slice(0, max - shots.length);
+    if (!list.length) throw new Error("Limite de photos atteinte. Supprimez-en une, ou passez au Forfait Pro (20 photos).");
     for (const f of list) { const r = await addPortfolio(await up(f, 1400, 700_000), ""); if (!r.ok) throw new Error(r.error); }
     return list.length > 1 ? `${list.length} photos ajoutées.` : "Photo ajoutée.";
   });
@@ -46,13 +45,14 @@ export default function Gallery({ uid, cover, shots }: { uid: string; cover: str
           {cover && <button type="button" className="btn small ghost" disabled={busy} onClick={() => run(async () => { await removeCover(); return "Couverture retirée."; })}>Retirer</button>}</div>
       </div>
       <div className="stack" style={{ gap: 8 }}>
-        <h3 className="fh">Mes réalisations <span className="hint">({shots.length}/{MAX})</span></h3>
+        <h3 className="fh">Mes réalisations <span className="hint">({shots.length}/{max})</span></h3>
         <p className="hint">Montrez vos chantiers terminés : les clients appellent plus facilement quand ils voient le résultat. Évitez les photos de personnes ou de documents.</p>
         {shots.length > 0 && <div className="shotgrid">{shots.map((s) => (
           <figure key={s.id}><img src={s.url} alt={s.caption ?? "Réalisation"} loading="lazy" />
             <button type="button" aria-label="Supprimer cette photo" disabled={busy} onClick={() => run(async () => { await removePortfolio(s.id); return "Photo supprimée."; })}>×</button></figure>))}</div>}
         <input ref={shotRef} type="file" accept="image/*" multiple hidden onChange={(e) => { onShots(e.target.files); e.target.value = ""; }} />
-        <div><button type="button" className="btn small" disabled={busy || shots.length >= MAX} onClick={() => shotRef.current?.click()}>{busy ? "Envoi…" : "＋ Ajouter des photos"}</button></div>
+        {!pro && shots.length >= max && <p className="hint"><a href="/forfait">Passez Pro</a> pour montrer jusqu’à 20 photos.</p>}
+        <div><button type="button" className="btn small" disabled={busy || shots.length >= max} onClick={() => shotRef.current?.click()}>{busy ? "Envoi…" : "＋ Ajouter des photos"}</button></div>
       </div>
       {msg && <p className={`notice ${msg.ok ? "ok" : "err"}`} role="status">{msg.t}</p>}
     </div>

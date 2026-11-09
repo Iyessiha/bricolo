@@ -30,7 +30,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     db.from("artisans").select("id, country_code, status, created_at, photo_url").limit(10000),
     cnt(db.from("profiles").select("id", { count: "exact", head: true }).eq("role", "artisan")),
     db.from("artisan_identity").select("artisan_id, status, submitted_at, artisan:artisans(name)").eq("status", "pending").order("submitted_at"),
-    db.from("payments").select("amount, paid_at, boost:boosts(type, artisan:artisans(country_code))").eq("status", "paid").gte("paid_at", d60).limit(10000),
+    db.from("payments").select("amount, paid_at, boost:boosts(type, artisan:artisans(country_code)), sub:subscriptions(artisan:artisans(country_code))").eq("status", "paid").gte("paid_at", d60).limit(10000),
     db.from("service_requests").select("id, country_code, status, urgent, created_at").gte("created_at", d60).limit(10000),
     db.from("events").select("created_at").eq("type", "view").gte("created_at", d30).limit(20000),
     cnt(db.from("boosts").select("id", { count: "exact", head: true }).eq("status", "active").gt("ends_at", nowIso)),
@@ -61,7 +61,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     c, online: A.filter((a) => a.country_code === c.code && a.status === "approved").length,
     pending: A.filter((a) => a.country_code === c.code && a.status === "pending").length,
     req: R.filter((r) => r.country_code === c.code && inRange(r.created_at, 0, 30)).length,
-    rev: P.filter((p) => one(one(p.boost as any)?.artisan as any)?.country_code === c.code && inRange(p.paid_at!, 0, 30)).reduce((s, p) => s + p.amount, 0),
+    rev: P.filter((p) => (one(one(p.boost as any)?.artisan as any) ?? one(one(p.sub as any)?.artisan as any))?.country_code === c.code && inRange(p.paid_at!, 0, 30)).reduce((s, p) => s + p.amount, 0),
   }));
 
   const todo = [

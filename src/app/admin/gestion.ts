@@ -91,6 +91,7 @@ export async function savePrices(f: FormData) {
   let n = 0;
   for (const [key, value] of f.entries()) {
     if (key.startsWith("p:")) { await ctx.db.from("price_grid").update({ amount: Math.max(0, parseInt(String(value), 10) || 0) }).eq("id", key.slice(2)); n++; }
+    else if (key.startsWith("plan:")) { await ctx.db.from("plan_prices").update({ amount: Math.max(0, parseInt(String(value), 10) || 0) }).eq("country_code", key.slice(5)); n++; }
     else if (key.startsWith("z:")) { const v = Math.min(9.99, Math.max(0.1, parseFloat(String(value).replace(",", ".")) || 1)); await ctx.db.from("zones").update({ price_factor: v }).eq("id", key.slice(2)); n++; }
   }
   await audit(ctx, "prix.modifier", undefined, { lignes: n });

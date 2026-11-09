@@ -10,7 +10,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const isMock = () => (process.env.GENIUSPAY_MODE ?? "mock") !== "live";
 
 export async function createCheckout(o: { reference: string; amount: number; currency: string; description: string; returnUrl: string; webhookUrl: string; customerEmail: string }) {
-  if (isMock()) return { checkoutUrl: `${o.returnUrl.split("/boosts")[0]}/api/dev/confirm?ref=${encodeURIComponent(o.reference)}` };
+  if (isMock()) return { checkoutUrl: `${new URL(o.returnUrl).origin}/api/dev/confirm?ref=${encodeURIComponent(o.reference)}` };
   const res = await fetch(`${process.env.GENIUSPAY_API_URL}/payments`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${process.env.GENIUSPAY_API_KEY}` },

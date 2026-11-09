@@ -9,9 +9,9 @@ import { siteUrl } from "@/lib/env";
 export async function GET(req: NextRequest) {
   if (!isMock()) return new NextResponse("Indisponible", { status: 404 });
   const ref = req.nextUrl.searchParams.get("ref") ?? "";
-  const { data: p } = await supabaseAdmin().from("payments").select("amount").eq("provider_ref", ref).maybeSingle();
+  const { data: p } = await supabaseAdmin().from("payments").select("amount, subscription_id").eq("provider_ref", ref).maybeSingle();
   if (!p) return new NextResponse("Paiement inconnu", { status: 404 });
   const res = await activateFromPayment(ref, p.amount);
-  if (res.ok && !res.already) after(() => notifyBoostPaid(ref));
-  return NextResponse.redirect(new URL("/boosts?paye=1", siteUrl()), 303);
+  if (res.ok && !res.already) if (!p.subscription_id) after(() => notifyBoostPaid(ref));
+  return NextResponse.redirect(new URL(p.subscription_id ? "/forfait?paye=1" : "/boosts?paye=1", siteUrl()), 303);
 }

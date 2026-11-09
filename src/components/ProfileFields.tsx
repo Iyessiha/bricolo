@@ -14,14 +14,14 @@ export function parsePrice(raw?: string | null): { amount: string; unit: string 
 }
 
 /** Tarif en deux champs : « à partir de » + unité. Le client comprend tout de suite ce que le prix recouvre. */
-export function PriceField({ value }: { value?: string | null }) {
+export function PriceField({ value, uid = "pr" }: { value?: string | null; uid?: string }) {
   const init = parsePrice(value);
   const [unit, setUnit] = useState(init.unit);
   const [amount, setAmount] = useState(init.amount);
   const n = parseInt(amount, 10);
   return (
-    <div className="fld"><span className="lbl" id="pr-l">Tarif indicatif <span className="hint">(facultatif)</span></span>
-      <div className="row" style={{ flexWrap: "nowrap", gap: 8 }} role="group" aria-labelledby="pr-l">
+    <div className="fld"><span className="lbl" id={`${uid}-l`}>Tarif indicatif <span className="hint">(facultatif)</span></span>
+      <div className="row" style={{ flexWrap: "nowrap", gap: 8 }} role="group" aria-labelledby={`${uid}-l`}>
         {unit !== "devis" && <><span style={{ alignSelf: "center", whiteSpace: "nowrap" }}>À partir de</span>
           <input name="price_amount" inputMode="numeric" pattern="[0-9 ]*" placeholder="5000" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, "").slice(0, 8))} aria-label="Montant en FCFA" style={{ minWidth: 0, flex: "1 1 90px" }} />
           <span style={{ alignSelf: "center" }}>FCFA</span></>}
@@ -33,12 +33,12 @@ export function PriceField({ value }: { value?: string | null }) {
 }
 
 /** Accroche : toujours une promesse qui commence par « Je vais ». */
-export function HeadlineField({ value }: { value?: string | null }) {
+export function HeadlineField({ value, uid = "headline_rest", label = "Votre promesse en une phrase" }: { value?: string | null; uid?: string; label?: string }) {
   const [v, setV] = useState((value ?? "").replace(/^je vais\s+/i, ""));
   return (
-    <div className="fld"><label htmlFor="headline_rest">Votre promesse en une phrase</label>
+    <div className="fld"><label htmlFor={uid}>{label}</label>
       <div className="hl"><span aria-hidden="true">Je vais</span>
-        <input id="headline_rest" name="headline_rest" value={v} maxLength={70} required minLength={8} placeholder="réparer votre climatisation" onChange={(e) => setV(e.target.value)} /></div>
+        <input id={uid} name="headline_rest" value={v} maxLength={70} required minLength={8} placeholder="réparer votre climatisation" onChange={(e) => setV(e.target.value)} /></div>
       <span className="hint">Ce que vous faites pour le client, simplement. Exemples : « installer votre climatisation », « construire votre portail métallique », « dépanner votre prise en urgence ». {v.length}/70</span></div>
   );
 }

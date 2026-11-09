@@ -51,7 +51,7 @@ export const notifyServiceRequest = (requestId: string) => safe(async () => {
 export const notifyBoostPaid = (providerRef: string) => safe(async () => {
   const db = supabaseAdmin();
   const { data: pay } = await db.from("payments").select("boost_id, amount, status").eq("provider_ref", providerRef).maybeSingle();
-  if (!pay || pay.status !== "paid") return;
+  if (!pay || pay.status !== "paid" || !pay.boost_id) return;
   const { data: b } = await db.from("boosts").select("*, zone:zones(name)").eq("id", pay.boost_id).maybeSingle();
   if (!b) return;
   const c = await contactOf(b.artisan_id); if (!c) return;
