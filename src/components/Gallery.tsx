@@ -39,7 +39,7 @@ export default function Gallery({ uid, cover, shots, max = 8, pro = false }: { u
       <div className="stack" style={{ gap: 8 }}>
         <h3 className="fh">Photo de couverture</h3>
         <div className="covprev">{cover ? <img src={cover} alt="Votre couverture" /> : <span>Aucune couverture : c’est la première chose que voient les clients. Choisissez une belle photo de votre travail, en format paysage (horizontale).</span>}</div>
-        <p className="hint">Format paysage obligatoire : idéalement <b>1600 × 600 px</b> (sur Canva : « dimensions personnalisées »). Largeur minimum 1200 px, rapport largeur/hauteur entre 1,6 et 3,2. Les images au mauvais format sont refusées automatiquement. Photo nette, en pleine lumière, sans texte ni logo.</p>
+        <p className="hint">Format paysage obligatoire : idéalement <b>1600 × 600 px</b> (sur Canva : « dimensions personnalisées »). Largeur minimum 1200 px, rapport largeur/hauteur entre 1,6 et 3,2. Les images au mauvais format sont refusées automatiquement. Le texte est autorisé (nom, métier, téléphone) : placez-le au centre, car les bords sont recadrés sur les cartes de résultats. Photo nette et lumineuse.</p>
         <input ref={coverRef} type="file" accept="image/*" hidden onChange={(e) => { onCover(e.target.files?.[0]); e.target.value = ""; }} />
         <div className="row"><button type="button" className="btn small primary" disabled={busy} onClick={() => coverRef.current?.click()}>{cover ? "Changer la couverture" : "Ajouter une couverture"}</button>
           {cover && <button type="button" className="btn small ghost" disabled={busy} onClick={() => run(async () => { await removeCover(); return "Couverture retirée."; })}>Retirer</button>}</div>

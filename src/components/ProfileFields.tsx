@@ -14,13 +14,13 @@ export function parsePrice(raw?: string | null): { amount: string; unit: string 
 }
 
 /** Tarif en deux champs : « à partir de » + unité. Le client comprend tout de suite ce que le prix recouvre. */
-export function PriceField({ value, uid = "pr" }: { value?: string | null; uid?: string }) {
+export function PriceField({ value, uid = "pr", label = "Tarif indicatif" }: { value?: string | null; uid?: string; label?: string }) {
   const init = parsePrice(value);
   const [unit, setUnit] = useState(init.unit);
   const [amount, setAmount] = useState(init.amount);
   const n = parseInt(amount, 10);
   return (
-    <div className="fld"><span className="lbl" id={`${uid}-l`}>Tarif indicatif <span className="hint">(facultatif)</span></span>
+    <div className="fld"><span className="lbl" id={`${uid}-l`}>{label} <span className="hint">(facultatif)</span></span>
       <div className="row" style={{ flexWrap: "nowrap", gap: 8 }} role="group" aria-labelledby={`${uid}-l`}>
         {unit !== "devis" && <><span style={{ alignSelf: "center", whiteSpace: "nowrap" }}>À partir de</span>
           <input name="price_amount" inputMode="numeric" pattern="[0-9 ]*" placeholder="5000" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, "").slice(0, 8))} aria-label="Montant en FCFA" style={{ minWidth: 0, flex: "1 1 90px" }} />

@@ -10,6 +10,7 @@ import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
+import ZonePicker from "@/components/ZonePicker";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
 import { addService, markAnswered, removeService, saveHours, saveProfile } from "./actions";
@@ -172,29 +173,31 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
-        <details className="card pad tips"><summary><b>💡 Comment réussir ma fiche ?</b></summary>
-          <ol>
-            <li><b>Couverture en paysage</b> : une belle photo horizontale de votre travail, nette, en pleine lumière, sans texte.</li>
-            <li><b>3 à 8 réalisations</b> : avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.</li>
-            <li><b>Une promesse « Je vais… »</b> : « Je vais installer votre climatisation ».</li>
-            <li><b>Une description concrète</b> : ce que vous faites, votre expérience, vos garanties.</li>
-            <li><b>Un tarif de départ</b> : « À partir de … FCFA » avec l’unité. Le prix final se discute avec le client.</li>
-            <li><b>Horaires et zones</b> : plus vous couvrez de zones, plus vous apparaissez dans les recherches.</li>
-            <li><b>Répondez vite</b> : dans l’heure, c’est ce qui fait décrocher les chantiers.</li>
-          </ol></details>
-        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Couverture et réalisations</h2><Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} /></div>
-        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photo de profil <span className="hint">(pour vous identifier)</span></h2><PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
-        <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Mes prestations <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
+        <div className="card pad stack psec"><h2>Mon forfait {pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</h2>
+          <p className="sub">{pro && proSub ? `Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : "Voici ce que votre forfait gratuit permet. Passez Pro pour en faire plus."}</p>
+          <div className="limits">
+            <div className={`lim${(services?.length ?? 0) >= maxServices ? " full" : ""}`}><b><span>Prestations</span><span>{services?.length ?? 0} / {maxServices}</span></b><div className="bar"><i style={{ width: `${Math.min(100, ((services?.length ?? 0) / maxServices) * 100)}%` }} /></div></div>
+            <div className={`lim${(shots?.length ?? 0) >= maxPhotos ? " full" : ""}`}><b><span>Photos de réalisations</span><span>{shots?.length ?? 0} / {maxPhotos}</span></b><div className="bar"><i style={{ width: `${Math.min(100, ((shots?.length ?? 0) / maxPhotos) * 100)}%` }} /></div></div>
+            <div className="lim"><b><span>Couverture</span><span>{(artisan as any).cover_url ? "✓ ajoutée" : "à ajouter"}</span></b><small>Format paysage 1600 × 600 px</small></div>
+            <div className="lim"><b><span>Badge Pro</span><span>{pro ? "✓ actif" : "—"}</span></b><small>Affiché sur votre fiche et vos cartes</small></div>
+          </div>
+          {!pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait Pro :</b> jusqu’à 10 prestations, 20 photos et le badge Pro.</span><Link className="btn small boost" href="/forfait">Découvrir le Forfait Pro</Link></div>}
+        </div>
+        <div className="card pad stack psec"><h2>Photos</h2>
+          <p className="sub">C’est la première chose que voient les clients : soignez-les.</p>
+          <Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} />
+          <h3 className="fh">Photo de profil <span className="hint">(pour vous identifier)</span></h3>
+          <PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
+        <div className="card pad stack psec"><h2>Mes prestations <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
           <p className="hint">Listez ce que vous proposez, chacune avec son prix de départ. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
           {services?.map((s) => <form key={s.id} action={removeService} className="todo"><input type="hidden" name="id" value={s.id} /><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}</span><button className="btn small ghost" style={{ marginLeft: "auto" }} type="submit">Supprimer</button></form>)}
           {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/forfait">Découvrir le Forfait Pro</Link></div>}
           {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
-            <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" />
+            <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de cette prestation" />
             <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
         </div>
-        <form action={saveProfile} className="card pad stack">
-          <h2 style={{ fontSize: 20 }}>Mon profil</h2>
-          <h3 className="fh">Votre activité</h3>
+        <form action={saveProfile} className="stack">
+          <div className="card pad stack psec"><h2>Mon activité</h2>
           <div className="fld"><span className="lbl" id="statut-l">Vous exercez</span>
             <div className="chips" role="radiogroup" aria-labelledby="statut-l">
               <label className="chip"><input type="radio" name="account_type" value="individuel" defaultChecked={artisan.account_type === "individuel"} />À titre individuel</label>
@@ -206,18 +209,32 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><label htmlFor="trade_id">Métier principal</label>
             <select id="trade_id" name="trade_id" required defaultValue={artisan.trade_id}>{trades?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
           <div className="fld"><label htmlFor="experience_years">Années d’expérience</label><input type="number" inputMode="numeric" min={0} max={60} id="experience_years" name="experience_years" required defaultValue={artisan.experience_years ?? ""} /></div>
-          <h3 className="fh">Où intervenez-vous ?</h3>
-          <div className="fld"><span className="lbl">Zones couvertes ({countryName(country)})</span>
-            <div className="chips">{zones?.map((z) => (<label className="chip" key={z.id}><input type="checkbox" name="zones" value={z.id} defaultChecked={myZones.has(z.id)} />{z.name}</label>))}</div></div>
-          <h3 className="fh">Tarif et contact</h3>
-          <PriceField value={artisan.price_label} />
+          </div>
+          <div className="card pad stack psec"><h2>Ma présentation</h2>
+            <p className="sub">Une promesse claire et une description concrète donnent envie d’appeler.</p>
+          <HeadlineField value={(artisan as any).headline} label="Ma promesse principale (affichée sur votre carte)" />
+          <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
+          </div>
+          <div className="card pad stack psec"><h2>Où j’interviens</h2>
+            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} />
+          </div>
+          <div className="card pad stack psec"><h2>Prix et contact</h2>
+          <PriceField value={artisan.price_label} label="Prix affiché sur votre carte" />
           <div className="fld"><label htmlFor="phone">Téléphone</label><input type="tel" id="phone" name="phone" required defaultValue={artisan.phone ?? ""} /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp (si différent)</label><input type="tel" id="whatsapp" name="whatsapp" defaultValue={artisan.whatsapp ?? ""} /></div>
-          <h3 className="fh">Présentation</h3>
-          <HeadlineField value={(artisan as any).headline} />
-          <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
-          <button className="btn primary" type="submit">Enregistrer</button>
+          </div>
+          <div className="savebar"><span className="meta">Pensez à enregistrer vos modifications.</span><button className="btn primary" type="submit">Enregistrer mes modifications</button></div>
         </form>
+        <details className="card pad tips"><summary><b>💡 Comment réussir ma fiche ?</b></summary>
+          <ol>
+            <li><b>Couverture en paysage</b> : une belle image horizontale (1600 × 600 px), avec votre activité et votre nom. Gardez le texte et les éléments importants au centre : les bords sont recadrés sur les cartes.</li>
+            <li><b>3 à 8 réalisations</b> : avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.</li>
+            <li><b>Une promesse « Je vais… »</b> : « Je vais installer votre climatisation ».</li>
+            <li><b>Une description concrète</b> : ce que vous faites, votre expérience, vos garanties.</li>
+            <li><b>Un tarif de départ</b> : « À partir de … FCFA » avec l’unité. Le prix final se discute avec le client.</li>
+            <li><b>Horaires et zones</b> : plus vous couvrez de zones, plus vous apparaissez dans les recherches.</li>
+            <li><b>Répondez vite</b> : dans l’heure, c’est ce qui fait décrocher les chantiers.</li>
+          </ol></details>
       <div className="card pad stack">
         <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
