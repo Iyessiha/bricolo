@@ -623,3 +623,5 @@ html{scroll-padding-top:72px}
 .seo-links{display:flex;flex-wrap:wrap;gap:8px}
 .seo-links a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface-raised);text-decoration:none;font-weight:600;font-size:14px}
 .crumbs{font-size:13px;color:var(--ink-muted)}.crumbs a{color:inherit}
+
+.install{margin-top:6px;display:grid;gap:6px}.install .btn{justify-content:flex-start}

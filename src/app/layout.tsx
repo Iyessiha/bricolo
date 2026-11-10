@@ -27,6 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: { type: "website", siteName: "Bricolo", locale: "fr_FR" },
     twitter: { card: "summary_large_image" },
     robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
+    appleWebApp: { capable: true, title: "Bricolo", statusBarStyle: "default" },
     formatDetection: { telephone: false, email: false, address: false },
     verification: { google: s.google_verification, other: { ...(s.bing_verification ? { "msvalidate.01": s.bing_verification } : {}), ...(s.meta_domain_verification ? { "facebook-domain-verification": s.meta_domain_verification } : {}) } },
   };

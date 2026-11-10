@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { COMPANY, LEGAL_LINKS } from "@/lib/company";
 import { COUNTRIES } from "@/lib/countries";
+import InstallApp from "@/components/InstallApp";
 
 export default function Footer() {
   return (
@@ -16,6 +17,7 @@ export default function Footer() {
           <Link href="/inscription">Devenir artisan</Link>
           <Link href="/connexion">Connexion</Link>
           <Link href="/bientot">Bientôt : Cameroun, Tchad, Gabon</Link>
+          <InstallApp />
         </nav>
         <nav aria-label="Artisans par pays" className="footcol">
           <b>Artisans par pays</b>
