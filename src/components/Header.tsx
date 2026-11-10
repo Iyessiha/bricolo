@@ -6,6 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { setCountry } from "@/app/actions";
 import CountrySelect from "./CountrySelect";
 import NavMenu from "./NavMenu";
+import { MARK_D, MARK_VIEWBOX } from "@/lib/logo";
 
 export default async function Header() {
   const country = await getCountry();
@@ -18,7 +19,7 @@ export default async function Header() {
       <header className="top">
         <div className="inner topin">
           <Link className="brand" href="/" aria-label="Bricolo, accueil">
-            <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h6v11h10v7H4z" fill="currentColor" /></svg>
+            <svg width="28" height="28" viewBox={MARK_VIEWBOX} aria-hidden="true"><path d={MARK_D} fill="currentColor" /></svg>
             Bricolo
           </Link>
           <div className="topact">
