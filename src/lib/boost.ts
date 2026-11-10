@@ -34,11 +34,16 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
   if (pay.status === "paid") return { ok: true as const, already: true };
   if (paidAmount < pay.amount) return { ok: false as const, reason: "montant insuffisant" };
 
-  if (pay.subscription_id) return activateSubscription(db, pay);
-  const { data: boost } = await db.from("boosts").select("*").eq("id", pay.boost_id).single();
-  if (!boost) return { ok: false as const, reason: "boost introuvable" };
-
+  // Verrou : un seul des envois simultanés du même webhook passe (les autres voient « déjà payé »).
   const now = new Date();
+  const { data: claimed } = await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id).neq("status", "paid").select("id");
+  if (!claimed?.length) return { ok: true as const, already: true };
+  const release = async () => { await db.from("payments").update({ status: "pending", paid_at: null }).eq("id", pay.id); };
+
+  if (pay.subscription_id) { const r = await activateSubscription(db, pay); if (!r.ok) await release(); return r; }
+  const { data: boost } = await db.from("boosts").select("*").eq("id", pay.boost_id).single();
+  if (!boost) { await release(); return { ok: false as const, reason: "boost introuvable" }; }
+
   const ms = boost.duration_hours * 36e5;
   let q = db.from("boosts").select("id, ends_at").eq("artisan_id", boost.artisan_id).eq("type", boost.type)
     .eq("status", "active").gt("ends_at", now.toISOString()).neq("id", boost.id);
@@ -51,7 +56,6 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
   } else {
     await db.from("boosts").update({ status: "active", starts_at: now.toISOString(), ends_at: new Date(now.getTime() + ms).toISOString() }).eq("id", boost.id);
   }
-  await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id);
   return { ok: true as const, already: false };
 }
 
@@ -70,6 +74,5 @@ async function activateSubscription(db: Admin, pay: { id: string; subscription_i
   const start = cur ? new Date(cur.ends_at) : now;
   const end = new Date(start); end.setUTCDate(end.getUTCDate() + sub.days);
   await db.from("subscriptions").update({ status: "active", starts_at: start.toISOString(), ends_at: end.toISOString() }).eq("id", sub.id);
-  await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id);
   return { ok: true as const, already: false };
 }
