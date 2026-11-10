@@ -7,6 +7,7 @@ import Trackers from "@/components/Trackers";
 import { getSettings } from "@/lib/site-settings";
 import { siteUrl } from "@/lib/env";
 import { jsonLd, DEFAULT_TITLE, DEFAULT_DESC } from "@/lib/seo";
+import { parseSnippet, type CustomItem } from "@/lib/custom-pixels";
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#27489a" }, { media: "(prefers-color-scheme: dark)", color: "#0e1525" }] };
 
@@ -34,6 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const s = await getSettings();
   const base = siteUrl();
+  const custom: CustomItem[] = (["custom_pixel_1", "custom_pixel_2", "custom_pixel_3"] as const).flatMap((k) => { const p = s[k] ? parseSnippet(s[k]!) : null; return p?.ok ? p.items : []; });
   const site = [
     { "@context": "https://schema.org", "@type": "Organization", "@id": `${base}/#organisation`, name: "Bricolo", legalName: COMPANY.name, url: base, logo: `${base}/icon`, email: COMPANY.email, areaServed: ["CI", "SN", "BF", "ML", "NE", "BJ", "TG"] },
     { "@context": "https://schema.org", "@type": "WebSite", "@id": `${base}/#site`, name: "Bricolo", url: base, inLanguage: "fr", publisher: { "@id": `${base}/#organisation` }, potentialAction: { "@type": "SearchAction", target: `${base}/resultats?metier={search_term_string}`, "query-input": "required name=search_term_string" } },
@@ -52,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Header />
         <main>{children}</main>
         <Footer />
-        <Trackers ga4={s.ga4_id} meta={s.meta_pixel_id} tiktok={s.tiktok_pixel_id} />
+        <Trackers ga4={s.ga4_id} ads={s.google_ads_id} gtm={s.gtm_id} meta={s.meta_pixel_id} tiktok={s.tiktok_pixel_id} custom={custom} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(site) }} />
       </body>
     </html>

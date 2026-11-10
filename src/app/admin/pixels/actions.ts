@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { audit, requireAdmin } from "@/lib/admin";
 import { SETTINGS, type SettingKey } from "@/lib/site-settings";
+import { parseSnippet } from "@/lib/custom-pixels";
 
 const back = (kind: "ok" | "erreur", msg: string): never => redirect(`/admin/pixels?${kind}=${encodeURIComponent(msg)}`);
 
@@ -16,8 +17,11 @@ export async function saveSettings(f: FormData) {
     const v = String(f.get(k) ?? "").trim();
     if (!v) { clear.push(k); continue; }
     if (!SETTINGS[k].re.test(v)) back("erreur", `« ${SETTINGS[k].label} » : format invalide. ${SETTINGS[k].hint}`);
+    if (k.startsWith("custom_pixel_")) { const p = parseSnippet(v); if (!p.ok) back("erreur", `« ${SETTINGS[k].label} » : ${p.error}`); }
     rows.push({ key: k, value: v });
   }
+  // Un pixel sans code n'a pas de nom à garder.
+  for (const n of ["1", "2", "3"]) if (clear.includes(`custom_pixel_${n}`) && !clear.includes(`custom_name_${n}`)) { clear.push(`custom_name_${n}`); const i = rows.findIndex((r) => r.key === `custom_name_${n}`); if (i >= 0) rows.splice(i, 1); }
   if (rows.length) {
     const { error } = await ctx.db.from("site_settings").upsert(rows.map((r) => ({ ...r, updated_at: new Date().toISOString() })), { onConflict: "key" });
     if (error) back("erreur", "L’enregistrement a échoué. Réessayez dans un instant.");

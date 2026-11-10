@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Ids = { ga4?: string; meta?: string; tiktok?: string };
+type Item = { src?: string; code?: string };
+type Ids = { ga4?: string; ads?: string; gtm?: string; meta?: string; tiktok?: string; custom?: Item[] };
 const KEY = "bricolo_consent";
 declare global { interface Window { dataLayer: any[]; gtag: (...a: any[]) => void; fbq: any; _fbq: any; ttq: any; TiktokAnalyticsObject: string } }
 
@@ -12,12 +13,17 @@ const write = (v: string) => { try { localStorage.setItem(KEY, v); } catch { /* 
 const add = (src: string) => { const s = document.createElement("script"); s.async = true; s.src = src; document.head.appendChild(s); };
 
 function load(ids: Ids) {
-  if (ids.ga4) {
-    window.dataLayer = window.dataLayer || [];
+  window.dataLayer = window.dataLayer || [];
+  if (ids.gtm) {
+    window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+    add(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(ids.gtm)}`);
+  }
+  if (ids.ga4 || ids.ads) {
     window.gtag = function () { window.dataLayer.push(arguments); };
     window.gtag("js", new Date());
-    window.gtag("config", ids.ga4, { send_page_view: false });
-    add(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ids.ga4)}`);
+    if (ids.ga4) window.gtag("config", ids.ga4, { send_page_view: false });
+    if (ids.ads) window.gtag("config", ids.ads);
+    add(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent((ids.ga4 || ids.ads)!)}`);
   }
   if (ids.meta) {
     const n: any = (window.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); });
@@ -25,6 +31,12 @@ function load(ids: Ids) {
     n.push = n; n.loaded = true; n.version = "2.0"; n.queue = [];
     add("https://connect.facebook.net/en_US/fbevents.js");
     window.fbq("init", ids.meta);
+  }
+  for (const it of ids.custom ?? []) {
+    const el = document.createElement("script");
+    if (it.src) { el.src = it.src; el.async = true; }
+    if (it.code) el.text = it.code;
+    document.head.appendChild(el);
   }
   if (ids.tiktok) {
     window.TiktokAnalyticsObject = "ttq";
@@ -42,14 +54,15 @@ function load(ids: Ids) {
 }
 
 function pageview(ids: Ids, path: string) {
-  if (ids.ga4) window.gtag?.("event", "page_view", { page_path: path, page_location: location.href, page_title: document.title });
+  if (ids.gtm) window.dataLayer?.push({ event: "virtual_page_view", page_path: path, page_location: location.href, page_title: document.title });
+  if (ids.ga4 || ids.ads) window.gtag?.("event", "page_view", { page_path: path, page_location: location.href, page_title: document.title });
   if (ids.meta) window.fbq?.("track", "PageView");
   if (ids.tiktok) window.ttq?.page?.();
 }
 
 /** Mesure d'audience et pixels publicitaires : rien n'est chargé tant que le visiteur n'a pas dit oui. Sans aucun identifiant configuré, ce composant n'affiche rien. */
 export default function Trackers(ids: Ids) {
-  const any = Boolean(ids.ga4 || ids.meta || ids.tiktok);
+  const any = Boolean(ids.ga4 || ids.ads || ids.gtm || ids.meta || ids.tiktok || ids.custom?.length);
   const [choice, setChoice] = useState<string | null | undefined>(undefined);
   const path = usePathname();
   const started = useRef(false);
@@ -72,7 +85,8 @@ export default function Trackers(ids: Ids) {
       const href = a?.getAttribute("href") ?? "";
       if (!/^tel:|wa\.me|whatsapp/i.test(href)) return;
       const i = idsRef.current;
-      if (i.ga4) window.gtag?.("event", "generate_lead", { method: href.startsWith("tel:") ? "appel" : "whatsapp" });
+      if (i.gtm) window.dataLayer?.push({ event: "generate_lead", method: href.startsWith("tel:") ? "appel" : "whatsapp" });
+      if (i.ga4 || i.ads) window.gtag?.("event", "generate_lead", { method: href.startsWith("tel:") ? "appel" : "whatsapp" });
       if (i.meta) window.fbq?.("track", "Contact");
       if (i.tiktok) window.ttq?.track?.("Contact");
     };

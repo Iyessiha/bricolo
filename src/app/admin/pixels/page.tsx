@@ -8,7 +8,8 @@ export const metadata: Metadata = { title: "Pixels et référencement", robots: 
 export const dynamic = "force-dynamic";
 
 const GROUPS: { title: string; intro: string; keys: SettingKey[] }[] = [
-  { title: "Mesure et publicité", intro: "Ces outils ne se chargent que si le visiteur clique sur « Accepter » dans le bandeau cookies. Laissez un champ vide pour désactiver l’outil.", keys: ["ga4_id", "meta_pixel_id", "tiktok_pixel_id"] },
+  { title: "Mesure et publicité", intro: "Ces outils ne se chargent que si le visiteur clique sur « Accepter » dans le bandeau cookies. Laissez un champ vide pour désactiver l’outil.", keys: ["gtm_id", "google_ads_id", "ga4_id", "meta_pixel_id", "tiktok_pixel_id"] },
+  { title: "Pixels personnalisés", intro: "Pour tout autre outil (Hotjar, Snap, Pinterest, LinkedIn, X…). Collez le code fourni, balises <script> comprises. Seules les balises <script> en https sont acceptées ; le domaine du script est autorisé automatiquement. Le code ne se charge qu’après l’accord du visiteur.", keys: ["custom_name_1", "custom_pixel_1", "custom_name_2", "custom_pixel_2", "custom_name_3", "custom_pixel_3"] },
   { title: "Vérification du site", intro: "Pour prouver à Google, Bing et Meta que le site est à vous. Collez uniquement le code demandé.", keys: ["google_verification", "bing_verification", "meta_domain_verification"] },
   { title: "Titre et description de l’accueil", intro: "Ce que Google affiche pour la page d’accueil. Laissez vide pour garder le texte par défaut.", keys: ["home_title", "home_description"] },
 ];
@@ -29,8 +30,8 @@ export default async function Pixels({ searchParams }: { searchParams: Promise<R
       <div className="card pad stack">
         <h2 style={{ fontSize: 18 }}>État</h2>
         <div className="tags">
-          {(["ga4_id", "meta_pixel_id", "tiktok_pixel_id", "google_verification", "bing_verification"] as SettingKey[]).map((k) => (
-            <span key={k} className={`tag ${on(k) ? "ok" : "mute"}`}>{on(k) ? "✓" : "○"} {SETTINGS[k].label.split(":")[0].split(" (")[0]}</span>
+          {(["gtm_id", "google_ads_id", "ga4_id", "meta_pixel_id", "tiktok_pixel_id", "custom_pixel_1", "custom_pixel_2", "custom_pixel_3", "google_verification", "bing_verification"] as SettingKey[]).filter((k) => !k.startsWith("custom_pixel_") || on(k)).map((k) => (
+            <span key={k} className={`tag ${on(k) ? "ok" : "mute"}`}>{on(k) ? "✓" : "○"} {k.startsWith("custom_pixel_") ? (val(k.replace("pixel", "name")) || "Pixel personnalisé") : SETTINGS[k].label.split(":")[0].split(" (")[0]}</span>
           ))}
         </div>
       </div>
@@ -42,11 +43,11 @@ export default async function Pixels({ searchParams }: { searchParams: Promise<R
             <p className="hint">{g.intro}</p>
             {g.keys.map((k) => {
               const s = SETTINGS[k];
-              const long = k === "home_description";
+              const long = k === "home_description" || Boolean(s.long);
               return (
                 <div className="fld" key={k}>
                   <label htmlFor={k}>{s.label}</label>
-                  {long ? <textarea id={k} name={k} rows={3} maxLength={170} defaultValue={val(k)} placeholder={s.ph} />
+                  {long ? <textarea id={k} name={k} rows={k.startsWith("custom_") ? 6 : 3} maxLength={k.startsWith("custom_") ? 3000 : 170} spellCheck={false} defaultValue={val(k)} placeholder={s.ph} />
                     : <input id={k} name={k} type="text" maxLength={k === "home_title" ? 70 : 100} defaultValue={val(k)} placeholder={s.ph} autoComplete="off" spellCheck={false} />}
                   <p className="hint">{s.hint}</p>
                 </div>
