@@ -105,6 +105,14 @@ export const requestForClient = (artisan: string, description: string) => layout
     p("Pour un dépannage urgent, vous pouvez aussi l'appeler depuis sa fiche."),
 });
 
+export const reviewRequest = (artisan: string, url: string) => layout({
+  subject: `Votre avis sur ${artisan}`, pre: "30 secondes pour aider les prochains clients.",
+  title: "Comment s’est passé votre chantier ?",
+  body: p(`${artisan} a traité votre demande. Si le travail est terminé, votre avis aide les prochains clients à choisir un artisan de confiance.`) +
+    btn("Donner mon avis", url, true) +
+    p("Ce lien est personnel et ne peut servir qu’une fois. Vous n’avez pas besoin de créer de compte."),
+});
+
 export const boostReceipt = (o: { name: string; label: string; zone: string | null; duration: string; amount: number; endsAt: string; merged: boolean }) => layout({
   subject: `Paiement reçu : ${o.label} activé`, pre: `Actif jusqu'au ${when(o.endsAt)}.`,
   title: o.merged ? "Votre boost est prolongé" : "Votre boost est actif",

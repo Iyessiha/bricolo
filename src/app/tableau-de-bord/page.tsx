@@ -17,7 +17,9 @@ import { PLANS, planPrice } from "@/lib/plans";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
 import ServiceDetails from "@/components/ServiceDetails";
-import { addService, markAnswered, removeService, saveZones, updateService, saveHours, saveProfile } from "./actions";
+import AskReview from "@/components/AskReview";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { addService, markAnswered, removeService, replyToReview, saveZones, updateService, saveHours, saveProfile } from "./actions";
 import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
@@ -72,7 +74,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <div className="limits">
       {usage.map((u) => { const unl = !Number.isFinite(u.max); const full = !unl && u.n >= u.max; return (
         <div key={u.l} className={`lim${full ? " full" : ""}`}><b><span>{u.l}</span><span>{unl ? `${u.n} · illimité` : `${u.n} / ${u.max}`}</span></b>{!unl && <div className="bar"><i style={{ width: `${Math.min(100, (u.n / u.max) * 100)}%` }} /></div>}{full && !pro && <small>Limite atteinte, <Link href="/tableau-de-bord?s=forfait" scroll={false}>passez Pro</Link></small>}</div>); })}
-      <div className="lim"><b><span>Badge Pro</span><span>{pro ? "✓ actif" : "—"}</span></b><small>Affiché sur votre fiche et vos cartes</small></div>
     </div>
   );
   const daysLeft = proSub ? Math.max(1, Math.ceil((new Date(proSub.ends_at).getTime() - Date.now()) / 864e5)) : 0;
@@ -94,6 +95,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
+  const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
+  const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
   const PSUBS = [["infos", "Infos"], ["photos", "Photos"], ["zones", "Zones et horaires"], ["diplomes", "Diplômes"]] as const;
   const ptab = PSUBS.find(([k]) => k === (sp.s === "horaires" ? "zones" : sp.p))?.[0] ?? "infos";
   const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
@@ -203,6 +207,21 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <div key={r.id} className="req"><div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" && <span className="tag wait">Nouvelle</span>}<span className="meta">{day(r.created_at)}</span></div><p><b>{r.client_name || "Client"}</b> — {r.description.slice(0, 90)}{r.description.length > 90 ? "…" : ""}</p></div>
             )) : <p className="empty">Aucune demande pour le moment. Elles arriveront ici et par e-mail.</p>}
           </div>
+          {approved && <div className="card pad stack" id="avis">
+            <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Avis clients</h2>{artisan.review_count ? <span className="tag ok">★ {String(artisan.avg_rating).replace(".", ",")}/5 · {artisan.review_count} avis</span> : <span className="tag mute">Pas encore d’avis</span>}</div>
+            <p className="meta">Les avis rassurent les nouveaux clients. Après un chantier terminé, envoyez-leur un lien personnel : il ne sert qu’une fois et l’avis est vérifié par notre équipe avant d’être publié.</p>
+            <AskReview artisanName={artisan.name} />
+            {reviewsPending > 0 && <p className="notice boostnote">{reviewsPending} avis en cours de vérification par notre équipe.</p>}
+            {(myReviews ?? []).filter((r) => r.status === "published").slice(0, 5).map((r) => (
+              <div key={r.id} className="review">
+                <b>{r.author_name}</b> <span className="meta">· ★ {r.rating}/5{r.verified_by ? " · avis vérifié" : ""}</span>
+                {r.comment && <p>{r.comment}</p>}
+                <form action={replyToReview} className="stack" style={{ marginTop: 8 }}><input type="hidden" name="id" value={r.id} />
+                  <div className="fld"><label htmlFor={`rep_${r.id}`}>{r.artisan_reply ? "Votre réponse (publique)" : "Répondre publiquement"}</label>
+                    <textarea id={`rep_${r.id}`} name="reply" rows={2} maxLength={400} defaultValue={r.artisan_reply ?? ""} placeholder="Merci pour votre confiance !" /></div>
+                  <div><button className="btn small" type="submit">{r.artisan_reply ? "Modifier ma réponse" : "Publier ma réponse"}</button></div></form>
+              </div>))}
+          </div>}
           {approved && <div className="card pad dboost"><div><b>Passez devant les autres artisans</b><p className="meta">Un boost place votre profil en tête des résultats ou sur l’accueil.</p></div><Link className="btn boost" href="/tableau-de-bord?s=boosts" scroll={false}>Voir les boosts</Link></div>}
         </div>
 

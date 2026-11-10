@@ -600,3 +600,5 @@ html{scroll-padding-top:72px}
 .gbody b{font-size:16px;margin-right:8px}.gbody p{margin:0;line-height:1.5;color:var(--ink-muted)}
 @media(max-width:699px){.dnav a{font-size:9.5px}.dnav .lg{display:none}}
 @media(min-width:700px){.dnav .sh{display:none}}
+
+.review-reply{margin:6px 0 0;padding:8px 12px;border-left:3px solid var(--brand);background:var(--surface-sunken);border-radius:0 var(--radius-md) var(--radius-md) 0;font-size:14px}

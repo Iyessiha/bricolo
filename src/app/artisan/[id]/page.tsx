@@ -26,7 +26,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const { data: isPro } = await db.rpc("artisan_is_pro", { a: id });
   const { data: services } = await db.from("artisan_services").select("id, headline, price_label, included, extras").eq("artisan_id", id).order("created_at");
   const { data: shots } = await db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", id).order("created_at");
-  const { data: reviews } = await db.from("reviews").select("id, author_name, rating, comment").eq("artisan_id", id).eq("status", "published").order("created_at", { ascending: false }).limit(10);
+  const { data: reviews } = await db.from("reviews").select("id, author_name, rating, comment, verified_by, artisan_reply").eq("artisan_id", id).eq("status", "published").order("created_at", { ascending: false }).limit(10);
   try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view" }); } catch { /* statistiques non bloquantes */ }
 
   const zones = ((a as any).zones ?? []).map((z: any) => z.zone).filter(Boolean) as { id: string; name: string }[];
@@ -92,8 +92,8 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <div className="card pad stack">
             <h2>Avis clients</h2>
             {reviews?.length ? reviews.map((r) => (
-              <div key={r.id} className="review"><b>{r.author_name}</b> <span className="meta">· ★ {r.rating}/5</span><p>{r.comment}</p></div>
-            )) : <p className="meta">Pas encore d’avis. Soyez le premier à contacter cet artisan.</p>}
+              <div key={r.id} className="review"><b>{r.author_name}</b> <span className="meta">· ★ {r.rating}/5</span>{r.verified_by && <span className="tag ok" style={{ marginLeft: 8 }}>✓ Avis vérifié</span>}{r.comment && <p>{r.comment}</p>}{r.artisan_reply && <p className="review-reply"><b>Réponse de {a.name}</b><br />{r.artisan_reply}</p>}</div>
+            )) : <p className="meta">Pas encore d’avis. Les avis sont déposés par des clients dont le chantier est terminé.</p>}
           </div>
         </div>
         <aside className="card aside">

@@ -1,6 +1,9 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { notifyReviewRequest } from "@/lib/email-flows";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveArtisanProfile, saveArtisanZones } from "@/lib/artisan-save";
 import { composeHeadline, lines, priceLabel } from "@/lib/compose";
@@ -36,8 +39,39 @@ export async function markAnswered(formData: FormData) {
   const db = await supabaseServer();
   const { data: { user } } = await db.auth.getUser();
   if (!user) redirect("/connexion");
-  await db.from("service_requests").update({ status: "answered" }).eq("id", String(formData.get("id")));
+  const id = String(formData.get("id"));
+  // La politique d'accès ne renvoie que les demandes de cet artisan.
+  const { data: r } = await db.from("service_requests").select("id, artisan_id, client_email, status").eq("id", id).maybeSingle();
+  await db.from("service_requests").update({ status: "answered" }).eq("id", id);
+  // Demande traitée avec une adresse e-mail : le client reçoit un lien pour donner son avis (une seule fois par demande).
+  if (r?.artisan_id && r.client_email && r.status === "new") {
+    const { data: link } = await supabaseAdmin().from("review_links").insert({ artisan_id: r.artisan_id, request_id: r.id }).select("id").maybeSingle();
+    if (link) after(() => notifyReviewRequest(link.id));
+  }
   revalidatePath("/tableau-de-bord");
+}
+
+/** « Demander un avis » : crée un lien personnel à usage unique que l'artisan envoie à son client (WhatsApp, SMS…). */
+export async function createReviewLink(): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const c = await me();
+  if (!c) return { ok: false, error: "Votre session a expiré. Reconnectez-vous." };
+  const { data: a } = await c.db.from("artisans").select("status").eq("id", c.a.id).single();
+  if (a?.status !== "approved") return { ok: false, error: "Votre profil doit être en ligne pour demander des avis." };
+  const { data: link, error } = await supabaseAdmin().from("review_links").insert({ artisan_id: c.a.id }).select("token").single();
+  if (error || !link) return { ok: false, error: /trop_de_liens/.test(error?.message ?? "") ? "Vous avez atteint la limite de 10 demandes d’avis par mois. Réessayez plus tard." : "Le lien n’a pas pu être créé. Réessayez." };
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return { ok: true, url: `${base}/avis/${link.token}` };
+}
+
+/** Réponse publique de l'artisan à un avis publié (une réponse par avis, modifiable). */
+export async function replyToReview(formData: FormData) {
+  const c = await me(); if (!c) redirect("/connexion");
+  const id = String(formData.get("id") ?? "");
+  const reply = String(formData.get("reply") ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
+  if (/^[0-9a-f-]{36}$/i.test(id) && reply.length >= 2)
+    await supabaseAdmin().from("reviews").update({ artisan_reply: reply, replied_at: new Date().toISOString() }).eq("id", id).eq("artisan_id", c.a.id).eq("status", "published");
+  revalidatePath("/tableau-de-bord"); revalidatePath(`/artisan/${c.a.id}`);
+  redirect("/tableau-de-bord?ok=1");
 }
 
 /** Diplôme ajouté depuis le tableau de bord (le fichier est déjà dans le stockage privé). */

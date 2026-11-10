@@ -3,6 +3,7 @@ import { supabaseAdmin } from "./supabase/admin";
 import { sendOnce, sendBatch, marketingHeaders, unsubPage, type Msg } from "./email";
 import * as T from "./email-templates";
 import { BOOST_TYPES, DURATIONS } from "./format";
+import { siteUrl } from "./env";
 
 /** Un e-mail raté ne doit jamais faire échouer l'action de l'utilisateur. */
 async function safe<R>(fn: () => Promise<R>): Promise<R | undefined> {
@@ -46,6 +47,15 @@ export const notifyServiceRequest = (requestId: string) => safe(async () => {
     sendOnce("request_artisan", r.id, mail(c.email, T.requestForArtisan({ client: r.client_name, email: r.client_email, phone: r.client_phone, description: r.description, urgent: r.urgent, artisanId: c.artisanId }), r.client_email ? { replyTo: r.client_email } : undefined)),
     r.client_email ? sendOnce("request_client", r.id, mail(r.client_email, T.requestForClient(c.name, r.description))) : Promise.resolve(),
   ]);
+});
+
+export const notifyReviewRequest = (linkId: string) => safe(async () => {
+  const db = supabaseAdmin();
+  const { data: l } = await db.from("review_links").select("id, token, request:service_requests(client_email), artisan:artisans(name)").eq("id", linkId).maybeSingle();
+  const one = (x: any) => (Array.isArray(x) ? x[0] : x);
+  const email = one((l as any)?.request)?.client_email, name = one((l as any)?.artisan)?.name;
+  if (!l || !email || !name) return;
+  await sendOnce("review_request", l.id, mail(email, T.reviewRequest(name, `${siteUrl()}/avis/${l.token}`)));
 });
 
 export const REPORT_REASONS: Record<string, string> = { travail: "Travail non fait ou mal fait", arnaque: "Argent demandé sans prestation (arnaque)", comportement: "Comportement inapproprié", identite: "Fausse identité ou fausses photos", autre: "Autre" };
