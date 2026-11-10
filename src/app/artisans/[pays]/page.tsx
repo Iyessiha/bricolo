@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasSupabase } from "@/lib/env";
-import { loadHub, inCountry } from "@/lib/seo-data";
+import { loadHub, inCountry, defaultHubTitle, defaultHubDesc } from "@/lib/seo-data";
 import { jsonLd, slugify } from "@/lib/seo";
 import { siteUrl } from "@/lib/env";
 import Flag from "@/components/Flag";
+import { getSettings } from "@/lib/site-settings";
 
 type P = { params: Promise<{ pays: string }> };
 
@@ -14,8 +15,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { pays } = await params;
   const h = await loadHub(pays);
   if (!h) return { robots: { index: false } };
-  const title = `Artisans ${inCountry(h.country.code, h.country.name)} : plombiers, électriciens, menuisiers…`;
-  const description = `Trouvez un artisan vérifié ${inCountry(h.country.code, h.country.name)} : ${h.trades.slice(0, 5).map((t) => t.plural.toLowerCase()).join(", ")} et plus. Comparez, appelez ou écrivez sur WhatsApp. Gratuit.`;
+  const st = await getSettings();
+  const cc = h.country.code as "ci" | "sn" | "bf" | "ml" | "ne" | "bj" | "tg";
+  const title = st[`seo_title_${cc}`] ?? defaultHubTitle(cc, h.country.name);
+  const description = st[`seo_desc_${cc}`] ?? defaultHubDesc(cc, h.country.name, h.trades.map((t) => t.plural));
   return { title, description, alternates: { canonical: `/artisans/${pays}` }, openGraph: { title, description, url: `/artisans/${pays}`, type: "website", siteName: "Bricolo", locale: "fr_FR" } };
 }
 

@@ -8,6 +8,9 @@ import { slugify, type Z } from "./seo";
 const pub = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
 
 export const inCountry = (code: string, name: string) => (code === "ci" ? `en ${name}` : `au ${name}`);
+/** Textes par défaut des pages « Artisans en <pays> » (utilisés tant qu'aucun texte n'est saisi dans l'admin). */
+export const defaultHubTitle = (code: string, name: string) => `Artisans ${inCountry(code, name)} : plombiers, électriciens, menuisiers…`;
+export const defaultHubDesc = (code: string, name: string, plurals: string[]) => `Trouvez un artisan vérifié ${inCountry(code, name)} : ${plurals.slice(0, 5).map((t) => t.toLowerCase()).join(", ")} et plus. Comparez, appelez ou écrivez sur WhatsApp. Gratuit.`;
 
 export const loadHub = cache(async (pays: string) => {
   if (!isCountry(pays)) return null;

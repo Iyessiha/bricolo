@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "./supabase/admin";
+import { COUNTRIES } from "./countries";
 
 /** Réglages modifiables depuis /admin/pixels. Chaque identifiant est validé avant d'être enregistré : rien d'autre qu'un identifiant n'est jamais écrit dans les pages. */
 type Def = { label: string; ph: string; re: RegExp; hint: string; long?: boolean };
@@ -22,7 +23,14 @@ export const SETTINGS: Record<string, Def> = {
   home_title: { label: "Titre de l’accueil (balise title)", ph: "Bricolo : trouvez un artisan de confiance en Afrique de l’Ouest", re: /^.{10,70}$/, hint: "Entre 10 et 70 caractères. C’est le titre qui s’affiche dans Google." },
   home_description: { label: "Description de l’accueil (balise meta description)", ph: "Plombiers, électriciens, menuisiers, frigoristes…", re: /^.{50,170}$/, hint: "Entre 50 et 170 caractères. C’est le texte sous le titre dans Google." },
 };
-export type SettingKey = "gtm_id" | "google_ads_id" | "ga4_id" | "meta_pixel_id" | "tiktok_pixel_id" | "google_verification" | "bing_verification" | "meta_domain_verification" | "custom_name_1" | "custom_pixel_1" | "custom_name_2" | "custom_pixel_2" | "custom_name_3" | "custom_pixel_3" | "home_title" | "home_description";
+type BaseKey = "gtm_id" | "google_ads_id" | "ga4_id" | "meta_pixel_id" | "tiktok_pixel_id" | "google_verification" | "bing_verification" | "meta_domain_verification" | "custom_name_1" | "custom_pixel_1" | "custom_name_2" | "custom_pixel_2" | "custom_name_3" | "custom_pixel_3" | "home_title" | "home_description";
+export type SettingKey = BaseKey | `seo_title_${(typeof COUNTRIES)[number]["code"]}` | `seo_desc_${(typeof COUNTRIES)[number]["code"]}`;
+
+/** Titre et description modifiables des pages « Artisans en <pays> ». */
+for (const c of COUNTRIES) {
+  SETTINGS[`seo_title_${c.code}`] = { label: `Titre : page ${c.name}`, ph: "", re: /^.{10,70}$/, hint: "Entre 10 et 70 caractères." };
+  SETTINGS[`seo_desc_${c.code}`] = { label: `Description : page ${c.name}`, ph: "", re: /^.{50,170}$/, hint: "Entre 50 et 170 caractères." };
+}
 
 export const getSettings = unstable_cache(async (): Promise<Partial<Record<SettingKey, string>>> => {
   try {

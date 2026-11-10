@@ -11,7 +11,6 @@ const GROUPS: { title: string; intro: string; keys: SettingKey[] }[] = [
   { title: "Mesure et publicité", intro: "Ces outils ne se chargent que si le visiteur clique sur « Accepter » dans le bandeau cookies. Laissez un champ vide pour désactiver l’outil.", keys: ["gtm_id", "google_ads_id", "ga4_id", "meta_pixel_id", "tiktok_pixel_id"] },
   { title: "Pixels personnalisés", intro: "Pour tout autre outil (Hotjar, Snap, Pinterest, LinkedIn, X…). Collez le code fourni, balises <script> comprises. Seules les balises <script> en https sont acceptées ; le domaine du script est autorisé automatiquement. Le code ne se charge qu’après l’accord du visiteur.", keys: ["custom_name_1", "custom_pixel_1", "custom_name_2", "custom_pixel_2", "custom_name_3", "custom_pixel_3"] },
   { title: "Vérification du site", intro: "Pour prouver à Google, Bing et Meta que le site est à vous. Collez uniquement le code demandé.", keys: ["google_verification", "bing_verification", "meta_domain_verification"] },
-  { title: "Titre et description de l’accueil", intro: "Ce que Google affiche pour la page d’accueil. Laissez vide pour garder le texte par défaut.", keys: ["home_title", "home_description"] },
 ];
 
 export default async function Pixels({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -64,7 +63,7 @@ export default async function Pixels({ searchParams }: { searchParams: Promise<R
           <li>Plan du site automatique : <a href={`${base}/sitemap.xml`} target="_blank" rel="noreferrer">{base}/sitemap.xml</a> (fiches, métiers, villes avec au moins un artisan).</li>
           <li>Fichier robots : <a href={`${base}/robots.txt`} target="_blank" rel="noreferrer">{base}/robots.txt</a> (l’admin, les espaces connectés et l’API sont exclus).</li>
           <li>Pages par pays, métier et ville : <code>/artisans/ci/plombier/cocody</code>. Une page sans artisan n’est pas indexée.</li>
-          <li>Titres, descriptions, adresse canonique, image de partage et données structurées sur chaque page.</li>
+          <li>Titres et descriptions : à régler dans <a href="/admin/seo">Titres Google</a>, avec aperçu du résultat. Adresse canonique, image de partage et données structurées sur chaque page.</li>
         </ul>
         <h3 style={{ fontSize: 16 }}>À faire une seule fois</h3>
         <ol className="stack" style={{ gap: 6, paddingLeft: 18, margin: 0 }}>
