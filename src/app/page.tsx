@@ -9,6 +9,15 @@ import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
 import ArtisanNudge from "@/components/ArtisanNudge";
 import ZoneOptions from "@/components/ZoneOptions";
+import type { Metadata } from "next";
+import { getSettings } from "@/lib/site-settings";
+import { jsonLd, DEFAULT_TITLE, DEFAULT_DESC } from "@/lib/seo";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSettings();
+  const title = s.home_title ?? DEFAULT_TITLE, description = s.home_description ?? DEFAULT_DESC;
+  return { title: { absolute: title }, description, alternates: { canonical: "/" }, openGraph: { title, description, url: "/", type: "website", siteName: "Bricolo", locale: "fr_FR" }, twitter: { card: "summary_large_image", title, description } };
+}
 
 const FAQ = [
   ["Est-ce payant pour un client ?", "Non. Chercher un artisan, voir son profil et lui envoyer une demande est gratuit, sans compte. Vous réglez l’artisan directement, après avoir convenu du prix avec lui."],
@@ -47,8 +56,10 @@ export default async function Home() {
     ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
     ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).slice(0, 6).map((a) => ({ ...a, trade: tradeName(a.trade_id) })),
   ].slice(0, 6);
+  const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqLd) }} />
       {!user && <ArtisanNudge />}
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>
@@ -86,7 +97,7 @@ export default async function Home() {
         <div className="sec-head"><h2>Chercher par métier</h2></div>
         <div className="tiles">
           {topTrades.map((t) => (
-            <Link key={t.id} className="tile" href={`/resultats?metier=${t.slug}`}><i className="ti" aria-hidden="true"><TradeIcon slug={t.slug} /></i><b>{t.plural}</b><span>{t.description}</span></Link>
+            <Link key={t.id} className="tile" href={`/artisans/${country}/${t.slug}`}><i className="ti" aria-hidden="true"><TradeIcon slug={t.slug} /></i><b>{t.plural}</b><span>{t.description}</span></Link>
           ))}
           {(trades?.length ?? 0) > topTrades.length && <Link className="tile tile-all" href="/resultats"><i className="ti" aria-hidden="true"><TradeIcon slug="tous" /></i><b>Tous les métiers</b><span>{trades!.length} métiers à découvrir →</span></Link>}
         </div>

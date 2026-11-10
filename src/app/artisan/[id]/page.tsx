@@ -11,6 +11,22 @@ import { countryName } from "@/lib/countries";
 import SetupNotice from "@/components/SetupNotice";
 import { sendRequest, reportArtisan } from "./actions";
 import { REPORT_REASONS } from "@/lib/email-flows";
+import type { Metadata } from "next";
+import { siteUrl } from "@/lib/env";
+import { jsonLd, cut } from "@/lib/seo";
+import { loadArtisanMeta } from "@/lib/seo-data";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  if (!hasSupabase()) return {};
+  const { id } = await params;
+  const a = await loadArtisanMeta(id);
+  if (!a) return { title: "Artisan introuvable", robots: { index: false } };
+  const where = a.zoneNames.length ? ` à ${a.zoneNames.slice(0, 2).join(", ")}` : ` ${a.country_code === "ci" ? "en" : "au"} ${countryName(a.country_code)}`;
+  const title = `${a.name}, ${a.trade?.name.toLowerCase() ?? "artisan"}${where}`;
+  const description = cut(a.headline || a.description || `${a.name}, ${a.trade?.name.toLowerCase() ?? "artisan"}${where}. Consultez son profil, ses prestations et ses avis, puis contactez-le directement.`, 160);
+  const image = a.cover_url || a.photo_url || undefined;
+  return { title, description, alternates: { canonical: `/artisan/${id}` }, openGraph: { title, description, url: `/artisan/${id}`, type: "profile", siteName: "Bricolo", locale: "fr_FR", ...(image ? { images: [{ url: image, alt: a.name }] } : {}) } };
+}
 
 export default async function ArtisanPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   if (!hasSupabase()) return <SetupNotice />;
@@ -40,8 +56,17 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const rating = a.review_count ? String(a.avg_rating).replace(".", ",") : null;
   const whoLine = a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? a.company_name : null;
 
+  const base = siteUrl();
+  const ld = {
+    "@context": "https://schema.org", "@type": "LocalBusiness", "@id": `${base}/artisan/${id}`, url: `${base}/artisan/${id}`,
+    name: a.name, description: (a as any).headline || a.description || undefined, image: (a as any).cover_url || a.photo_url || undefined,
+    address: { "@type": "PostalAddress", addressCountry: a.country_code.toUpperCase() },
+    areaServed: zones.map((z) => ({ "@type": "Place", name: z.name })), knowsAbout: trade?.name,
+    ...(a.review_count ? { aggregateRating: { "@type": "AggregateRating", ratingValue: a.avg_rating, reviewCount: a.review_count, bestRating: 5, worstRating: 1 } } : {}),
+  };
   return (
     <section className="inner sec stack has-mbar">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(ld) }} />
       <p><Link href="/resultats">← Retour aux résultats</Link></p>
       <div className="pgrid">
         <div className="stack">

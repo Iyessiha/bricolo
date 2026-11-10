@@ -9,11 +9,12 @@ let supa = "";
 try { supa = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin; } catch {}
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
+  // Pixels de mesure : uniquement les domaines officiels de Google Analytics, Meta et TikTok.
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com${dev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `img-src 'self' data: blob: ${supa}`.trim(),
+  `img-src 'self' data: blob: ${supa} https://www.google-analytics.com https://www.googletagmanager.com https://www.facebook.com https://analytics.tiktok.com https://*.tiktok.com`.replace(/\s+/g, " ").trim(),
   "font-src 'self' data: https://fonts.gstatic.com",
-  `connect-src 'self' ${supa} ${supa.replace("https://", "wss://")}${dev ? " ws:" : ""}`.replace(/\s+/g, " ").trim(),
+  `connect-src 'self' ${supa} ${supa.replace("https://", "wss://")} https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.facebook.com https://connect.facebook.net https://analytics.tiktok.com https://*.tiktok.com${dev ? " ws:" : ""}`.replace(/\s+/g, " ").trim(),
   "object-src 'none'", "base-uri 'self'", "frame-ancestors 'none'",
 ].join("; ");
 

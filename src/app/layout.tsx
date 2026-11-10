@@ -3,17 +3,41 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { COMPANY } from "@/lib/company";
+import Trackers from "@/components/Trackers";
+import { getSettings } from "@/lib/site-settings";
+import { siteUrl } from "@/lib/env";
+import { jsonLd, DEFAULT_TITLE, DEFAULT_DESC } from "@/lib/seo";
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#27489a" }, { media: "(prefers-color-scheme: dark)", color: "#0e1525" }] };
 
-export const metadata: Metadata = {
-  authors: [{ name: COMPANY.name }],
-  publisher: COMPANY.name,
-  title: { default: "Bricolo", template: "%s · Bricolo" },
-  description: "L’annuaire des artisans de l’Afrique de l’Ouest francophone : frigoristes, mécaniciens, menuisiers, électriciens et plus.",
-};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSettings();
+  return {
+    metadataBase: new URL(siteUrl()),
+    applicationName: "Bricolo",
+    authors: [{ name: COMPANY.name }],
+    publisher: COMPANY.name,
+    creator: COMPANY.name,
+    title: { default: s.home_title ?? DEFAULT_TITLE, template: "%s · Bricolo" },
+    description: s.home_description ?? DEFAULT_DESC,
+    keywords: ["artisan", "artisan pro", "annuaire artisans", "plombier", "électricien", "menuisier", "frigoriste", "mécanicien", "Côte d’Ivoire", "Abidjan", "Sénégal", "Dakar", "Burkina Faso", "Mali", "Niger", "Bénin", "Togo", "Afrique de l’Ouest"],
+    alternates: { canonical: "./" },
+    openGraph: { type: "website", siteName: "Bricolo", locale: "fr_FR" },
+    twitter: { card: "summary_large_image" },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
+    formatDetection: { telephone: false, email: false, address: false },
+    verification: { google: s.google_verification, other: { ...(s.bing_verification ? { "msvalidate.01": s.bing_verification } : {}), ...(s.meta_domain_verification ? { "facebook-domain-verification": s.meta_domain_verification } : {}) } },
+  };
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const s = await getSettings();
+  const base = siteUrl();
+  const site = [
+    { "@context": "https://schema.org", "@type": "Organization", "@id": `${base}/#organisation`, name: "Bricolo", legalName: COMPANY.name, url: base, logo: `${base}/icon`, email: COMPANY.email, areaServed: ["CI", "SN", "BF", "ML", "NE", "BJ", "TG"] },
+    { "@context": "https://schema.org", "@type": "WebSite", "@id": `${base}/#site`, name: "Bricolo", url: base, inLanguage: "fr", publisher: { "@id": `${base}/#organisation` }, potentialAction: { "@type": "SearchAction", target: `${base}/resultats?metier={search_term_string}`, "query-input": "required name=search_term_string" } },
+  ];
   return (
     <html lang="fr">
       <head>
@@ -28,6 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main>{children}</main>
         <Footer />
+        <Trackers ga4={s.ga4_id} meta={s.meta_pixel_id} tiktok={s.tiktok_pixel_id} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(site) }} />
       </body>
     </html>
   );

@@ -9,7 +9,8 @@ import ZoneOptions from "@/components/ZoneOptions";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
 
-export const metadata: Metadata = { title: "Trouver un artisan" };
+/** Les combinaisons de filtres ne sont pas indexées (contenu en double) : Google passe par les pages /artisans/… */
+export const metadata: Metadata = { title: "Trouver un artisan", description: "Recherchez un artisan par métier et par commune : plombier, électricien, menuisier, frigoriste… Profils vérifiés, avis clients, contact direct.", robots: { index: false, follow: true }, alternates: { canonical: "/resultats" } };
 
 export default async function Results({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   if (!hasSupabase()) return <SetupNotice />;

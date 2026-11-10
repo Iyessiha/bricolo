@@ -84,12 +84,12 @@ textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-mu
 .legal h2{font-size:21px;margin-top:14px}.legal ul{margin:0;padding-left:20px;display:grid;gap:6px}
 .legal code{font-size:13px;background:var(--surface-sunken);padding:1px 6px;border-radius:6px}
 .foot{margin-top:24px;padding:0;border-top:1px solid var(--line);background:var(--surface-raised);font-size:14px}
-.footgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:28px;padding-block:32px 20px}
+.footgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:28px;padding-block:32px 20px}
 .footbrand{font:800 22px var(--font-display);color:var(--brand)}
 .footcol{display:grid;gap:2px;align-content:start}.footcol b{margin-bottom:6px;color:var(--ink)}
 .footcol a{display:inline-flex;align-items:center;min-height:36px;color:var(--ink-muted);text-decoration:none}.footcol a:hover{color:var(--ink);text-decoration:underline}
 .footbase{padding-block:16px 28px;border-top:1px solid var(--line);font-size:13px}
-@media (max-width:760px){.footgrid{grid-template-columns:1fr}}
+@media (max-width:900px){.footgrid{grid-template-columns:1fr 1fr}}@media (max-width:560px){.footgrid{grid-template-columns:1fr}}
 /* Tunnel d'inscription et de connexion */
 .prog{display:grid;gap:8px}.progtop{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .progbar{height:6px;border-radius:var(--radius-pill);background:var(--surface-sunken);border:1px solid var(--line);overflow:hidden}
@@ -614,3 +614,12 @@ html{scroll-padding-top:72px}
 .svc-cols{display:grid;gap:14px;grid-template-columns:1fr}
 @media(min-width:620px){.svc-cols{grid-template-columns:1fr 1fr}}
 .svc-cta{justify-self:start}
+
+/* Bandeau de consentement aux cookies de mesure */
+.consent{position:fixed;left:12px;right:12px;bottom:12px;z-index:60;max-width:640px;margin:0 auto;display:grid;gap:10px;padding:14px 16px;background:var(--surface-raised);color:var(--ink);border:1px solid var(--border-strong);border-radius:var(--radius-lg);box-shadow:0 8px 28px rgba(19,32,58,.22);font-size:14px}
+.consent-btns{display:flex;gap:10px;justify-content:flex-end}
+.consent-btns .btn{min-width:110px}
+.seo-intro{max-width:720px;color:var(--ink-muted)}
+.seo-links{display:flex;flex-wrap:wrap;gap:8px}
+.seo-links a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface-raised);text-decoration:none;font-weight:600;font-size:14px}
+.crumbs{font-size:13px;color:var(--ink-muted)}.crumbs a{color:inherit}

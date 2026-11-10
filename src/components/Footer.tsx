@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { COMPANY, LEGAL_LINKS } from "@/lib/company";
+import { COUNTRIES } from "@/lib/countries";
 
 export default function Footer() {
   return (
@@ -14,6 +15,10 @@ export default function Footer() {
           <Link href="/resultats">Trouver un artisan</Link>
           <Link href="/inscription">Devenir artisan</Link>
           <Link href="/connexion">Connexion</Link>
+        </nav>
+        <nav aria-label="Artisans par pays" className="footcol">
+          <b>Artisans par pays</b>
+          {COUNTRIES.map((c) => <Link key={c.code} href={`/artisans/${c.code}`}>{c.name}</Link>)}
         </nav>
         <nav aria-label="Informations légales" className="footcol">
           <b>Informations légales</b>
