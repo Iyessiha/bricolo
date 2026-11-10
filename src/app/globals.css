@@ -77,7 +77,7 @@ textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-mu
 .tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}.tbl input[type=number]{min-width:96px;min-height:38px}
 .narrow{max-width:640px;margin:0 auto}.empty{padding:20px;border:1px dashed var(--line);border-radius:var(--radius-lg);color:var(--ink-muted)}
 .foot{padding-block:32px;color:var(--ink-muted);font-size:13px}
-@media (max-width:860px){.hero{grid-template-columns:1fr;padding-block:28px 24px}.pgrid{grid-template-columns:1fr}.aside{position:static}
+@media (max-width:860px){.hero{grid-template-columns:1fr;padding-block:28px 24px}.pgrid{grid-template-columns:minmax(0,1fr)}.pgrid>*{min-width:0}.aside{position:static}
  .result{grid-template-columns:auto minmax(0,1fr)}.result .row{grid-column:1/-1}.result .row .btn{flex:1}}
 /* Pages légales et pied de page */
 .legal{max-width:760px;margin:0 auto;display:grid;gap:14px;line-height:1.65}
@@ -423,3 +423,15 @@ h1 .flag{margin-inline:2px}
   .tile{flex:0 0 auto;scroll-snap-align:start;padding:10px 16px;border-radius:var(--radius-pill);min-height:44px;align-content:center}
   .tile b{font-size:15px;white-space:nowrap}.tile span{display:none}
 }
+
+/* Audit UX : badges de carte sur une seule ligne, prestations qui passent à la ligne */
+.acard-media.cov .acard-badges{flex-wrap:nowrap;overflow:hidden}
+.acard-media.cov .acard-badges .tag{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acard-media.cov .acard-badges .tag:nth-child(n+3){display:none}
+.pgrid .todo{flex-wrap:wrap;row-gap:4px}
+.pgrid .todo b{flex:1 1 180px;min-width:0}
+.pgrid .todo .acard-price{margin-left:0!important}
+.inner,.pfhead,.pfid{min-width:0}
+.acard-badges{flex-wrap:nowrap;overflow:hidden}
+.acard-badges .tag{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acard-badges .tag:nth-child(n+3){display:none}
