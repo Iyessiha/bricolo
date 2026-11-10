@@ -40,7 +40,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const [{ data: trades }, { data: zones }, { data: artisan }] = await Promise.all([
     db.from("trades").select("id, name").order("name"),
-    db.from("zones").select("id, name").eq("country_code", country).order("name"),
+    db.from("zones").select("id, name, parent_id").eq("country_code", country).order("name"),
     db.from("artisans").select("*, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
   ]);
   // Le dossier doit être complet (profil, photo, pièce d'identité) : sinon on reprend le tunnel d'activation.

@@ -1,4 +1,5 @@
 "use client";
+import ZonePicker from "./ZonePicker";
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Progress } from "./Funnel";
@@ -8,7 +9,7 @@ import { prepareImage, IMAGE_ERRORS } from "@/lib/images";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { saveProfileStep, savePhoto, submitDossier, type StepState } from "@/app/activation/actions";
 
-type Opt = { id: string; name: string };
+type Opt = { id: string; name: string; parent_id?: string | null };
 export type ActivationProps = {
   uid: string; countryName: string; trades: Opt[]; zones: Opt[]; initialStep: number; photoUrl: string | null;
   defaults: {
@@ -51,10 +52,6 @@ export default function Activation(p: ActivationProps) {
   const [certify, setCertify] = useState(false);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
-  const [zonesSel, setZonesSel] = useState<string[]>(p.defaults.zones);
-  const [zq, setZq] = useState("");
-  const norm = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const zonesShown = p.zones.filter((z) => !zonesSel.includes(z.id) && (!zq || norm(z.name).includes(norm(zq)))).slice(0, zq ? 60 : 24);
   const d = p.defaults;
 
   async function putPhoto() {
@@ -138,15 +135,7 @@ export default function Activation(p: ActivationProps) {
             <input id="experience_years" name="experience_years" type="number" inputMode="numeric" min={0} max={60} required defaultValue={d.experience_years} placeholder="Ex. 8" />
             <span className="hint">Mettez 0 si vous débutez. Cette information est affichée sur votre fiche.</span></div>
           <div className="fld"><span className="lbl">Zones couvertes ({p.countryName})</span>
-            {zonesSel.map((id) => <input key={id} type="hidden" name="zones" value={id} />)}
-            {zonesSel.length > 0 && <div className="chips">{p.zones.filter((z) => zonesSel.includes(z.id)).map((z) => (
-              <button type="button" className="chip on" key={z.id} onClick={() => setZonesSel((x) => x.filter((i) => i !== z.id))} aria-label={`Retirer ${z.name}`}>{z.name} ✕</button>
-            ))}</div>}
-            <input type="search" value={zq} onChange={(e) => setZq(e.target.value)} placeholder="Chercher votre ville ou quartier…" aria-label="Chercher une zone" autoComplete="off" />
-            <div className="chips zlist">{zonesShown.map((z) => (
-              <button type="button" className="chip" key={z.id} onClick={() => setZonesSel((x) => [...x, z.id])}>+ {z.name}</button>
-            ))}{zonesShown.length === 0 && <span className="hint">Aucun résultat. Essayez une autre orthographe.</span>}</div>
-            {!zq && p.zones.length > 40 && <span className="hint">Tapez le nom de votre ville pour la trouver parmi {p.zones.length} zones.</span>}
+            <ZonePicker zones={p.zones} selected={p.defaults.zones} />
           </div>
           <div className="fld"><label htmlFor="phone">Téléphone</label><input id="phone" name="phone" type="tel" required defaultValue={d.phone} placeholder="+225 07 00 00 00 00" autoComplete="tel" /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp <span className="hint">(si différent)</span></label><input id="whatsapp" name="whatsapp" type="tel" defaultValue={d.whatsapp} /></div>

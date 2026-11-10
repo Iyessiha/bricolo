@@ -5,6 +5,7 @@ import { countryName } from "@/lib/countries";
 import Flag from "@/components/Flag";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
+import ZoneOptions from "@/components/ZoneOptions";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
 
@@ -18,7 +19,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
 
   const [{ data: trades }, { data: zones }] = await Promise.all([
     db.from("trades").select("id, slug, name, plural").order("plural"),
-    db.from("zones").select("id, name").eq("country_code", country).order("name"),
+    db.from("zones").select("id, name, parent_id").eq("country_code", country).order("name"),
   ]);
   const trade = trades?.find((t) => t.slug === sp.metier);
   const zone = zones?.find((z) => z.id === sp.zone);
@@ -46,8 +47,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
           </select></div>
         <div className="fld"><label htmlFor="zone">Commune ou ville</label>
           <select id="zone" name="zone" defaultValue={zone?.id ?? ""}>
-            <option value="">Toutes les zones</option>
-            {zones?.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+            <ZoneOptions zones={zones ?? []} />
           </select></div>
         <label className="check" htmlFor="verifie" style={{ minHeight: 44, alignItems: "center" }}>
           <input type="checkbox" id="verifie" name="verifie" value="1" defaultChecked={sp.verifie === "1"} /> Artisans vérifiés uniquement

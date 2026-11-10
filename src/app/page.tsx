@@ -8,6 +8,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
 import ArtisanNudge from "@/components/ArtisanNudge";
+import ZoneOptions from "@/components/ZoneOptions";
 
 const FAQ = [
   ["Est-ce payant pour un client ?", "Non. Chercher un artisan, voir son profil et lui envoyer une demande est gratuit, sans compte. Vous réglez l’artisan directement, après avoir convenu du prix avec lui."],
@@ -27,7 +28,7 @@ export default async function Home() {
 
   const [{ data: trades }, { data: zones }, { data: boosts }] = await Promise.all([
     db.from("trades").select("id, slug, plural, description").order("plural"),
-    db.from("zones").select("id, name").eq("country_code", country).order("name"),
+    db.from("zones").select("id, name, parent_id").eq("country_code", country).order("name"),
     db.from("boosts").select("artisan_id").eq("type", "accueil").eq("status", "active").gt("ends_at", new Date().toISOString()),
   ]);
   const ids = [...new Set((boosts ?? []).map((b) => b.artisan_id))];
@@ -69,8 +70,7 @@ export default async function Home() {
             </select></div>
           <div className="fld"><label htmlFor="zone">Commune ou ville</label>
             <select id="zone" name="zone" defaultValue="">
-              <option value="">Toutes les zones</option>
-              {zones?.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+              <ZoneOptions zones={zones ?? []} />
             </select></div>
           <button className="btn primary" type="submit">Rechercher</button>
         </form>

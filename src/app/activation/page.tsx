@@ -20,7 +20,7 @@ export default async function ActivationPage() {
 
   const [{ data: trades }, { data: zones }, { data: a }] = await Promise.all([
     db.from("trades").select("id, name").order("name"),
-    db.from("zones").select("id, name").eq("country_code", country).order("name"),
+    db.from("zones").select("id, name, parent_id").eq("country_code", country).order("name"),
     db.from("artisans").select("id, name, trade_id, description, headline, price_label, phone, whatsapp, experience_years, account_type, company_name, photo_url, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
   ]);
   const { data: ident } = a ? await db.from("artisan_identity").select("status").eq("artisan_id", a.id).maybeSingle() : { data: null };
