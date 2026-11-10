@@ -69,14 +69,24 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
             <div><span aria-hidden="true">🕒</span><b className={st.state === "open" ? "pf-open" : undefined}>{st.state === "none" ? "—" : st.state === "open" ? "Ouvert" : "Fermé"}</b><small>{st.state === "none" ? "horaires non précisés" : st.text.replace(/^(Ouvert|Fermé) · ?/, "") || (st.state === "open" ? "maintenant" : "")}</small></div>
           </div>
 
+          {services && services.length > 0 && (() => { const list = services.slice(0, isPro ? 10 : 1); return (
+            <section className="svcbox" aria-labelledby="svc-t">
+              <div className="svcbox-h"><h2 id="svc-t">🛠️ Ce que je propose</h2><span className="svcbox-n">{list.length} prestation{list.length > 1 ? "s" : ""}</span></div>
+              {list.map((s) => (
+                <article key={s.id} className="svc-pub">
+                  <div className="svc-pub-h"><h3>{s.headline}</h3>{priceText(s.price_label) && <span className="svc-price">{priceText(s.price_label)}</span>}</div>
+                  {(((s as any).included?.length ?? 0) > 0 || ((s as any).extras?.length ?? 0) > 0) && (
+                    <div className="svc-cols">
+                      {(s as any).included?.length > 0 && <div><span className="svc-lbl">Inclus dans le prix</span><ul className="svc-inc">{(s as any).included.map((x: string) => <li key={x}>{x}</li>)}</ul></div>}
+                      {(s as any).extras?.length > 0 && <div><span className="svc-lbl">En supplément</span><ul className="svc-ext">{(s as any).extras.map((x: string) => <li key={x}>{x}</li>)}</ul></div>}
+                    </div>)}
+                  <Link className="btn small primary svc-cta" href={`/artisan/${id}?message=1#message`}>Demander cette prestation</Link>
+                </article>))}
+            </section>); })()}
+
           {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p className="pfabout">{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
 
-          {services && services.length > 0 && <div className="card pad stack"><h2>Prestations</h2>{services.slice(0, isPro ? 10 : 1).map((s) => (
-            <div key={s.id} className="svc-pub">
-              <div className="svc-pub-h"><b>{s.headline}</b>{priceText(s.price_label) && <span className="acard-price">{priceText(s.price_label)}</span>}</div>
-              {(s as any).included?.length > 0 && <><span className="svc-lbl">Inclus dans le prix</span><ul className="svc-inc">{(s as any).included.map((x: string) => <li key={x}>{x}</li>)}</ul></>}
-              {(s as any).extras?.length > 0 && <><span className="svc-lbl">En supplément</span><ul className="svc-ext">{(s as any).extras.map((x: string) => <li key={x}>{x}</li>)}</ul></>}
-            </div>))}</div>}
+
 
           {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><div className="gal">{shots.slice(0, isPro ? 20 : 8).map((s) => <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={s.caption ?? `Réalisation de ${a.name}`} loading="lazy" /></a>)}</div></div>}
 
