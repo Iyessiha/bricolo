@@ -119,17 +119,28 @@ export async function removePortfolio(id: string): Promise<{ ok: boolean }> {
 }
 
 const to = (kind: "ok" | "erreur", msg: string): never => redirect(`/tableau-de-bord?${kind}=${encodeURIComponent(msg)}#profil`);
+const svcTo = (kind: "ok" | "erreur", msg: string): never => redirect(`/tableau-de-bord?s=prestations&${kind}=${encodeURIComponent(msg)}`);
 export async function addService(formData: FormData) {
   const c = await me(); if (!c) redirect("/connexion");
   const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
-  if (!h.ok) return to("erreur", h.error);
+  if (!h.ok) return svcTo("erreur", h.error);
   const { error } = await c.db.from("artisan_services").insert({ artisan_id: c.a.id, headline: h.value, price_label: priceLabel(formData) });
-  if (error) return to("erreur", /prestations_pleines/.test(error.message) ? "Le forfait gratuit permet 1 prestation. Passez au Forfait Pro pour en ajouter jusqu’à 10." : "La prestation n’a pas pu être ajoutée.");
-  revalidatePath("/tableau-de-bord"); return to("ok", "Prestation ajoutée.");
+  if (error) return svcTo("erreur", /prestations_pleines/.test(error.message) ? "Le forfait gratuit permet 1 prestation. Passez au Forfait Pro pour en ajouter jusqu’à 10." : "La prestation n’a pas pu être ajoutée.");
+  revalidatePath("/tableau-de-bord"); return svcTo("ok", "Prestation ajoutée.");
+}
+export async function updateService(formData: FormData) {
+  const c = await me(); if (!c) redirect("/connexion");
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return svcTo("erreur", "Prestation introuvable.");
+  const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
+  if (!h.ok) return svcTo("erreur", h.error);
+  const { error } = await c.db.from("artisan_services").update({ headline: h.value, price_label: priceLabel(formData) }).eq("id", id).eq("artisan_id", c.a.id);
+  if (error) return svcTo("erreur", "La prestation n’a pas pu être modifiée.");
+  revalidatePath("/tableau-de-bord"); revalidatePath(`/artisan/${c.a.id}`); return svcTo("ok", "Prestation modifiée.");
 }
 export async function removeService(formData: FormData) {
   const c = await me(); if (!c) redirect("/connexion");
   const id = String(formData.get("id") ?? "");
   if (/^[0-9a-f-]{36}$/i.test(id)) await c.db.from("artisan_services").delete().eq("id", id).eq("artisan_id", c.a.id);
-  revalidatePath("/tableau-de-bord"); return to("ok", "Prestation supprimée.");
+  revalidatePath("/tableau-de-bord"); return svcTo("ok", "Prestation supprimée.");
 }

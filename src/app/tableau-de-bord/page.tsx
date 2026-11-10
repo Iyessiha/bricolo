@@ -16,7 +16,7 @@ import { PRO_LIMITS } from "@/lib/boost";
 import { PLANS, planPrice } from "@/lib/plans";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
-import { addService, markAnswered, removeService, saveHours, saveProfile } from "./actions";
+import { addService, markAnswered, removeService, updateService, saveHours, saveProfile } from "./actions";
 import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
@@ -92,7 +92,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
-  const sec = (["apercu", "demandes", "profil", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "prestations", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
   const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
   const hasHours = !!(artisan as any).open_24_7 || Object.keys(cleanHours((artisan as any).hours)).length > 0;
   const checks = [
@@ -100,6 +100,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { ok: ident.status === "approved", l: "Identité vérifiée", s: "apercu" },
     { ok: !!(artisan as any).headline, l: "Écrire votre promesse « Je vais… »", s: "profil" },
     { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
+    { ok: nSvc > 0, l: "Ajouter au moins une prestation avec son prix", s: "prestations" },
     { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
     { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil" },
     { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", s: "profil" },
@@ -109,7 +110,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -221,10 +222,30 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
         </div>
 
+        <div className="stack" hidden={sec !== "prestations"}>
+          <h1 className="dtitle">Mes prestations</h1>
+          <div id="prestations" className="card pad stack psec"><h2>Ce que je propose <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
+            <p className="hint">Listez chaque service avec son prix de départ : le client sait tout de suite ce que vous faites et combien ça coûte. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
+            {!services?.length && <p className="empty">Vous n’avez pas encore de prestation. Ajoutez la première ci-dessous.</p>}
+            {services?.map((s) => (
+              <details key={s.id} className="svc">
+                <summary><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}</span><span className="btn small">Modifier</span></summary>
+                <form action={updateService} className="stack svc-f"><input type="hidden" name="id" value={s.id} />
+                  <HeadlineField uid={`svc_h_${s.id}`} label="Prestation" value={s.headline} /><PriceField uid={`svc_p_${s.id}`} label="Prix de cette prestation" value={s.price_label} />
+                  <div className="row"><button className="btn small primary" type="submit">Enregistrer</button></div></form>
+                <form action={removeService} className="svc-del"><input type="hidden" name="id" value={s.id} /><button className="btn small ghost" type="submit">Supprimer cette prestation</button></form>
+              </details>))}
+            {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait">Découvrir le Forfait Pro</Link></div>}
+            {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
+              <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de cette prestation" />
+              <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
+          </div>
+        </div>
+
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
           <nav className="subnav" aria-label="Aller à">
-            {[["limites", "Limites"], ["photos", "Photos"], ["prestations", "Prestations"], ["activite", "Infos"], ["zones", "Zones"], ["diplomes", "Diplômes"], ["horaires", "Horaires"]].map(([k, l]) => <a key={k} href={`#${k}`}>{l}</a>)}
+            {[["limites", "Limites"], ["photos", "Photos"], ["activite", "Infos"], ["zones", "Zones"], ["diplomes", "Diplômes"], ["horaires", "Horaires"]].map(([k, l]) => <a key={k} href={`#${k}`}>{l}</a>)}
           </nav>
         <div id="limites" className="card pad stack psec"><h2>Mes limites {pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</h2>
           {limitsEl}
@@ -235,14 +256,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} />
           <h3 className="fh">Photo de profil <span className="hint">(pour vous identifier)</span></h3>
           <PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
-        <div id="prestations" className="card pad stack psec"><h2>Mes prestations <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
-          <p className="hint">Listez ce que vous proposez, chacune avec son prix de départ. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
-          {services?.map((s) => <form key={s.id} action={removeService} className="todo"><input type="hidden" name="id" value={s.id} /><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}</span><button className="btn small ghost" style={{ marginLeft: "auto" }} type="submit">Supprimer</button></form>)}
-          {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait">Découvrir le Forfait Pro</Link></div>}
-          {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
-            <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de cette prestation" />
-            <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
-        </div>
         <form action={saveProfile} className="stack">
           <div id="activite" className="card pad stack psec"><h2>Mon activité</h2>
           <div className="fld"><span className="lbl" id="statut-l">Vous exercez</span>

@@ -253,7 +253,7 @@ h1 .flag{margin-inline:2px}
 .dme-t{display:grid;gap:3px;min-width:0;flex:1;justify-items:start}.dme-t b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px}
 .dout{border:0;background:transparent;font-size:20px;min-width:44px;min-height:44px;cursor:pointer;color:var(--ink-muted);border-radius:var(--radius-md)}.dout:hover{background:var(--surface-sunken)}
 .dview{justify-content:center;width:100%}
-.dnav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface-raised);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(19,32,58,.08)}
+.dnav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(6,1fr);background:var(--surface-raised);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(19,32,58,.08)}
 .dnav a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:58px;font-size:11.5px;font-weight:600;color:var(--ink-muted);text-decoration:none}
 .dnav a span:first-child{font-size:20px;line-height:1}
 .dnav a[aria-current=page]{color:var(--brand)}.dnav a[aria-current=page]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--brand)}
@@ -572,3 +572,11 @@ html{scroll-padding-top:72px}
 .why i{display:grid;place-items:center;width:15px;height:15px;border-radius:50%;background:rgba(0,0,0,.2);color:inherit;font:700 10px/1 var(--font-body,inherit);font-style:normal}
 .why>span{display:none;position:absolute;z-index:5;left:0;top:calc(100% + 6px);width:calc(100cqw - 16px);padding:9px 11px;border-radius:10px;background:var(--ink);color:var(--surface-raised);font:500 12px/1.4 var(--font-body,inherit);text-align:left;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .why:hover>span,.why:focus>span,.why:focus-within>span{display:block}
+
+/* Section Prestations */
+.svc{border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-raised)}
+.svc>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;cursor:pointer;list-style:none}
+.svc>summary::-webkit-details-marker{display:none}
+.svc[open]>summary{border-bottom:1px solid var(--line)}
+.svc-f{padding:14px}.svc-del{padding:0 14px 14px}
+@media(max-width:699px){.dnav a{font-size:10px}}
