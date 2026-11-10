@@ -53,10 +53,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     db.from("subscriptions").select("ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const [{ data: planRow }, { data: history }] = await Promise.all([
-    db.from("plan_prices").select("amount").eq("country_code", country).maybeSingle(),
+    db.from("plan_prices").select("amount, week_amount, year_amount").eq("country_code", country).maybeSingle(),
     db.from("subscriptions").select("id, days, amount, starts_at, ends_at, created_at").eq("artisan_id", artisan.id).eq("status", "active").order("created_at", { ascending: false }).limit(10),
   ]);
   const monthPrice = planRow?.amount ?? 0;
+  const planOf = planRow ?? { amount: 0 };
   const pro = !!proSub, maxServices = pro ? 10 : 1, maxPhotos = pro ? 20 : 8;
   const zonesCount = (((artisan as any).zones ?? []) as any[]).length;
   const maxZones = pro ? Infinity : Math.max(PRO_LIMITS.free.zones, zonesCount);
@@ -90,7 +91,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
-  const sec = (["apercu", "demandes", "profil", "horaires", "forfait", "boosts"] as const).find((k) => k === sp.s) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
   const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
   const hasHours = !!(artisan as any).open_24_7 || Object.keys(cleanHours((artisan as any).hours)).length > 0;
   const checks = [
@@ -107,7 +108,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["horaires", "🕒", "Horaires"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -123,7 +124,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {approved && <Link className="btn small dview" href={`/artisan/${artisan.id}`}>Voir ma fiche publique</Link>}
         <nav className="dnav" aria-label="Sections">
           {NAV.map(([k, ic, l]) => (
-            <Link key={k} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
+            <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
               <span aria-hidden="true">{ic}</span><span>{l}</span>{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
             </Link>
           ))}
@@ -205,16 +206,19 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
-        <div className="card pad stack psec"><h2>Mes limites {pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</h2>
+          <nav className="subnav" aria-label="Aller à">
+            {[["limites", "Limites"], ["photos", "Photos"], ["prestations", "Prestations"], ["activite", "Infos"], ["zones", "Zones"], ["diplomes", "Diplômes"], ["horaires", "Horaires"]].map(([k, l]) => <a key={k} href={`#${k}`}>{l}</a>)}
+          </nav>
+        <div id="limites" className="card pad stack psec"><h2>Mes limites {pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</h2>
           {limitsEl}
           <div className="row" style={{ justifyContent: "space-between" }}><span className="meta">Couverture : {(artisan as any).cover_url ? "✓ ajoutée" : "à ajouter"} (paysage 1600 × 600 px)</span><Link className={pro ? "" : "btn small boost"} href="/tableau-de-bord?s=forfait" scroll={false}>{pro ? "Gérer mon forfait" : "Voir le Forfait Pro"}</Link></div>
         </div>
-        <div className="card pad stack psec"><h2>Photos</h2>
+        <div id="photos" className="card pad stack psec"><h2>Photos</h2>
           <p className="sub">C’est la première chose que voient les clients : soignez-les.</p>
           <Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} />
           <h3 className="fh">Photo de profil <span className="hint">(pour vous identifier)</span></h3>
           <PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
-        <div className="card pad stack psec"><h2>Mes prestations <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
+        <div id="prestations" className="card pad stack psec"><h2>Mes prestations <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
           <p className="hint">Listez ce que vous proposez, chacune avec son prix de départ. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
           {services?.map((s) => <form key={s.id} action={removeService} className="todo"><input type="hidden" name="id" value={s.id} /><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}</span><button className="btn small ghost" style={{ marginLeft: "auto" }} type="submit">Supprimer</button></form>)}
           {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait">Découvrir le Forfait Pro</Link></div>}
@@ -223,7 +227,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
         </div>
         <form action={saveProfile} className="stack">
-          <div className="card pad stack psec"><h2>Mon activité</h2>
+          <div id="activite" className="card pad stack psec"><h2>Mon activité</h2>
           <div className="fld"><span className="lbl" id="statut-l">Vous exercez</span>
             <div className="chips" role="radiogroup" aria-labelledby="statut-l">
               <label className="chip"><input type="radio" name="account_type" value="individuel" defaultChecked={artisan.account_type === "individuel"} />À titre individuel</label>
@@ -236,12 +240,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <select id="trade_id" name="trade_id" required defaultValue={artisan.trade_id}>{trades?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
           <div className="fld"><label htmlFor="experience_years">Années d’expérience</label><input type="number" inputMode="numeric" min={0} max={60} id="experience_years" name="experience_years" required defaultValue={artisan.experience_years ?? ""} /></div>
           </div>
-          <div className="card pad stack psec"><h2>Ma présentation</h2>
+          <div id="presentation" className="card pad stack psec"><h2>Ma présentation</h2>
             <p className="sub">Une promesse claire et une description concrète donnent envie d’appeler.</p>
           <HeadlineField value={(artisan as any).headline} label="Ma promesse principale (affichée sur votre carte)" />
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
-          <div className="card pad stack psec"><h2>Où j’interviens</h2>
+          <div id="zones" className="card pad stack psec"><h2>Où j’interviens</h2>
             <p className="sub">{pro ? "Forfait Pro : zones illimitées." : `Forfait gratuit : jusqu’à ${PRO_LIMITS.free.zones} zones. Passez Pro pour couvrir davantage de villes et quartiers.`}</p>
             <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} max={pro ? undefined : maxZones} />
             {!pro && <Link className="btn small boost" href="/tableau-de-bord?s=forfait" style={{ justifySelf: "start" }}>Couvrir plus de zones avec le Pro</Link>}
@@ -263,7 +267,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <li><b>Horaires et zones</b> : plus vous couvrez de zones, plus vous apparaissez dans les recherches.</li>
             <li><b>Répondez vite</b> : dans l’heure, c’est ce qui fait décrocher les chantiers.</li>
           </ol></details>
-      <div className="card pad stack">
+      <div id="diplomes" className="card pad stack">
         <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
         {diplomas?.map((d) => (
@@ -277,8 +281,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         </div>
 
-      <div id="horaires" className="card pad stack" hidden={sec !== "horaires"}>
-        <h2 style={{ fontSize: 20 }}>Jours et heures de disponibilité</h2>
+      <div id="horaires" className="card pad stack" hidden={sec !== "profil"}>
+        <h2 style={{ fontSize: 20 }}>Mes horaires</h2>
         <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
         <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
       </div>
@@ -296,7 +300,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="stack">
             <h2 style={{ fontSize: 18 }}>{pro ? "Prolonger mon Forfait Pro" : "Passer au Forfait Pro"}</h2>
             <div className="agrid plans">
-              {PLANS.map((pl) => { const amount = planPrice(monthPrice, pl.key); const perMonth = Math.round((amount / (pl.days / 30)) / 100) * 100; return (
+              {PLANS.map((pl) => { const amount = planPrice(planOf, pl.key); const perMonth = Math.round((amount / (pl.days / 30)) / 100) * 100; return (
                 <form key={pl.key} method="post" action="/api/forfait/checkout" className={`card pad stack plan${pl.key === "month" ? " best" : ""}`}>
                   <span className="tag mute">{pl.note}</span>
                   <h3 style={{ fontSize: 18 }}>{pl.label}</h3><p className="price">{fcfa(amount)}</p>

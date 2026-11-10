@@ -58,6 +58,18 @@ export async function giftBoost(f: FormData) {
   await audit(ctx, "boost.offrir", { type: "artisan", id: a.id, label: a.name }, { type, hours });
   refresh(a.id); back(page, "ok", `Boost offert : ${type}, ${hours / 24} jour(s).`);
 }
+export async function giftPro(f: FormData) {
+  const { ctx, a, page } = await target(f);
+  const days = parseInt(s(f, "days", 4), 10);
+  if (![7, 30, 365].includes(days)) back(page, "erreur", "Durée invalide.");
+  const now = new Date();
+  const { data: cur } = await ctx.db.from("subscriptions").select("ends_at").eq("artisan_id", a.id).eq("status", "active").gt("ends_at", now.toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle();
+  const start = cur ? new Date(cur.ends_at) : now; const end = new Date(start); end.setUTCDate(end.getUTCDate() + days);
+  const { error } = await ctx.db.from("subscriptions").insert({ artisan_id: a.id, days, amount: 0, status: "active", starts_at: now.toISOString(), ends_at: end.toISOString() });
+  if (error) back(page, "erreur", "Le Forfait Pro n’a pas pu être offert.");
+  await audit(ctx, "pro.offrir", { type: "artisan", id: a.id, label: a.name }, { days });
+  refresh(a.id); back(page, "ok", `Forfait Pro offert : ${days} jours.`);
+}
 export async function deleteArtisan(f: FormData) {
   const { ctx, a, page } = await target(f);
   if (s(f, "confirm", 20).toUpperCase() !== "SUPPRIMER") back(page, "erreur", "Tapez SUPPRIMER pour confirmer la suppression.");
@@ -91,7 +103,14 @@ export async function savePrices(f: FormData) {
   let n = 0;
   for (const [key, value] of f.entries()) {
     if (key.startsWith("p:")) { await ctx.db.from("price_grid").update({ amount: Math.max(0, parseInt(String(value), 10) || 0) }).eq("id", key.slice(2)); n++; }
-    else if (key.startsWith("plan:")) { await ctx.db.from("plan_prices").update({ amount: Math.max(0, parseInt(String(value), 10) || 0) }).eq("country_code", key.slice(5)); n++; }
+    else if (key.startsWith("plan:")) {
+      // plan:<pays>:<month|week|year> ; vide = prix automatique (semaine, année). Le prix du mois est obligatoire.
+      const [, cc, kind] = key.split(":"); const raw = String(value).replace(/\s/g, "");
+      const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+      if (kind === "month") { if (v !== null) await ctx.db.from("plan_prices").upsert({ country_code: cc, amount: v }, { onConflict: "country_code" }); }
+      else if (kind === "week" || kind === "year") await ctx.db.from("plan_prices").update({ [kind === "week" ? "week_amount" : "year_amount"]: v === 0 ? null : v }).eq("country_code", cc);
+      n++;
+    }
     else if (key.startsWith("z:")) { const v = Math.min(9.99, Math.max(0.1, parseFloat(String(value).replace(",", ".")) || 1)); await ctx.db.from("zones").update({ price_factor: v }).eq("id", key.slice(2)); n++; }
   }
   await audit(ctx, "prix.modifier", undefined, { lignes: n });

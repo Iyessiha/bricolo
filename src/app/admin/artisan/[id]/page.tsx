@@ -8,7 +8,7 @@ import { initials } from "@/lib/format";
 import Flag from "@/components/Flag";
 import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
-import { removeMedia, deleteArtisan, giftBoost, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
+import { removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
 import { fcfa } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Examen du dossier", robots: { index: false } };
@@ -30,10 +30,11 @@ export default async function Review({ params, searchParams }: { params: Promise
   const { data: a } = await db.from("artisans")
     .select("*, trade:trades(name), profile:profiles(email), zones:artisan_zones(zone:zones(name))").eq("id", id).maybeSingle();
   if (!a) notFound();
-  const [{ data: ident }, { data: diplomas }, { data: company }] = await Promise.all([
+  const [{ data: ident }, { data: diplomas }, { data: company }, { data: proSub }] = await Promise.all([
     db.from("artisan_identity").select("*").eq("artisan_id", id).maybeSingle(),
     db.from("artisan_diplomas").select("*").eq("artisan_id", id).order("submitted_at", { ascending: false }),
     db.from("artisan_companies").select("registration_number").eq("artisan_id", id).maybeSingle(),
+    db.from("subscriptions").select("ends_at").eq("artisan_id", id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   // Liens temporaires (10 min) vers les pièces : le stockage est privé.
@@ -100,6 +101,10 @@ export default async function Review({ params, searchParams }: { params: Promise
           <select name="type" aria-label="Type"><option value="recherche">Recherche</option><option value="accueil">Accueil</option><option value="urgence">Urgence</option></select>
           <select name="hours" aria-label="Durée"><option value="24">24 h</option><option value="72">3 jours</option><option value="168">7 jours</option></select>
           <button className="btn small" type="submit">Offrir</button></form>
+        <form action={giftPro} className="afilters"><input type="hidden" name="id" value={id} />
+          <b>Forfait Pro :</b> <span className={`tag ${proSub ? "boost" : "mute"}`}>{proSub ? `Pro jusqu’au ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(proSub.ends_at))}` : "Gratuit"}</span>
+          <select name="days" aria-label="Durée offerte"><option value="7">Offrir 1 semaine</option><option value="30">Offrir 1 mois</option><option value="365">Offrir 1 an</option></select>
+          <button className="btn small" type="submit">Offrir le Pro</button></form>
       </div>
 
       {(((a as any).cover_url) || shots?.length) ? (

@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
   const { data: a } = await db.from("artisans").select("id, country_code, status").eq("user_id", user.data.user.id).single();
   if (!a || a.status !== "approved") return to("/tableau-de-bord");
-  const { data: price } = await db.from("plan_prices").select("amount").eq("country_code", a.country_code).single();
+  const { data: price } = await db.from("plan_prices").select("amount, week_amount, year_amount").eq("country_code", a.country_code).single();
   if (!price || price.amount <= 0) return back("&erreur=" + encodeURIComponent("Le paiement n’a pas pu démarrer. Réessayez dans un instant."));
-  const amount = planPrice(price.amount, plan.key); // semaine = 1/3 du mois, année = 10 mois
+  const amount = planPrice(price, plan.key); // semaine = 1/3 du mois, année = 10 mois
 
   const { data: sub, error } = await db.from("subscriptions").insert({ artisan_id: a.id, days: plan.days, amount, status: "pending" }).select("id").single();
   if (error || !sub) return back("&erreur=" + encodeURIComponent("Le paiement n’a pas pu démarrer. Réessayez dans un instant."));
