@@ -86,7 +86,11 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
   }
   if (fields.account_type === "entreprise" && registration) await db.from("artisan_companies").upsert({ artisan_id: artisanId, registration_number: registration, updated_at: new Date().toISOString() });
   else await db.from("artisan_companies").delete().eq("artisan_id", artisanId);
+  // L'ordre compte : si le Forfait Pro se termine, les 3 premières zones restent actives. Les zones déjà détenues gardent leur rang, les nouvelles passent après.
+  const { data: held } = await db.from("artisan_zones").select("zone_id, position").eq("artisan_id", artisanId).order("position");
+  const rank = new Map((held ?? []).map((r, i) => [r.zone_id as string, i]));
+  const ordered = [...zoneIds].sort((a, b) => (rank.get(a) ?? 1e6) - (rank.get(b) ?? 1e6));
   await db.from("artisan_zones").delete().eq("artisan_id", artisanId);
-  await db.from("artisan_zones").insert(zoneIds.map((zone_id) => ({ artisan_id: artisanId!, zone_id })));
+  await db.from("artisan_zones").insert(ordered.map((zone_id, position) => ({ artisan_id: artisanId!, zone_id, position })));
   return { ok: true, created, artisanId };
 }
