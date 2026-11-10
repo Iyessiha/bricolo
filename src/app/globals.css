@@ -494,3 +494,11 @@ h1 .flag{margin-inline:2px}
   .tile{grid-auto-flow:column;align-items:center;column-gap:8px}
   .tile .ti{width:28px;height:28px;margin:0;border-radius:8px}.tile .ti svg{width:18px;height:18px}
 }
+
+/* Troisième bouton : message sur la plateforme */
+.acard-cta .msg{flex:none;width:44px;padding:0}
+.mbar .btn{padding-inline:8px;font-size:14px}
+html{scroll-padding-top:72px}
+.acard-cta{gap:5px}
+.acard-cta .wa{min-width:0;padding:0 6px;font-size:13px;white-space:nowrap}
+.acard-cta .call,.acard-cta .msg{width:38px}

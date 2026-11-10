@@ -42,6 +42,7 @@ export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: s
       <div className="acard-cta">
         <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>
         <a className="btn call" href={`/api/contact?id=${a.id}&type=call`} aria-label={`Appeler ${a.name}`}>📞</a>
+        <a className="btn msg" href={`/artisan/${a.id}?message=1#message`} aria-label={`Envoyer un message à ${a.name}`} title="Message">✉️</a>
       </div>
     </article>
   );
