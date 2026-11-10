@@ -12,7 +12,7 @@ export default async function Demandes({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const { db } = await requireAdmin();
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  let q = db.from("service_requests").select("id, created_at, country_code, status, urgent, client_name, client_email, description, artisan:artisans(id, name), trade:trades(name)", { count: "exact" }).order("created_at", { ascending: false });
+  let q = db.from("service_requests").select("id, created_at, country_code, status, urgent, client_name, client_email, client_phone, description, artisan:artisans(id, name), trade:trades(name)", { count: "exact" }).order("created_at", { ascending: false });
   if (sp.statut === "new" || sp.statut === "answered") q = q.eq("status", sp.statut);
   if (sp.pays) q = q.eq("country_code", sp.pays);
   if (sp.urgent === "1") q = q.eq("urgent", true);
@@ -36,7 +36,7 @@ export default async function Demandes({ searchParams }: { searchParams: Promise
             <span style={{ flex: "1 1 280px", minWidth: 0 }}>
               <b>{one(r.trade as any)?.name ?? "Demande"}</b> {r.urgent && <span className="tag err">Urgent</span>} <span className={`tag ${r.status === "new" ? "wait" : "ok"}`}>{r.status === "new" ? "Sans réponse" : "Répondue"}</span> {late && <span className="sla">⚠ +48 h</span>}
               <br /><span>{r.description}</span>
-              <br /><span className="meta">{r.client_name ?? "Client"} · {r.client_email} · {(r.country_code ?? "").toUpperCase()} · {day(r.created_at)} ({ago(r.created_at)}) · pour {a ? <Link href={`/admin/artisan/${a.id}`}>{a.name}</Link> : "—"}</span>
+              <br /><span className="meta">{r.client_name ?? "Client"} · {[r.client_phone ? `+${r.client_phone}` : null, r.client_email].filter(Boolean).join(" · ")} · {(r.country_code ?? "").toUpperCase()} · {day(r.created_at)} ({ago(r.created_at)}) · pour {a ? <Link href={`/admin/artisan/${a.id}`}>{a.name}</Link> : "—"}</span>
             </span>
             <form action={markRequest}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={r.status === "new" ? "answered" : "new"} /><input type="hidden" name="to" value={keep(page)} />
               <button className="btn small" type="submit">{r.status === "new" ? "Marquer répondue" : "Rouvrir"}</button></form>

@@ -83,7 +83,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const [{ data: ev }, { data: act }, { data: reqs }, { data: grid }] = await Promise.all([
     db.from("events").select("type").eq("artisan_id", artisan.id).gte("created_at", since),
     db.from("boosts").select("id, type, status, ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()),
-    db.from("service_requests").select("id, client_name, client_email, description, urgent, status, created_at").eq("artisan_id", artisan.id).order("created_at", { ascending: false }).limit(15),
+    db.from("service_requests").select("id, client_name, client_email, client_phone, description, urgent, status, created_at").eq("artisan_id", artisan.id).order("created_at", { ascending: false }).limit(15),
     db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", country),
   ]);
   const stats = { vues: 0, appels: 0, wa: 0, demandes: 0 };
@@ -196,8 +196,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {reqs?.length ? reqs.map((r) => (
           <div key={r.id} className="req card pad">
             <div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" ? <span className="tag wait">Nouvelle</span> : <span className="tag mute">Traitée</span>}<span className="meta">{day(r.created_at)}</span></div>
-            <p><b>{r.client_name || "Client"}</b> · <a href={`mailto:${r.client_email}`}>{r.client_email}</a></p>
+            <p><b>{r.client_name || "Client"}</b>{r.client_phone ? <> · <a href={`tel:+${r.client_phone}`}>+{r.client_phone}</a></> : null}{r.client_email ? <> · <a href={`mailto:${r.client_email}`}>{r.client_email}</a></> : null}</p>
             <p>{r.description}</p>
+            <div className="row reqact">
+              {r.client_phone && <a className="btn small wa" href={`https://wa.me/${r.client_phone}?text=${encodeURIComponent(`🔧 *Bricolo* — Bonjour${r.client_name ? " " + r.client_name : ""}, ici ${artisan.name}. Je réponds à votre demande envoyée sur Bricolo : « ${r.description.slice(0, 80)} »`)}`} target="_blank" rel="noopener noreferrer">💬 Répondre sur WhatsApp</a>}
+              {r.client_phone && <a className="btn small" href={`tel:+${r.client_phone}`}>📞 Appeler</a>}
+              {r.client_email && <a className="btn small" href={`mailto:${r.client_email}?subject=${encodeURIComponent("Votre demande sur Bricolo")}`}>✉️ Répondre par e-mail</a>}
+            </div>
             {r.status === "new" && <form action={markAnswered}><input type="hidden" name="id" value={r.id} /><button className="btn small" type="submit">Marquer comme traitée</button></form>}
           </div>
         )) : <p className="empty">Aucune demande pour le moment. Elles apparaîtront ici et vous seront aussi envoyées par e-mail.</p>}

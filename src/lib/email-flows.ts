@@ -43,8 +43,8 @@ export const notifyServiceRequest = (requestId: string) => safe(async () => {
   if (!r?.artisan_id) return;
   const c = await contactOf(r.artisan_id); if (!c) return;
   await Promise.all([
-    sendOnce("request_artisan", r.id, mail(c.email, T.requestForArtisan({ client: r.client_name, email: r.client_email, description: r.description, urgent: r.urgent, artisanId: c.artisanId }), { replyTo: r.client_email })),
-    sendOnce("request_client", r.id, mail(r.client_email, T.requestForClient(c.name, r.description))),
+    sendOnce("request_artisan", r.id, mail(c.email, T.requestForArtisan({ client: r.client_name, email: r.client_email, phone: r.client_phone, description: r.description, urgent: r.urgent, artisanId: c.artisanId }), r.client_email ? { replyTo: r.client_email } : undefined)),
+    r.client_email ? sendOnce("request_client", r.id, mail(r.client_email, T.requestForClient(c.name, r.description))) : Promise.resolve(),
   ]);
 });
 

@@ -86,12 +86,13 @@ export const badgeGranted = (name: string, artisanId: string) => layout({
   body: p("Votre fiche affiche désormais le badge Vérifié et remonte mieux dans les résultats, à égalité de boost.") + btn("Voir ma fiche", `${siteUrl()}/artisan/${artisanId}`),
 });
 
-export const requestForArtisan = (o: { client: string | null; email: string; description: string; urgent: boolean; artisanId: string }) => layout({
+export const requestForArtisan = (o: { client: string | null; email: string | null; phone?: string | null; description: string; urgent: boolean; artisanId: string }) => layout({
   subject: `${o.urgent ? "Urgent : " : ""}Nouvelle demande sur Bricolo`, pre: o.description.slice(0, 90),
   title: o.urgent ? "Nouvelle demande urgente" : "Vous avez une nouvelle demande",
   body: p(`${o.client || "Un client"} vous écrit :`) +
     `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(o.description).replace(/\n/g, "<br>")}</blockquote>` +
-    p(`Pour répondre, écrivez directement à ${o.email} (il suffit de répondre à ce message).`) +
+    (o.phone ? p(`Pour répondre, le plus simple : écrivez-lui sur WhatsApp ou appelez le <b>+${esc(o.phone)}</b>.`) : "") +
+    (o.email ? p(`${o.phone ? "Vous pouvez aussi" : "Pour répondre,"} écrire à ${esc(o.email)} (il suffit de répondre à ce message).`) : "") +
     btn("Voir mes demandes", `${siteUrl()}/tableau-de-bord`),
 });
 

@@ -25,9 +25,9 @@ export async function GET(req: NextRequest) {
     head = ["Date", "Statut", "Montant", "Devise", "Boost", "Durée (h)", "Artisan", "Pays", "Référence"];
     rows = (data ?? []).map((x: any) => { const b = one(x.boost), s = one(x.sub), a = one(b?.artisan) ?? one(s?.artisan); return [x.paid_at ?? x.created_at, x.status, x.amount, x.currency, s ? "forfait_pro" : b?.type, s ? s.days * 24 : b?.duration_hours, a?.name, a?.country_code, x.provider_ref]; });
   } else if (type === "demandes") {
-    const { data } = await ctx.db.from("service_requests").select("created_at, country_code, status, urgent, client_name, client_email, description, artisan:artisans(name), trade:trades(name)").order("created_at", { ascending: false }).limit(10000);
+    const { data } = await ctx.db.from("service_requests").select("created_at, country_code, status, urgent, client_name, client_email, client_phone, description, artisan:artisans(name), trade:trades(name)").order("created_at", { ascending: false }).limit(10000);
     head = ["Date", "Pays", "Statut", "Urgent", "Client", "E-mail", "Métier", "Artisan", "Description"];
-    rows = (data ?? []).map((x: any) => [x.created_at, x.country_code, x.status, x.urgent ? "oui" : "non", x.client_name, x.client_email, one(x.trade)?.name, one(x.artisan)?.name, x.description]);
+    rows = (data ?? []).map((x: any) => [x.created_at, x.country_code, x.status, x.urgent ? "oui" : "non", x.client_name, [x.client_phone ? "+" + x.client_phone : "", x.client_email].filter(Boolean).join(" "), one(x.trade)?.name, one(x.artisan)?.name, x.description]);
   } else return new NextResponse("Type inconnu", { status: 400 });
   await audit(ctx, "export.csv", undefined, { type, lignes: rows.length });
   const body = "﻿" + [head, ...rows].map((r) => r.map(cell).join(";")).join("\r\n");
