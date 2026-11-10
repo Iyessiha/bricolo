@@ -46,7 +46,11 @@ export default async function Home() {
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
         </div>
-        <div className="heroimg"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></div>
+        <div className="heroimg collage" aria-label="Artisans de l’Afrique de l’Ouest au travail">
+          <figure className="c1"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></figure>
+          <figure className="c2"><img src="/photos/mecaniciens.jpg" width={800} height={345} alt="Deux mécaniciens sous le capot d’une voiture" loading="lazy" /></figure>
+          <figure className="c3"><img src="/photos/jeune-casque.jpg" width={700} height={277} alt="Jeune artisan ajustant son casque blanc" loading="lazy" /></figure>
+        </div>
         <form className="card pad stack heroform" action="/resultats">
           <h2 style={{ fontSize: 20 }}>Trouver un artisan</h2>
           <div className="fld"><label htmlFor="metier">Métier</label>
