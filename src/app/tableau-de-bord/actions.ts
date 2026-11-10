@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
 import { saveArtisanProfile } from "@/lib/artisan-save";
-import { composeHeadline, priceLabel } from "@/lib/compose";
+import { composeHeadline, lines, priceLabel } from "@/lib/compose";
 import sharp from "sharp";
 import { coverProblem, shotProblem } from "@/lib/cover-rules";
 import { cleanHours } from "@/lib/hours";
@@ -124,7 +124,7 @@ export async function addService(formData: FormData) {
   const c = await me(); if (!c) redirect("/connexion");
   const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
   if (!h.ok) return svcTo("erreur", h.error);
-  const { error } = await c.db.from("artisan_services").insert({ artisan_id: c.a.id, headline: h.value, price_label: priceLabel(formData) });
+  const { error } = await c.db.from("artisan_services").insert({ artisan_id: c.a.id, headline: h.value, price_label: priceLabel(formData), included: lines(formData.get("included"), 8), extras: lines(formData.get("extras"), 6) });
   if (error) return svcTo("erreur", /prestations_pleines/.test(error.message) ? "Le forfait gratuit permet 1 prestation. Passez au Forfait Pro pour en ajouter jusqu’à 10." : "La prestation n’a pas pu être ajoutée.");
   revalidatePath("/tableau-de-bord"); return svcTo("ok", "Prestation ajoutée.");
 }
@@ -134,7 +134,7 @@ export async function updateService(formData: FormData) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return svcTo("erreur", "Prestation introuvable.");
   const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
   if (!h.ok) return svcTo("erreur", h.error);
-  const { error } = await c.db.from("artisan_services").update({ headline: h.value, price_label: priceLabel(formData) }).eq("id", id).eq("artisan_id", c.a.id);
+  const { error } = await c.db.from("artisan_services").update({ headline: h.value, price_label: priceLabel(formData), included: lines(formData.get("included"), 8), extras: lines(formData.get("extras"), 6) }).eq("id", id).eq("artisan_id", c.a.id);
   if (error) return svcTo("erreur", "La prestation n’a pas pu être modifiée.");
   revalidatePath("/tableau-de-bord"); revalidatePath(`/artisan/${c.a.id}`); return svcTo("ok", "Prestation modifiée.");
 }

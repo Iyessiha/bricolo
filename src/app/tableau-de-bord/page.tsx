@@ -16,6 +16,7 @@ import { PRO_LIMITS } from "@/lib/boost";
 import { PLANS, planPrice } from "@/lib/plans";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
+import ServiceDetails from "@/components/ServiceDetails";
 import { addService, markAnswered, removeService, updateService, saveHours, saveProfile } from "./actions";
 import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
@@ -50,7 +51,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     db.from("artisan_diplomas").select("id, title, status, reject_reason, submitted_at").eq("artisan_id", artisan.id).order("submitted_at", { ascending: false }),
     db.from("artisan_companies").select("registration_number").eq("artisan_id", artisan.id).maybeSingle(),
     db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", artisan.id).order("created_at"),
-    db.from("artisan_services").select("id, headline, price_label").eq("artisan_id", artisan.id).order("created_at"),
+    db.from("artisan_services").select("id, headline, price_label, included, extras").eq("artisan_id", artisan.id).order("created_at"),
     db.from("subscriptions").select("ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const [{ data: planRow }, { data: history }] = await Promise.all([
@@ -229,15 +230,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             {!services?.length && <p className="empty">Vous n’avez pas encore de prestation. Ajoutez la première ci-dessous.</p>}
             {services?.map((s) => (
               <details key={s.id} className="svc">
-                <summary><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}</span><span className="btn small">Modifier</span></summary>
+                <summary><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}{((s as any).included?.length ?? 0) > 0 ? <><br /><span className="meta">{(s as any).included.length} élément{(s as any).included.length > 1 ? "s" : ""} inclus{((s as any).extras?.length ?? 0) > 0 ? ` · ${(s as any).extras.length} en supplément` : ""}</span></> : null}</span><span className="btn small">Modifier</span></summary>
                 <form action={updateService} className="stack svc-f"><input type="hidden" name="id" value={s.id} />
-                  <HeadlineField uid={`svc_h_${s.id}`} label="Prestation" value={s.headline} /><PriceField uid={`svc_p_${s.id}`} label="Prix de cette prestation" value={s.price_label} />
+                  <HeadlineField uid={`svc_h_${s.id}`} label="Prestation" value={s.headline} /><PriceField uid={`svc_p_${s.id}`} label="Prix de cette prestation" value={s.price_label} /><ServiceDetails uid={`svc_d_${s.id}`} included={(s as any).included} extras={(s as any).extras} />
                   <div className="row"><button className="btn small primary" type="submit">Enregistrer</button></div></form>
                 <form action={removeService} className="svc-del"><input type="hidden" name="id" value={s.id} /><button className="btn small ghost" type="submit">Supprimer cette prestation</button></form>
               </details>))}
             {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait">Découvrir le Forfait Pro</Link></div>}
             {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
-              <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de cette prestation" />
+              <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de cette prestation" /><ServiceDetails uid="svc_d" />
               <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
           </div>
         </div>

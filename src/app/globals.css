@@ -580,3 +580,13 @@ html{scroll-padding-top:72px}
 .svc[open]>summary{border-bottom:1px solid var(--line)}
 .svc-f{padding:14px}.svc-del{padding:0 14px 14px}
 @media(max-width:699px){.dnav a{font-size:10px}}
+
+/* Détail d'une prestation (fiche publique) */
+.svc-pub{border:1px solid var(--line);border-radius:var(--radius-md);padding:14px;display:grid;gap:6px}
+.svc-pub-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.svc-pub-h .acard-price{white-space:nowrap}
+.svc-lbl{margin-top:6px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-muted)}
+.svc-inc,.svc-ext{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.svc-inc li,.svc-ext li{position:relative;padding-left:22px;font-size:15px}
+.svc-inc li::before{content:"✓";position:absolute;left:0;color:var(--success,#15803d);font-weight:700}
+.svc-ext li::before{content:"+";position:absolute;left:3px;color:var(--boost,#c2570c);font-weight:700}

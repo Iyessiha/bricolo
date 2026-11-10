@@ -17,3 +17,14 @@ export function composeHeadline(raw: string): { ok: true; value: string } | { ok
   if (rest.length > 70) return { ok: false, error: "Votre promesse est trop longue (70 caractères maximum)." };
   return { ok: true, value: `Je vais ${rest.charAt(0).toLowerCase()}${rest.slice(1)}` };
 }
+
+/** Liste saisie « un élément par ligne » : nettoyée, 80 caractères par ligne, sans doublon. */
+export function lines(raw: unknown, max: number): string[] {
+  const out: string[] = [];
+  for (const l of String(raw ?? "").split(/\r?\n/)) {
+    const t = l.replace(/^[\s•*\-–✓+]+/, "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (t.length >= 2 && !out.some((o) => o.toLowerCase() === t.toLowerCase())) out.push(t);
+    if (out.length >= max) break;
+  }
+  return out;
+}

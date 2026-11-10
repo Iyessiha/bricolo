@@ -24,7 +24,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!a || a.status !== "approved") notFound();
 
   const { data: isPro } = await db.rpc("artisan_is_pro", { a: id });
-  const { data: services } = await db.from("artisan_services").select("id, headline, price_label").eq("artisan_id", id).order("created_at");
+  const { data: services } = await db.from("artisan_services").select("id, headline, price_label, included, extras").eq("artisan_id", id).order("created_at");
   const { data: shots } = await db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", id).order("created_at");
   const { data: reviews } = await db.from("reviews").select("id, author_name, rating, comment").eq("artisan_id", id).eq("status", "published").order("created_at", { ascending: false }).limit(10);
   try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view" }); } catch { /* statistiques non bloquantes */ }
@@ -71,7 +71,12 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
 
           {(a.description || a.diploma_title) && <div className="card pad stack"><h2>À propos</h2>{a.description && <p className="pfabout">{a.description}</p>}{a.diploma_title && <p className="meta">🎓 {a.diploma_title} · diplôme vérifié par Bricolo</p>}</div>}
 
-          {services && services.length > 0 && <div className="card pad stack"><h2>Prestations</h2>{services.slice(0, isPro ? 10 : 1).map((s) => <div key={s.id} className="todo" style={{ cursor: "default" }}><b>{s.headline}</b>{priceText(s.price_label) && <span className="acard-price" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>{priceText(s.price_label)}</span>}</div>)}</div>}
+          {services && services.length > 0 && <div className="card pad stack"><h2>Prestations</h2>{services.slice(0, isPro ? 10 : 1).map((s) => (
+            <div key={s.id} className="svc-pub">
+              <div className="svc-pub-h"><b>{s.headline}</b>{priceText(s.price_label) && <span className="acard-price">{priceText(s.price_label)}</span>}</div>
+              {(s as any).included?.length > 0 && <><span className="svc-lbl">Inclus dans le prix</span><ul className="svc-inc">{(s as any).included.map((x: string) => <li key={x}>{x}</li>)}</ul></>}
+              {(s as any).extras?.length > 0 && <><span className="svc-lbl">En supplément</span><ul className="svc-ext">{(s as any).extras.map((x: string) => <li key={x}>{x}</li>)}</ul></>}
+            </div>))}</div>}
 
           {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><div className="gal">{shots.slice(0, isPro ? 20 : 8).map((s) => <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={s.caption ?? `Réalisation de ${a.name}`} loading="lazy" /></a>)}</div></div>}
 
