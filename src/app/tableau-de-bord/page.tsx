@@ -259,7 +259,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </form>
         <details className="card pad tips"><summary><b>💡 Comment réussir ma fiche ?</b></summary>
           <ol>
-            <li><b>Couverture en paysage</b> : une belle image horizontale (1600 × 600 px), avec votre activité et votre nom. Gardez le texte et les éléments importants au centre : les bords sont recadrés sur les cartes.</li>
+            <li><b>Couverture en paysage</b> : une belle image horizontale (1600 × 600 px), avec votre activité et votre nom en gros caractères (90 px minimum) : sur les cartes de résultats, la cover est affichée en petit, un texte fin y serait illisible.</li>
             <li><b>3 à 8 réalisations</b> : avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.</li>
             <li><b>Une promesse « Je vais… »</b> : « Je vais installer votre climatisation ».</li>
             <li><b>Une description concrète</b> : ce que vous faites, votre expérience, vos garanties.</li>

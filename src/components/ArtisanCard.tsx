@@ -18,8 +18,9 @@ export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: s
       <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
         {a.cover_url ? <img src={a.cover_url} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
         {a.cover_url && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
-        {a.sponsored && <span className="acard-flag">Sponsorisé</span>}
+        {a.sponsored && !a.cover_url && <span className="acard-flag">Sponsorisé</span>}
         <div className="acard-badges">
+          {a.sponsored && a.cover_url && <span className="tag boost">Sponsorisé</span>}
           {a.is_pro && <span className="tag boost">Pro</span>}
           {a.verified && <span className="tag ok">✓ Vérifié</span>}
           {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
