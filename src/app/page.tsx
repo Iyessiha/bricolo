@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { tradeIcon } from "@/lib/trade-icons";
+import TradeIcon from "@/components/TradeIcon";
 import { getCountry } from "@/lib/country";
 import { COUNTRIES, countryCapital, countryName } from "@/lib/countries";
 import Flag from "@/components/Flag";
@@ -80,9 +80,9 @@ export default async function Home() {
         <div className="sec-head"><h2>Chercher par métier</h2></div>
         <div className="tiles">
           {topTrades.map((t) => (
-            <Link key={t.id} className="tile" href={`/resultats?metier=${t.slug}`}><i className="ti" aria-hidden="true">{tradeIcon(t.slug)}</i><b>{t.plural}</b><span>{t.description}</span></Link>
+            <Link key={t.id} className="tile" href={`/resultats?metier=${t.slug}`}><i className="ti" aria-hidden="true"><TradeIcon slug={t.slug} /></i><b>{t.plural}</b><span>{t.description}</span></Link>
           ))}
-          {(trades?.length ?? 0) > topTrades.length && <Link className="tile tile-all" href="/resultats"><i className="ti" aria-hidden="true">🔎</i><b>Tous les métiers</b><span>{trades!.length} métiers à découvrir →</span></Link>}
+          {(trades?.length ?? 0) > topTrades.length && <Link className="tile tile-all" href="/resultats"><i className="ti" aria-hidden="true"><TradeIcon slug="tous" /></i><b>Tous les métiers</b><span>{trades!.length} métiers à découvrir →</span></Link>}
         </div>
       </section>
 
