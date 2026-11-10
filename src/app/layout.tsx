@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { COMPANY } from "@/lib/company";
 import Trackers from "@/components/Trackers";
+import BadgeSync from "@/components/BadgeSync";
 import { getSettings } from "@/lib/site-settings";
 import { siteUrl } from "@/lib/env";
 import { jsonLd, DEFAULT_TITLE, DEFAULT_DESC } from "@/lib/seo";
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Header />
         <main>{children}</main>
         <Footer />
+        <BadgeSync />
         <Trackers ga4={s.ga4_id} ads={s.google_ads_id} gtm={s.gtm_id} meta={s.meta_pixel_id} tiktok={s.tiktok_pixel_id} custom={custom} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(site) }} />
       </body>

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { notifyBadge, notifySanction } from "@/lib/email-flows";
+import { pushToArtisan } from "@/lib/push";
 import { audit, requireAdmin } from "@/lib/admin";
 
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
@@ -84,7 +85,10 @@ export async function moderateReview(f: FormData) {
   const id = s(f, "id", 40), act = s(f, "act", 10), to = s(f, "to", 60) || "/admin/avis";
   if (!UUID.test(id)) redirect(to);
   if (act === "delete") await ctx.db.from("reviews").delete().eq("id", id);
-  else if (act === "publish" || act === "hide") await ctx.db.from("reviews").update({ status: act === "publish" ? "published" : "hidden" }).eq("id", id);
+  else if (act === "publish" || act === "hide") {
+    const { data: rv } = await ctx.db.from("reviews").update({ status: act === "publish" ? "published" : "hidden" }).eq("id", id).select("artisan_id, rating").maybeSingle();
+    if (act === "publish" && rv?.artisan_id) after(() => pushToArtisan(rv.artisan_id, { title: "Nouvel avis publié", body: `${"★".repeat(rv.rating)}${"☆".repeat(5 - rv.rating)} Un client a laissé un avis sur votre profil.`, tag: "avis" }));
+  }
   await audit(ctx, `avis.${act}`, { type: "avis", id });
   revalidatePath("/admin/avis"); revalidatePath("/admin");
   back(to.startsWith("/admin") ? to : "/admin/avis", "ok", act === "publish" ? "Avis publié." : act === "hide" ? "Avis masqué." : "Avis supprimé.");

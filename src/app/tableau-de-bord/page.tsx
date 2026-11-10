@@ -9,6 +9,7 @@ import Flag from "@/components/Flag";
 import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import MomentPopup from "@/components/MomentPopup";
+import PushBell from "@/components/PushBell";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import ZonePicker from "@/components/ZonePicker";
@@ -141,6 +142,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </aside>
 
       <main className="dmain stack">
+        {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
         {approved ? (
           <MomentPopup id={`online:${artisan.id}`} emoji="🎉" title="Votre profil est en ligne !" text="Les clients peuvent maintenant vous trouver. Pour recevoir vos premières demandes plus vite, partagez votre fiche à vos clients et contacts sur WhatsApp."
             actions={[{ label: "💬 Partager ma fiche sur WhatsApp", primary: true, share: { path: `/artisan/${artisan.id}`, text: `Retrouvez-moi sur Bricolo (${tradeName}) :` } }, { label: "Voir ma fiche", href: `/artisan/${artisan.id}` }]} />

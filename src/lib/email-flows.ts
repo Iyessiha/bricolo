@@ -4,6 +4,7 @@ import { sendOnce, sendBatch, marketingHeaders, unsubPage, type Msg } from "./em
 import * as T from "./email-templates";
 import { BOOST_TYPES, DURATIONS } from "./format";
 import { siteUrl } from "./env";
+import { pushToArtisan } from "./push";
 
 /** Un e-mail raté ne doit jamais faire échouer l'action de l'utilisateur. */
 async function safe<R>(fn: () => Promise<R>): Promise<R | undefined> {
@@ -30,11 +31,13 @@ export const notifyProfileReceived = (artisanId: string) => safe(async () => {
 
 export const notifyDecision = (artisanId: string, approved: boolean, reason?: string) => safe(async () => {
   const c = await contactOf(artisanId); if (!c) return;
+  await pushToArtisan(c.artisanId, approved ? { title: "Votre profil est en ligne ✓", body: "Les clients peuvent maintenant vous contacter.", tag: "decision" } : { title: "Profil à corriger", body: "Ouvrez Bricolo pour voir ce qu'il faut modifier.", tag: "decision" });
   await sendOnce(approved ? "profile_approved" : "profile_rejected", `${c.artisanId}:${Date.now()}`, mail(c.email, T.profileDecision(c.name, approved, c.artisanId, reason)));
 });
 
 export const notifyBadge = (artisanId: string) => safe(async () => {
   const c = await contactOf(artisanId); if (!c) return;
+  await pushToArtisan(c.artisanId, { title: "Badge « Vérifié » accordé ✓", body: "Votre identité est vérifiée.", tag: "badge" });
   await sendOnce("badge_granted", c.artisanId, mail(c.email, T.badgeGranted(c.name, c.artisanId)));
 });
 
@@ -44,6 +47,7 @@ export const notifyServiceRequest = (requestId: string) => safe(async () => {
   if (!r?.artisan_id) return;
   const c = await contactOf(r.artisan_id); if (!c) return;
   await Promise.all([
+    pushToArtisan(r.artisan_id, { title: r.urgent ? "🚨 Demande urgente" : "Nouvelle demande", body: `${r.client_name || "Un client"} : ${String(r.description).slice(0, 90)}`, tag: `req-${r.id}` }),
     sendOnce("request_artisan", r.id, mail(c.email, T.requestForArtisan({ client: r.client_name, email: r.client_email, phone: r.client_phone, description: r.description, urgent: r.urgent, artisanId: c.artisanId }), r.client_email ? { replyTo: r.client_email } : undefined)),
     r.client_email ? sendOnce("request_client", r.id, mail(r.client_email, T.requestForClient(c.name, r.description))) : Promise.resolve(),
   ]);
