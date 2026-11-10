@@ -10,16 +10,29 @@ insert into public.countries (code, name, capital, currency, phone_prefix) value
 on conflict (code) do nothing;
 
 insert into public.trades (slug, name, plural, description) values
-  ('frigoriste','Frigoriste','Frigoristes','Climatiseurs, frigos, chambres froides'),
+  ('frigoriste','Frigoriste','Frigoristes','Climatisation, froid, chambres froides'),
   ('mecanicien','Mécanicien','Mécaniciens','Voitures, motos, dépannage'),
-  ('menuisier','Menuisier','Menuisiers','Portes, placards, charpentes'),
+  ('menuisier','Menuisier','Menuisiers','Portes, placards, escaliers'),
   ('ebeniste','Ébéniste','Ébénistes','Meubles sur mesure'),
   ('electricien','Électricien','Électriciens','Installation et dépannage'),
   ('plombier','Plombier','Plombiers','Fuites, sanitaires, installation'),
   ('peintre','Peintre','Peintres','Intérieur, extérieur, finitions'),
   ('soudeur','Soudeur','Soudeurs','Portails, grilles, structures'),
   ('macon','Maçon','Maçons','Murs, dalles, rénovation'),
-  ('tapissier','Tapissier','Tapissiers','Canapés, fauteuils, sièges auto')
+  ('tapissier','Tapissier','Tapissiers','Canapés, fauteuils, sièges auto'),
+  ('carreleur','Carreleur','Carreleurs','Sols, murs, salles de bain'),
+  ('plaquiste','Plaquiste','Plaquistes','Faux plafonds, cloisons'),
+  ('serrurier','Serrurier','Serruriers','Clés, serrures, portes bloquées'),
+  ('couvreur','Couvreur','Couvreurs','Toiture, charpente, étanchéité'),
+  ('electromenager','Technicien électroménager','Techniciens électroménager','Machines à laver, frigos, TV'),
+  ('vitrier','Vitrier','Vitriers','Vitres, baies, aluminium'),
+  ('cameras','Installateur de caméras','Caméras et alarmes','Vidéosurveillance, alarmes, interphones'),
+  ('solaire','Installateur solaire','Installateurs solaires','Panneaux, onduleurs, batteries'),
+  ('carrossier','Carrossier','Carrossiers','Tôlerie et peinture auto'),
+  ('jardinier','Jardinier','Jardiniers','Jardin, pelouse, élagage'),
+  ('nettoyage','Spécialiste nettoyage','Nettoyage et nuisibles','Nettoyage, désinsectisation, dératisation'),
+  ('puisatier','Puisatier','Puisatiers','Puits, forage, pompes'),
+  ('informatique','Technicien informatique','Informatique et téléphone','Ordinateurs, téléphones, réseau')
 on conflict (slug) do nothing;
 
 insert into public.zones (country_code, name, price_factor) values

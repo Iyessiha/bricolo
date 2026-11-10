@@ -34,6 +34,8 @@ export default async function Home() {
   const have = new Set((featured ?? []).map((f: any) => f.id));
   const { data: top } = await db.rpc("search_artisans", { p_country: country, p_trade: null, p_zone: null, p_verified: false, p_seed: String(Math.floor(Date.now() / 3600000)) });
   const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
+  const POPULAR = ["plombier", "electricien", "frigoriste", "macon", "peintre", "mecanicien", "menuisier", "carreleur", "serrurier", "electromenager"];
+  const topTrades = [...(trades ?? [])].sort((a, b) => (POPULAR.indexOf(a.slug) + 1 || 99) - (POPULAR.indexOf(b.slug) + 1 || 99)).slice(0, 9);
   const shown: any[] = [
     ...(featured ?? []).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
     ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).slice(0, 6).map((a) => ({ ...a, trade: tradeName(a.trade_id) })),
@@ -76,9 +78,10 @@ export default async function Home() {
       <section className="inner sec">
         <div className="sec-head"><h2>Chercher par métier</h2></div>
         <div className="tiles">
-          {trades?.map((t) => (
+          {topTrades.map((t) => (
             <Link key={t.id} className="tile" href={`/resultats?metier=${t.slug}`}><b>{t.plural}</b><span>{t.description}</span></Link>
           ))}
+          {(trades?.length ?? 0) > topTrades.length && <Link className="tile tile-all" href="/resultats"><b>Tous les métiers</b><span>{trades!.length} métiers à découvrir →</span></Link>}
         </div>
       </section>
 
