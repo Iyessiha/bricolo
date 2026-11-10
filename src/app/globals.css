@@ -454,7 +454,7 @@ h1 .flag{margin-inline:2px}
 .collage .c2{bottom:0;left:0;width:68%;aspect-ratio:16/10;transform:rotate(-2.5deg)}
 .collage .c3{top:12%;left:0;width:42%;aspect-ratio:1/1;transform:rotate(-3deg)}
 .collage .c3 img{object-position:50% 40%}
-.collage .c2 img{object-position:50% 40%}
+.collage .c2 img{object-position:55% 25%}
 @media(min-width:861px) and (max-width:1179px){.heroimg.collage{width:min(100%,320px)}}
 
 /* Connexion / inscription : formulaire + photo */
@@ -472,7 +472,7 @@ h1 .flag{margin-inline:2px}
 
 /* Hero mobile : photo en fond du bloc titre */
 @media(max-width:860px){
-  .heroin{position:relative;overflow:hidden;padding:22px 18px;border-radius:var(--radius-lg);color:#fff;background:linear-gradient(100deg,rgba(14,24,48,.9) 0%,rgba(14,24,48,.72) 55%,rgba(14,24,48,.38) 100%),url(/photos/mecaniciens.jpg) 80% 35%/cover no-repeat,#1c2f63}
+  .heroin{position:relative;overflow:hidden;padding:22px 18px;border-radius:var(--radius-lg);color:#fff;background:linear-gradient(100deg,rgba(14,24,48,.88) 0%,rgba(14,24,48,.66) 50%,rgba(14,24,48,.25) 100%),url(/photos/mecanicienne.jpg) 100% 15%/auto 120% no-repeat,#1c2f63}
   .heroin h1{color:#fff}
   .heroin .eyebrow{color:#ffd9bd}
   .heroin .lead{color:#e8eeff}

@@ -48,7 +48,7 @@ export default async function Home() {
         </div>
         <div className="heroimg collage" aria-label="Artisans de l’Afrique de l’Ouest au travail">
           <figure className="c1"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></figure>
-          <figure className="c2"><img src="/photos/mecaniciens.jpg" width={800} height={345} alt="Deux mécaniciens sous le capot d’une voiture" loading="lazy" /></figure>
+          <figure className="c2"><img src="/photos/mecanicienne.jpg" width={1000} height={700} alt="Mécanicienne en combinaison rouge devant un capot ouvert, son casque sous le bras" loading="lazy" /></figure>
           <figure className="c3"><img src="/photos/jeune-casque.jpg" width={700} height={277} alt="Jeune artisan ajustant son casque blanc" loading="lazy" /></figure>
         </div>
         <form className="card pad stack heroform" action="/resultats">
