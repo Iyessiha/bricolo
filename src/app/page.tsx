@@ -7,6 +7,7 @@ import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
+import ArtisanNudge from "@/components/ArtisanNudge";
 
 const FAQ = [
   ["Est-ce payant pour un client ?", "Non. Chercher un artisan, voir son profil et lui envoyer une demande est gratuit, sans compte. Vous réglez l’artisan directement, après avoir convenu du prix avec lui."],
@@ -22,6 +23,7 @@ export default async function Home() {
   if (!hasSupabase()) return <SetupNotice />;
   const country = await getCountry();
   const db = await supabaseServer();
+  const { data: { user } } = await db.auth.getUser();
 
   const [{ data: trades }, { data: zones }, { data: boosts }] = await Promise.all([
     db.from("trades").select("id, slug, plural, description").order("plural"),
@@ -43,6 +45,7 @@ export default async function Home() {
   ].slice(0, 6);
   return (
     <>
+      {!user && <ArtisanNudge />}
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>
           <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>

@@ -8,6 +8,7 @@ import { countryName } from "@/lib/countries";
 import Flag from "@/components/Flag";
 import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
+import MomentPopup from "@/components/MomentPopup";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import ZonePicker from "@/components/ZonePicker";
@@ -132,6 +133,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </aside>
 
       <main className="dmain stack">
+        {approved ? (
+          <MomentPopup id={`online:${artisan.id}`} emoji="🎉" title="Votre profil est en ligne !" text="Les clients peuvent maintenant vous trouver. Pour recevoir vos premières demandes plus vite, partagez votre fiche à vos clients et contacts sur WhatsApp."
+            actions={[{ label: "💬 Partager ma fiche sur WhatsApp", primary: true, share: { path: `/artisan/${artisan.id}`, text: `Retrouvez-moi sur Bricolo (${tradeName}) :` } }, { label: "Voir ma fiche", href: `/artisan/${artisan.id}` }]} />
+        ) : null}
+        {approved && newReqs > 0 ? (
+          <MomentPopup id={`firstreq:${artisan.id}`} emoji="📩" title="Vous avez reçu une demande !" text="Répondez vite : un client qui reçoit une réponse rapide choisit plus souvent cet artisan. Le plus simple est de lui écrire sur WhatsApp ou de l’appeler."
+            actions={[{ label: "Voir la demande", primary: true, href: "/tableau-de-bord?s=demandes" }]} />
+        ) : null}
+        <MomentPopup id={`welcome:${artisan.id}`} emoji="👋" title={`Bienvenue sur Bricolo, ${artisan.name.split(" ")[0]} !`} delay={1500}
+          text={approved ? "Voici comment attirer vos premiers clients : complétez votre profil (photos, zones, tarif), puis partagez votre fiche. Les profils complets reçoivent plus de demandes." : "Votre dossier est en cours de vérification (24 à 48 h). En attendant, complétez votre profil : photos de réalisations, zones, tarif et horaires. Il sera visible dès sa validation."}
+          actions={[{ label: "Compléter mon profil", primary: true, href: "/tableau-de-bord?s=profil" }]} />
         {sp.ok && <p className="notice ok">Modifications enregistrées.</p>}
         {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 

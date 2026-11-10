@@ -543,3 +543,24 @@ html{scroll-padding-top:72px}
 .trust li.t2 i{background:var(--ok);color:#fff}
 .trust li.t3{border-color:color-mix(in srgb,var(--boost) 45%,transparent);background:var(--boost-soft)}
 .trust li.t3 i{background:var(--boost);color:var(--on-boost)}
+
+/* Pop-ups et invitations (moments clés) */
+.moment-back{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(12,20,38,.55);animation:mfade .2s ease-out}
+.moment{position:relative;width:min(440px,100%);background:var(--surface-raised);color:var(--ink);border-radius:var(--radius-lg,16px);padding:28px 24px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:grid;gap:10px;text-align:center;animation:mpop .22s ease-out}
+.moment h2{font-size:21px;line-height:1.25;text-wrap:balance}
+.moment p{color:var(--ink-muted);line-height:1.55;margin:0}
+.moment-ic{width:56px;height:56px;margin:0 auto;display:grid;place-items:center;border-radius:50%;background:var(--brand-soft);font-size:26px}
+.moment-x{position:absolute;top:8px;right:8px;width:40px;height:40px;border:0;background:transparent;color:var(--ink-muted);font-size:26px;line-height:1;cursor:pointer;border-radius:50%}
+.moment-x:hover{background:var(--surface-sunken)}
+.moment-act{display:grid;gap:8px;margin-top:6px}
+.moment-skip{border:0;background:transparent;color:var(--ink-muted);font-weight:600;min-height:40px;cursor:pointer}
+.nudge-bar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;gap:12px;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--surface-raised);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(10,20,40,.12);animation:mslide .25s ease-out}
+.nudge-bar p{margin:0;flex:1;min-width:0;font-size:14px;line-height:1.35}
+.nudge-bar p span{color:var(--ink-muted)}
+.nudge-bar .btn{flex:none}
+.nudge-x{flex:none;width:36px;height:36px;border:0;background:transparent;color:var(--ink-muted);font-size:24px;cursor:pointer;border-radius:50%}
+@media(max-width:560px){.nudge-bar p span{display:none}}
+@keyframes mfade{from{opacity:0}}
+@keyframes mpop{from{opacity:0;transform:translateY(10px) scale(.97)}}
+@keyframes mslide{from{transform:translateY(100%)}}
+@media(prefers-reduced-motion:reduce){.moment-back,.moment,.nudge-bar{animation:none}}
