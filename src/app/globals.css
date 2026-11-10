@@ -486,3 +486,10 @@ h1 .flag{margin-inline:2px}
 .cropmask{position:absolute;inset:0;pointer-events:none;border-radius:50%;box-shadow:0 0 0 999px rgba(10,18,36,.55),inset 0 0 0 2px rgba(255,255,255,.9)}
 .croprange{display:flex;align-items:center;gap:10px;width:280px;max-width:100%;font-weight:600;font-size:14px}.croprange input{flex:1;min-width:0}
 .tile-all{background:var(--brand-soft);border-color:transparent}.tile-all b{color:var(--brand)}
+
+/* Icônes de métiers */
+.tile .ti{display:grid;place-items:center;width:40px;height:40px;margin-bottom:6px;border-radius:12px;background:var(--brand-soft);font-style:normal;font-size:22px;line-height:1}
+@media(max-width:699px){
+  .tile{grid-auto-flow:column;align-items:center;column-gap:8px}
+  .tile .ti{width:26px;height:26px;margin:0;border-radius:8px;font-size:16px}
+}
