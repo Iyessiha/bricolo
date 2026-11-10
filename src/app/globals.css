@@ -477,3 +477,11 @@ h1 .flag{margin-inline:2px}
   .heroin .eyebrow{color:#ffd9bd}
   .heroin .lead{color:#e8eeff}
 }
+
+/* Cadrage de la photo de profil */
+.crop{margin-top:10px;padding:14px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-sunken);align-items:flex-start}
+.cropview{position:relative;overflow:hidden;border-radius:var(--radius-md);background:#111;touch-action:none;cursor:grab;max-width:100%}
+.cropview:active{cursor:grabbing}.cropview:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.cropview img{position:absolute;left:0;top:0;max-width:none;user-select:none;-webkit-user-drag:none}
+.cropmask{position:absolute;inset:0;pointer-events:none;border-radius:50%;box-shadow:0 0 0 999px rgba(10,18,36,.55),inset 0 0 0 2px rgba(255,255,255,.9)}
+.croprange{display:flex;align-items:center;gap:10px;width:280px;max-width:100%;font-weight:600;font-size:14px}.croprange input{flex:1;min-width:0}
