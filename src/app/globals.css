@@ -145,11 +145,11 @@ textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-mu
 /* Mobile : cibles tactiles, lisibilité, pas de zoom iOS */
 input,select,textarea{font-size:16px}
 a,button,summary,label{-webkit-tap-highlight-color:transparent}
-.hero2{grid-template-areas:"intro form" "trust form"}.heroin{grid-area:intro}.heroform{grid-area:form}.trust{grid-area:trust}
+.hero2{grid-template-areas:"intro photo" "trust photo" "form form"}.heroin{grid-area:intro}.heroform{grid-area:form}.trust{grid-area:trust}.heroimg{grid-area:photo}
 .opts.two{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .mbar{display:none}
 @media (max-width:860px){
-  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "form" "trust";gap:20px}
+  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "photo" "form" "trust";gap:20px}
   .btn{min-height:48px}.btn.small{min-height:44px}.chip{min-height:44px;padding:0 16px}
   .pad{padding:16px}.sec{padding-block:20px}.sec-head{margin-bottom:12px}
   h1{font-size:clamp(28px,8.5vw,38px)}h2{font-size:clamp(21px,6vw,26px)}
@@ -403,3 +403,10 @@ h1 .flag{margin-inline:2px}
 .subnav a:hover{border-color:var(--brand);color:var(--brand)}
 .psec,#horaires,#diplomes{scroll-margin-top:84px}
 @media(min-width:700px){.dnav a.gsep{margin-top:8px;border-top:1px solid var(--line);border-radius:0 0 var(--radius-md) var(--radius-md);padding-top:4px}}
+
+.heroimg{border-radius:var(--radius-lg);overflow:hidden;background:var(--brand-soft);box-shadow:0 14px 34px rgba(19,32,58,.16);max-height:460px;justify-self:end;width:min(100%,380px);aspect-ratio:4/5}
+.heroimg img{display:block;width:100%;height:100%;object-fit:cover}
+.bandimg{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-lg)}
+@media(min-width:861px){.heroform{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}.heroform h2{grid-column:1/-1}.heroform .btn{min-width:180px}}
+@media(max-width:860px){.heroimg{width:100%;max-height:none;aspect-ratio:16/10;justify-self:stretch}.heroimg img{object-position:50% 18%}.bandimg{aspect-ratio:16/10;object-position:50% 25%}}
+@media(min-width:861px){.heroin{align-self:end}.trust{align-self:start}}

@@ -46,6 +46,7 @@ export default async function Home() {
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
         </div>
+        <div className="heroimg"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></div>
         <form className="card pad stack heroform" action="/resultats">
           <h2 style={{ fontSize: 20 }}>Trouver un artisan</h2>
           <div className="fld"><label htmlFor="metier">Métier</label>
@@ -104,9 +105,12 @@ export default async function Home() {
             </ul>
             <div className="row"><Link className="btn" href="/inscription">Créer mon profil gratuit</Link><Link className="btn ghost" href="/connexion">J’ai déjà un compte</Link></div>
           </div>
+          <div className="stack" style={{ gap: 14 }}>
+          <img className="bandimg" src="/photos/artisane-chantier.jpg" width={800} height={600} alt="Artisane en gilet de chantier, un mètre ruban à la main" loading="lazy" />
           <div className="offer" style={{ display: "grid", gap: 6 }}>
             <b>Votre espace artisan</b>
             <span>Suivez les vues de votre fiche, les appels et les demandes reçues, gérez votre profil et vos options de visibilité. Tout est réuni après votre inscription.</span>
+          </div>
           </div>
         </div>
       </section>
