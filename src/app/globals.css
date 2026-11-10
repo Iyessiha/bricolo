@@ -537,3 +537,9 @@ html{scroll-padding-top:72px}
   .trust li.tb i{width:30px;height:30px}
   .trust li.tb b{font-size:12.5px;line-height:1.2}
 }
+
+/* Couleurs des badges : bleu (contact), vert (vérifié), orange (pays) */
+.trust li.t2{border-color:color-mix(in srgb,var(--ok) 45%,transparent);background:var(--ok-soft)}
+.trust li.t2 i{background:var(--ok);color:#fff}
+.trust li.t3{border-color:color-mix(in srgb,var(--boost) 45%,transparent);background:var(--boost-soft)}
+.trust li.t3 i{background:var(--boost);color:var(--on-boost)}
