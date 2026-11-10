@@ -93,7 +93,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
-  const sec = (["apercu", "demandes", "profil", "prestations", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
   const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
   const hasHours = !!(artisan as any).open_24_7 || Object.keys(cleanHours((artisan as any).hours)).length > 0;
   const checks = [
@@ -111,7 +111,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -128,7 +128,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <nav className="dnav" aria-label="Sections">
           {NAV.map(([k, ic, l]) => (
             <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
-              <span aria-hidden="true">{ic}</span><span>{l}</span>{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
+              <span aria-hidden="true">{ic}</span>{k === "guide" ? <><span className="lg">Réussir ma fiche</span><span className="sh">Réussir</span></> : <span>{l}</span>}{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
             </Link>
           ))}
         </nav>
@@ -243,6 +243,29 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
         </div>
 
+        <div className="stack" hidden={sec !== "guide"}>
+          <h1 className="dtitle">Comment réussir ma fiche ?</h1>
+          <p className="sub">Les fiches complètes reçoivent bien plus d’appels. Suivez ces étapes dans l’ordre : chacune vous mène directement à l’endroit où la remplir.</p>
+          <div className="card pad stack">
+            <ol className="gsteps">
+              {([
+                [!!(artisan as any).cover_url || (shots ?? []).length > 0, "Une couverture en paysage", "Une belle image horizontale (1600 × 600 px) avec votre activité et votre nom. Gardez tout le texte dans la moitié centrale : sur les cartes de résultats, les bords sont coupés.", "/tableau-de-bord?s=profil#photos", "Ajouter ma couverture"],
+                [(shots ?? []).length >= 3, "3 à 8 réalisations", "Avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.", "/tableau-de-bord?s=profil#photos", "Ajouter des photos"],
+                [!!(artisan as any).headline, "Une promesse « Je vais… »", "Une phrase simple sur ce que vous faites pour le client. Exemple : « Je vais installer votre climatisation ».", "/tableau-de-bord?s=profil#presentation", "Écrire ma promesse"],
+                [!!artisan.description && artisan.description.length >= 30, "Une description concrète", "Ce que vous faites, votre expérience, vos garanties. Écrivez comme vous parleriez à un client.", "/tableau-de-bord?s=profil#presentation", "Écrire ma présentation"],
+                [nSvc > 0, "Des prestations avec leur prix", "Une ligne par service, avec un prix de départ : « À partir de … FCFA » et l’unité. Le prix final se discute avec le client.", "/tableau-de-bord?s=prestations", "Ajouter une prestation"],
+                [(services ?? []).some((x: any) => (x.included?.length ?? 0) > 0), "Ce qui est inclus, et ce qui est en supplément", "Pour chaque prestation, dites ce que le prix comprend. Exemple, entretien de climatisation : déplacement et nettoyage des filtres inclus ; recharge de gaz en supplément (500 g = … FCFA). Le client n’a aucune mauvaise surprise et appelle avec confiance.", "/tableau-de-bord?s=prestations", "Détailler mes prestations"],
+                [myZones.size >= 2 && hasHours, "Des zones et des horaires", "Plus vous couvrez de zones, plus vous apparaissez dans les recherches. Indiquez vos horaires pour être trouvé quand le client en a besoin.", "/tableau-de-bord?s=profil#zones", "Choisir mes zones"],
+                [null, "Répondez vite", "Dans l’heure, c’est ce qui fait décrocher les chantiers. Un client qui n’a pas de réponse appelle le suivant.", "/tableau-de-bord?s=demandes", "Voir mes demandes"],
+              ] as [boolean | null, string, string, string, string][]).map(([ok, t, d, href, cta], k) => (
+                <li key={t} className={ok ? "done" : undefined}>
+                  <span className="gnum" aria-hidden="true">{ok ? "✓" : k + 1}</span>
+                  <div className="gbody"><b>{t}</b>{ok === true && <span className="tag ok">Fait</span>}<p>{d}</p><Link className="btn small" href={href} scroll={false}>{cta}</Link></div>
+                </li>))}
+            </ol>
+          </div>
+        </div>
+
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
           <nav className="subnav" aria-label="Aller à">
@@ -288,16 +311,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
           <div className="savebar"><span className="meta">Pensez à enregistrer vos modifications.</span><button className="btn primary" type="submit">Enregistrer mes modifications</button></div>
         </form>
-        <details className="card pad tips"><summary><b>💡 Comment réussir ma fiche ?</b></summary>
-          <ol>
-            <li><b>Couverture en paysage</b> : une belle image horizontale (1600 × 600 px), avec votre activité et votre nom. Gardez tout le texte dans la moitié centrale de l’image : sur les cartes de résultats, les bords sont coupés.</li>
-            <li><b>3 à 8 réalisations</b> : avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.</li>
-            <li><b>Une promesse « Je vais… »</b> : « Je vais installer votre climatisation ».</li>
-            <li><b>Une description concrète</b> : ce que vous faites, votre expérience, vos garanties.</li>
-            <li><b>Un tarif de départ</b> : « À partir de … FCFA » avec l’unité. Le prix final se discute avec le client.</li>
-            <li><b>Horaires et zones</b> : plus vous couvrez de zones, plus vous apparaissez dans les recherches.</li>
-            <li><b>Répondez vite</b> : dans l’heure, c’est ce qui fait décrocher les chantiers.</li>
-          </ol></details>
       <div id="diplomes" className="card pad stack">
         <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
