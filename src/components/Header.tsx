@@ -19,7 +19,7 @@ export default async function Header() {
       <header className="top">
         <div className="inner topin">
           <Link className="brand" href="/" aria-label="Bricolo, accueil">
-            <svg width="28" height="28" viewBox={MARK_VIEWBOX} aria-hidden="true"><path d={MARK_D} fill="currentColor" /></svg>
+            <svg width="30" height="30" viewBox={MARK_VIEWBOX} aria-hidden="true"><path d={MARK_D} fill="currentColor" /></svg>
             Bricolo
           </Link>
           <div className="topact">
