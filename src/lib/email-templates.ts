@@ -100,6 +100,7 @@ export const requestForClient = (artisan: string, description: string) => layout
   subject: `Votre demande a été envoyée à ${artisan}`, pre: "L'artisan vous répond directement par e-mail.",
   title: "Votre demande est envoyée",
   body: p(`${artisan} a reçu votre demande et vous répondra directement à cette adresse e-mail.`) +
+    p("Conseil : demandez un prix clair avant le début du travail et ne payez jamais la totalité à l’avance. En cas de problème, vous pouvez signaler l’artisan depuis sa fiche sur Bricolo.") +
     `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(description).replace(/\n/g, "<br>")}</blockquote>` +
     p("Pour un dépannage urgent, vous pouvez aussi l'appeler depuis sa fiche."),
 });
@@ -151,3 +152,20 @@ export const campaign = (subject: string, text: string, name: string, unsub: str
   subject, pre: text.replace(/\s+/g, " ").slice(0, 100), unsub, title: subject,
   body: paragraphs(text.replace(/\{\{\s*nom\s*\}\}/gi, name)),
 });
+
+export const reportForAdmin = (o: { artisan: string; artisanId: string; reasonLabel: string; details: string; contact: string }) => layout({
+  subject: `Signalement : ${o.artisan}`, pre: o.reasonLabel,
+  title: "Nouveau signalement",
+  body: p(`Un client signale ${o.artisan}.\nMotif : ${o.reasonLabel}`) +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(o.details).replace(/\n/g, "<br>")}</blockquote>` +
+    p(`Contact du client : ${o.contact}`) + btn("Traiter le signalement", `${siteUrl()}/admin/signalements`),
+});
+
+export const sanctionForArtisan = (o: { name: string; kind: "avertissement" | "badge_retire" | "suspension" | "bannissement"; reason: string }) => {
+  const t = { avertissement: ["Avertissement sur votre profil Bricolo", "Un signalement vous concernant a été examiné. Ceci est un avertissement."], badge_retire: ["Votre badge « Vérifié » a été retiré", "Suite à un signalement examiné par notre équipe, votre badge « Vérifié » a été retiré."], suspension: ["Votre profil Bricolo est suspendu", "Suite à un signalement examiné par notre équipe, votre profil n’est plus visible sur Bricolo."], bannissement: ["Votre compte Bricolo est fermé", "Suite à des manquements graves à la charte, votre profil est retiré définitivement de Bricolo."] }[o.kind];
+  return layout({
+    subject: t[0], pre: t[1], title: t[0],
+    body: p(`Bonjour ${o.name},`) + p(t[1]) + `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(o.reason).replace(/\n/g, "<br>")}</blockquote>` +
+      p("Vous pouvez répondre à ce message si vous pensez qu’il s’agit d’une erreur. Notre charte de l’artisan rappelle les règles à respecter.") + btn("Lire la charte", `${siteUrl()}/charte-artisan`),
+  });
+};

@@ -30,6 +30,7 @@ export async function signupAccount(_prev: LinkState, fd: FormData): Promise<Lin
   if (!strong(password)) return fail(PASSWORD_RULE);
   if (password !== String(fd.get("password2") ?? "")) return fail("Les deux mots de passe ne sont pas identiques.");
   if (fd.get("accept") !== "on") return fail("Vous devez accepter les conditions pour continuer.");
+  if (fd.get("charter") !== "on") return fail("Vous devez accepter la charte de l’artisan pour continuer.");
   if (fd.get("docs_ack") !== "on") return fail("Confirmez que vous avez compris que votre identité sera vérifiée.");
   if (type === "entreprise" && fd.get("authorized") !== "on") return fail("Confirmez que vous êtes habilité(e) à créer ce profil au nom de l’entreprise.");
 
@@ -41,7 +42,7 @@ export async function signupAccount(_prev: LinkState, fd: FormData): Promise<Lin
     email, password,
     options: {
       emailRedirectTo: `${siteUrl()}/auth/callback?next=/activation`,
-      data: { country_code: pays, business_name: name, trade_id: tradeId, account_type: type, company_registration: registration, terms_accepted_at: new Date().toISOString() },
+      data: { country_code: pays, business_name: name, trade_id: tradeId, account_type: type, company_registration: registration, terms_accepted_at: new Date().toISOString(), charter_accepted_at: new Date().toISOString() },
     },
   });
   if (error) {

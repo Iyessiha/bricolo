@@ -8,6 +8,7 @@ const ITEMS = [
   ["/admin/artisans", "🧰", "Artisans", ""],
   ["/admin/demandes", "📩", "Demandes", "demandes"],
   ["/admin/revenus", "💰", "Revenus", ""],
+  ["/admin/signalements", "⚠️", "Signalements", "signalements"],
   ["/admin/avis", "⭐", "Avis", "avis"],
   ["/admin/prix", "🏷", "Pays et prix", ""],
   ["/admin/campagnes", "✉️", "Campagnes", ""],

@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { notifyBadge } from "@/lib/email-flows";
+import { notifyBadge, notifySanction } from "@/lib/email-flows";
 import { audit, requireAdmin } from "@/lib/admin";
 
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
@@ -155,4 +155,41 @@ export async function removeMedia(f: FormData) {
   }
   await audit(ctx, "photo.retirer", { type: "artisan", id: a.id, label: a.name }, { kind });
   refresh(a.id); back(page, "ok", "Photo retirée.");
+}
+
+const KINDS = ["avertissement", "badge_retire", "suspension", "bannissement"] as const;
+
+/** Traite un signalement : le classer, ou le retenir avec (ou sans) sanction. L'artisan est prévenu par e-mail. */
+export async function resolveReport(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  const to = "/admin/signalements";
+  if (!UUID.test(id)) redirect(to);
+  const outcome = s(f, "outcome", 12); // classer | retenir
+  const sanction = s(f, "sanction", 20);
+  const reason = s(f, "reason", 1000);
+  const { data: r } = await ctx.db.from("reports").select("id, artisan_id, artisan:artisans(id, name, verified)").eq("id", id).maybeSingle();
+  if (!r) redirect(to);
+  const a = (Array.isArray((r as any).artisan) ? (r as any).artisan[0] : (r as any).artisan) as { id: string; name: string; verified: boolean };
+  const stamp = { resolved_by: ctx.email, resolved_at: new Date().toISOString() };
+  if (outcome === "classer") {
+    await ctx.db.from("reports").update({ status: "dismissed", resolution: reason || "Sans suite.", ...stamp }).eq("id", id);
+    await audit(ctx, "signalement.classer", { type: "artisan", id: a.id, label: a.name }, { report: id });
+    revalidatePath(to); back(to, "ok", "Signalement classé sans suite.");
+  }
+  const kind = (KINDS as readonly string[]).includes(sanction) ? (sanction as (typeof KINDS)[number]) : null;
+  if (kind && reason.length < 5) back(to, "erreur", "Indiquez le motif de la sanction (5 caractères minimum) : il sera communiqué à l’artisan.");
+  await ctx.db.from("reports").update({ status: "upheld", resolution: reason || null, ...stamp }).eq("id", id);
+  if (kind) {
+    await ctx.db.from("artisan_sanctions").insert({ artisan_id: a.id, report_id: id, kind, reason, created_by: ctx.email });
+    if (kind === "badge_retire") await ctx.db.from("artisans").update({ verified: false }).eq("id", a.id);
+    if (kind === "suspension" || kind === "bannissement") await ctx.db.from("artisans").update({ status: "suspended", suspended_at: new Date().toISOString(), reject_reason: kind === "bannissement" ? `Banni : ${reason}` : reason }).eq("id", a.id);
+    after(() => notifySanction(a.id, kind, reason));
+    await audit(ctx, `sanction.${kind}`, { type: "artisan", id: a.id, label: a.name }, { report: id, reason });
+    refresh(a.id);
+  } else {
+    await audit(ctx, "signalement.retenir", { type: "artisan", id: a.id, label: a.name }, { report: id });
+  }
+  revalidatePath(to);
+  back(to, "ok", kind ? "Signalement retenu et sanction appliquée. L’artisan a été prévenu par e-mail." : "Signalement retenu (sans sanction).");
 }

@@ -18,6 +18,7 @@ export const LEGAL_UPDATED = "9 novembre 2026";
 export const LEGAL_LINKS = [
   { href: "/mentions-legales", label: "Mentions légales" },
   { href: "/conditions-utilisation", label: "Conditions d’utilisation" },
+  { href: "/charte-artisan", label: "Charte de l’artisan" },
   { href: "/confidentialite", label: "Confidentialité" },
   { href: "/cookies", label: "Cookies" },
 ] as const;

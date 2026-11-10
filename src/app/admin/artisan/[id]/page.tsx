@@ -10,6 +10,8 @@ import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
 import { removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
 import { fcfa } from "@/lib/format";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { REPORT_REASONS } from "@/lib/email-flows";
 
 export const metadata: Metadata = { title: "Examen du dossier", robots: { index: false } };
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
@@ -114,6 +116,24 @@ export default async function Review({ params, searchParams }: { params: Promise
             {shots?.map((p) => <figure key={p.id}><img src={p.url} alt="Réalisation" /><form action={removeMedia}><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="photo" /><input type="hidden" name="photo" value={p.id} /><button aria-label="Retirer cette photo">×</button></form></figure>)}
           </div></div>
       ) : null}
+
+      {await (async () => {
+        const adb = supabaseAdmin();
+        const [{ data: reps }, { data: sans }] = await Promise.all([
+          adb.from("reports").select("id, reason, status, created_at").eq("artisan_id", id).order("created_at", { ascending: false }).limit(20),
+          adb.from("artisan_sanctions").select("id, kind, reason, created_at, created_by").eq("artisan_id", id).order("created_at", { ascending: false }).limit(20),
+        ]);
+        if (!reps?.length && !sans?.length) return null;
+        const upheld = reps?.filter((r) => r.status === "upheld").length ?? 0;
+        return (
+          <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Signalements et sanctions</h2>
+            {upheld >= 3 && <p className="notice err">⚠️ {upheld} signalements retenus : envisagez une suspension ou un bannissement.</p>}
+            <p className="meta">{reps?.length ?? 0} signalement(s) dont {upheld} retenu(s). <Link href="/admin/signalements?statut=all">Voir et traiter</Link></p>
+            {sans?.map((x) => <p key={x.id} className="meta"><b>{x.kind.replace("_", " ")}</b> · {when(x.created_at)} · {x.created_by} — {x.reason}</p>)}
+            {reps?.map((r) => <p key={r.id} className="meta">{when(r.created_at)} · {REPORT_REASONS[r.reason] ?? r.reason} · {r.status === "new" ? "à traiter" : r.status === "upheld" ? "retenu" : "classé"}</p>)}
+          </div>
+        );
+      })()}
 
       <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Boosts et avis</h2>
         {boosts?.length ? <table className="tbl"><tbody>{boosts.map((b) => <tr key={b.id}><td>{b.type} · {b.duration_hours / 24} j</td><td><span className={`tag ${b.status === "active" ? "ok" : "mute"}`}>{b.status}</span></td><td className="num">{b.amount ? fcfa(b.amount) : "Offert"}</td></tr>)}</tbody></table> : <p className="empty">Aucun boost.</p>}

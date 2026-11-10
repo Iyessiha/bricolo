@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { notifyServiceRequest } from "@/lib/email-flows";
+import { notifyServiceRequest, notifyReport, REPORT_REASONS } from "@/lib/email-flows";
 import { headers } from "next/headers";
 import { domainCanReceiveMail, ipHash } from "@/lib/email-guard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -39,4 +39,23 @@ export async function sendRequest(artisanId: string, formData: FormData) {
   if (req) after(() => notifyServiceRequest(req.id));
   await db.from("events").insert({ artisan_id: artisanId, type: "request" });
   redirect(`/artisan/${artisanId}?envoye=1`);
+}
+
+/** Signalement d'un artisan par un client (sans compte). Traité ensuite par l'équipe dans l'administration. */
+export async function reportArtisan(artisanId: string, formData: FormData) {
+  const back = (k: string): never => redirect(`/artisan/${artisanId}?${k}#signaler`);
+  if (formData.get("website")) redirect(`/artisan/${artisanId}?signale=1#signaler`); // robot
+  const db = supabaseAdmin();
+  const { data: a } = await db.from("artisans").select("id").eq("id", artisanId).maybeSingle();
+  if (!a) redirect("/resultats");
+  const reason = String(formData.get("reason") ?? "");
+  const details = String(formData.get("details") ?? "").trim();
+  const contact = String(formData.get("contact") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim().slice(0, 80) || null;
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contact) || contact.replace(/\D/g, "").length >= 8;
+  if (!(reason in REPORT_REASONS) || details.length < 10 || !valid || contact.length > 120) back("erreur=signal");
+  const { data: rep, error } = await db.from("reports").insert({ artisan_id: artisanId, reason, details: details.slice(0, 1500), reporter_name: name, reporter_contact: contact, ip_hash: await ipHash(await headers()) }).select("id").single();
+  if (error) back(`erreur=${/deja_envoye/.test(error.message) ? "signal_doublon" : /trop_de/.test(error.message) ? "signal_limite" : "signal"}`);
+  if (rep) after(() => notifyReport(rep.id));
+  redirect(`/artisan/${artisanId}?signale=1#signaler`);
 }

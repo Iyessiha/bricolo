@@ -20,6 +20,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
   const [trade, setTrade] = useState("");
   const [email, setEmail] = useState("");
   const [accept, setAccept] = useState(false);
+  const [charter, setCharter] = useState(false);
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [resent, setResent] = useState("");
@@ -140,9 +141,11 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
           )}
           <label className="check"><input type="checkbox" name="accept" checked={accept} onChange={(e) => setAccept(e.target.checked)} required />
             <span>J’ai lu et j’accepte les <Link href="/conditions-utilisation" target="_blank">conditions d’utilisation</Link> et la <Link href="/confidentialite" target="_blank">politique de confidentialité</Link>.</span></label>
+          <label className="check"><input type="checkbox" name="charter" checked={charter} onChange={(e) => setCharter(e.target.checked)} required />
+            <span>Je m’engage à respecter la <Link href="/charte-artisan" target="_blank">charte de l’artisan</Link> (honnêteté, travail soigné, pas de paiement abusif). Je sais qu’un manquement peut entraîner la suspension de mon profil.</span></label>
           <div className="row">
             <button className="btn" type="button" onClick={() => setStep(3)}>Retour</button>
-            <button className="btn primary" type="submit" disabled={pending || !accept || !email || pw.length < 8 || pw !== pw2 || (type === "entreprise" && !authorized)}>{pending ? "Création…" : "Créer mon compte"}</button>
+            <button className="btn primary" type="submit" disabled={pending || !accept || !charter || !email || pw.length < 8 || pw !== pw2 || (type === "entreprise" && !authorized)}>{pending ? "Création…" : "Créer mon compte"}</button>
           </div>
         </form>
       )}

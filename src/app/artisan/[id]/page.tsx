@@ -9,7 +9,8 @@ import { initials } from "@/lib/format";
 import Flag from "@/components/Flag";
 import { countryName } from "@/lib/countries";
 import SetupNotice from "@/components/SetupNotice";
-import { sendRequest } from "./actions";
+import { sendRequest, reportArtisan } from "./actions";
+import { REPORT_REASONS } from "@/lib/email-flows";
 
 export default async function ArtisanPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   if (!hasSupabase()) return <SetupNotice />;
@@ -31,6 +32,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const zones = ((a as any).zones ?? []).map((z: any) => z.zone).filter(Boolean) as { id: string; name: string }[];
   const trade = (a as any).trade as { id: string; name: string };
   const action = sendRequest.bind(null, id);
+  const reportAction = reportArtisan.bind(null, id);
 
   const hrs = cleanHours((a as any).hours);
   const st = openStatus((a as any).hours, (a as any).open_24_7, a.country_code);
@@ -111,9 +113,33 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
               <button className="btn primary" type="submit">Envoyer mon message</button>
             </form>
           </details>
-          {sp.erreur && <p className="notice err" role="alert">{sp.erreur === "doublon" ? "Vous avez déjà contacté cet artisan il y a moins d’une heure." : sp.erreur === "limite" ? "Trop de demandes aujourd’hui. Réessayez demain." : sp.erreur === "contact" ? "Indiquez un numéro valide ou une adresse e-mail pour que l’artisan puisse vous répondre." : "Vérifiez votre adresse e-mail et votre message."}</p>}
+          {sp.erreur === "signal" || sp.erreur === "signal_doublon" || sp.erreur === "signal_limite" ? <p className="notice err" role="alert">{sp.erreur === "signal_doublon" ? "Vous avez déjà signalé cet artisan aujourd’hui." : sp.erreur === "signal_limite" ? "Trop de signalements aujourd’hui. Réessayez demain." : "Choisissez un motif, décrivez la situation (10 caractères minimum) et indiquez un téléphone ou une adresse e-mail valide."}</p> : sp.erreur && <p className="notice err" role="alert">{sp.erreur === "doublon" ? "Vous avez déjà contacté cet artisan il y a moins d’une heure." : sp.erreur === "limite" ? "Trop de demandes aujourd’hui. Réessayez demain." : sp.erreur === "contact" ? "Indiquez un numéro valide ou une adresse e-mail pour que l’artisan puisse vous répondre." : "Vérifiez votre adresse e-mail et votre message."}</p>}
           {sp.envoye === "1" && <p className="notice ok">Message envoyé. L’artisan vous répondra bientôt, par WhatsApp, téléphone ou e-mail selon ce que vous avez indiqué.</p>}
-          <p className="hint pftrust">🛡 Identité contrôlée par Bricolo. Ne payez jamais à l’avance sans avoir vu le travail.</p>
+          <div className="safetips">
+            <b>🛡 Pour éviter les mauvaises surprises</b>
+            <ul>
+              <li>Demandez un devis ou un prix clair avant le début du travail.</li>
+              <li>Ne payez jamais la totalité à l’avance : un petit acompte pour le matériel au maximum, le reste une fois le travail vu et accepté.</li>
+              <li>Gardez les messages et les reçus (WhatsApp, photos).</li>
+            </ul>
+          </div>
+          <details id="signaler" className="reportbox" open={!!sp.signale || String(sp.erreur ?? "").startsWith("signal")}>
+            <summary>⚠️ Signaler cet artisan</summary>
+            {sp.signale === "1" ? <p className="notice ok" role="status">Merci. Votre signalement a été transmis à l’équipe Bricolo, qui l’examine et peut retirer le profil si nécessaire.</p> : (
+              <form action={reportAction} className="stack" style={{ marginTop: 12 }}>
+                <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
+                <div className="fld"><label htmlFor="rreason">Motif</label>
+                  <select id="rreason" name="reason" required defaultValue="">
+                    <option value="" disabled>Choisissez…</option>
+                    {Object.entries(REPORT_REASONS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                  </select></div>
+                <div className="fld"><label htmlFor="rdetails">Que s’est-il passé ?</label><textarea id="rdetails" name="details" required minLength={10} maxLength={1500} placeholder="Date, lieu, montant éventuel, ce qui était convenu et ce qui a été fait." /></div>
+                <div className="fld"><label htmlFor="rname">Votre nom (facultatif)</label><input id="rname" name="name" maxLength={80} autoComplete="name" /></div>
+                <div className="fld"><label htmlFor="rcontact">Votre téléphone ou e-mail</label><input id="rcontact" name="contact" required maxLength={120} autoComplete="tel" /><span className="hint">Vu uniquement par l’équipe Bricolo, jamais par l’artisan.</span></div>
+                <button className="btn" type="submit">Envoyer le signalement</button>
+              </form>
+            )}
+          </details>
         </aside>
       </div>
       <div className="mbar">

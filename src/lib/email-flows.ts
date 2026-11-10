@@ -48,6 +48,23 @@ export const notifyServiceRequest = (requestId: string) => safe(async () => {
   ]);
 });
 
+export const REPORT_REASONS: Record<string, string> = { travail: "Travail non fait ou mal fait", arnaque: "Argent demandé sans prestation (arnaque)", comportement: "Comportement inapproprié", identite: "Fausse identité ou fausses photos", autre: "Autre" };
+
+export const notifyReport = (reportId: string) => safe(async () => {
+  const db = supabaseAdmin();
+  const { data: r } = await db.from("reports").select("*, artisan:artisans(id, name)").eq("id", reportId).maybeSingle();
+  const a = Array.isArray((r as any)?.artisan) ? (r as any).artisan[0] : (r as any)?.artisan;
+  if (!r || !a) return;
+  const { data: admins } = await db.from("profiles").select("email").eq("role", "admin");
+  const m = T.reportForAdmin({ artisan: a.name, artisanId: a.id, reasonLabel: REPORT_REASONS[r.reason] ?? r.reason, details: r.details, contact: r.reporter_contact });
+  await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("report_admin", `${r.id}:${x.email}`, mail(x.email as string, m))));
+});
+
+export const notifySanction = (artisanId: string, kind: "avertissement" | "badge_retire" | "suspension" | "bannissement", reason: string) => safe(async () => {
+  const c = await contactOf(artisanId); if (!c) return;
+  await sendOnce("sanction", `${c.artisanId}:${Date.now()}`, mail(c.email, T.sanctionForArtisan({ name: c.name, kind, reason })));
+});
+
 export const notifyBoostPaid = (providerRef: string) => safe(async () => {
   const db = supabaseAdmin();
   const { data: pay } = await db.from("payments").select("boost_id, amount, status").eq("provider_ref", providerRef).maybeSingle();
