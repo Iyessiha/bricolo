@@ -60,7 +60,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   return (
     <section className="inner sec stack boostpage">
       <p><Link href="/tableau-de-bord">← Mon espace</Link></p>
-      {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
+      {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : sp.erreur === "ferme" ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
       {sp.paye && <p className="notice ok">Paiement confirmé. Votre boost est actif : votre fiche passe devant les autres.</p>}
 
       <div className="bhero">

@@ -7,9 +7,13 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * Mode « live » : à ajuster avec la documentation officielle de GeniusPay (URL, champs, en-tête de signature).
  * Tout le reste du code ne parle qu’à ces deux fonctions.
  */
-export const isMock = () => (process.env.GENIUSPAY_MODE ?? "mock") !== "live";
+export const isLive = () => process.env.GENIUSPAY_MODE === "live";
+/** Le paiement simulé n’existe jamais en production : sans GENIUSPAY_MODE=live, les paiements sont simplement fermés (jamais gratuits). */
+export const isMock = () => process.env.GENIUSPAY_MODE === "mock" && process.env.VERCEL_ENV !== "production";
+export const paymentsOpen = () => isLive() || isMock();
 
 export async function createCheckout(o: { reference: string; amount: number; currency: string; description: string; returnUrl: string; webhookUrl: string; customerEmail: string }) {
+  if (!paymentsOpen()) throw new Error("paiements_fermes");
   if (isMock()) return { checkoutUrl: `${new URL(o.returnUrl).origin}/api/dev/confirm?ref=${encodeURIComponent(o.reference)}` };
   const res = await fetch(`${process.env.GENIUSPAY_API_URL}/payments`, {
     method: "POST",

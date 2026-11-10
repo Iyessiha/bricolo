@@ -32,9 +32,10 @@ export async function POST(req: NextRequest) {
       returnUrl: `${siteUrl()}/tableau-de-bord?s=forfait&paye=1`, webhookUrl: `${siteUrl()}/api/webhooks/geniuspay`, customerEmail: user.data.user.email ?? "",
     });
     return NextResponse.redirect(checkoutUrl, 303);
-  } catch {
+  } catch (e) {
+    const closed = e instanceof Error && e.message === "paiements_fermes";
     await db.from("payments").update({ status: "failed" }).eq("provider_ref", reference);
     await db.from("subscriptions").update({ status: "cancelled" }).eq("id", sub.id);
-    return back("&erreur=" + encodeURIComponent("Le paiement n’a pas pu démarrer. Réessayez dans un instant."));
+    return back("&erreur=" + encodeURIComponent(closed ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu démarrer. Réessayez dans un instant."));
   }
 }
