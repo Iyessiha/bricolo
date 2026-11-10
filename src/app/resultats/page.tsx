@@ -36,6 +36,8 @@ export default async function Results({ searchParams }: { searchParams: Promise<
         <h1 style={{ fontSize: "clamp(26px,4.5vw,38px)" }}>{trade ? trade.plural : "Tous les artisans"}{zone ? ` à ${zone.name}` : ""}</h1>
         <p className="meta num"><Flag code={country} size={18} /> {countryName(country)} · {list.length} résultat{list.length > 1 ? "s" : ""}</p>
       </div>
+      <input type="checkbox" id="ftog" className="ftog" />
+      <label htmlFor="ftog" className="fbtn"><span>⚙️ Filtres</span><small>{[trade?.plural, zone?.name, sp.verifie === "1" && "Vérifiés", sp.ouvert === "1" && "Ouverts"].filter(Boolean).join(" · ") || "Tous les artisans"}</small></label>
       <AutoSubmitForm className="card filters" action="/resultats">
         <div className="fld"><label htmlFor="metier">Métier</label>
           <select id="metier" name="metier" defaultValue={trade?.slug ?? ""}>

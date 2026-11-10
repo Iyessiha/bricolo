@@ -58,7 +58,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
         <>
           <h1 style={{ fontSize: 30 }}>Dans quel pays travaillez-vous ?</h1>
           <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
-          <details className="notice">
+          <details className="notice" open>
             <summary><b>Avant de commencer : préparez vos documents</b></summary>
             <div className="stack" style={{ gap: 8, marginTop: 8 }}>
               <p>Votre identité est vérifiée avant l’activation du profil, pour protéger les clients. Ayez sous la main :</p>

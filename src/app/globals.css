@@ -435,3 +435,13 @@ h1 .flag{margin-inline:2px}
 .acard-badges{flex-wrap:nowrap;overflow:hidden}
 .acard-badges .tag{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acard-badges .tag:nth-child(n+3){display:none}
+
+/* Filtres repliables sur mobile */
+.ftog{position:absolute;opacity:0;pointer-events:none}
+.fbtn{display:none}
+@media(max-width:699px){
+  .fbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:0 14px;margin-bottom:12px;background:var(--surface-raised);border:1px solid var(--line);border-radius:var(--radius-md);font-weight:600;cursor:pointer}
+  .fbtn small{color:var(--ink-muted);font-weight:500;font-size:13px;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ftog:not(:checked)~.filters{display:none}
+  .ftog:focus-visible+.fbtn{outline:2px solid var(--brand);outline-offset:2px}
+}
