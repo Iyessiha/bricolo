@@ -13,5 +13,5 @@ export async function GET(req: NextRequest) {
   if (!p) return new NextResponse("Paiement inconnu", { status: 404 });
   const res = await activateFromPayment(ref, p.amount);
   if (res.ok && !res.already) if (!p.subscription_id) after(() => notifyBoostPaid(ref));
-  return NextResponse.redirect(new URL(p.subscription_id ? "/forfait?paye=1" : "/boosts?paye=1", siteUrl()), 303);
+  return NextResponse.redirect(new URL(p.subscription_id ? "/tableau-de-bord?s=forfait&paye=1" : "/boosts?paye=1", siteUrl()), 303);
 }

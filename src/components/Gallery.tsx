@@ -51,7 +51,7 @@ export default function Gallery({ uid, cover, shots, max = 8, pro = false }: { u
           <figure key={s.id}><img src={s.url} alt={s.caption ?? "Réalisation"} loading="lazy" />
             <button type="button" aria-label="Supprimer cette photo" disabled={busy} onClick={() => run(async () => { await removePortfolio(s.id); return "Photo supprimée."; })}>×</button></figure>))}</div>}
         <input ref={shotRef} type="file" accept="image/*" multiple hidden onChange={(e) => { onShots(e.target.files); e.target.value = ""; }} />
-        {!pro && shots.length >= max && <p className="hint"><a href="/forfait">Passez Pro</a> pour montrer jusqu’à 20 photos.</p>}
+        {!pro && shots.length >= max && <p className="hint"><a href="/tableau-de-bord?s=forfait">Passez Pro</a> pour montrer jusqu’à 20 photos.</p>}
         <div><button type="button" className="btn small" disabled={busy || shots.length >= max} onClick={() => shotRef.current?.click()}>{busy ? "Envoi…" : "＋ Ajouter des photos"}</button></div>
       </div>
       {msg && <p className={`notice ${msg.ok ? "ok" : "err"}`} role="status">{msg.t}</p>}

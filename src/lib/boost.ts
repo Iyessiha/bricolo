@@ -65,7 +65,7 @@ async function activateSubscription(db: Admin, pay: { id: string; subscription_i
   const now = new Date();
   const { data: cur } = await db.from("subscriptions").select("id, ends_at").eq("artisan_id", sub.artisan_id).eq("status", "active").gt("ends_at", now.toISOString()).neq("id", sub.id).order("ends_at", { ascending: false }).limit(1).maybeSingle();
   const start = cur ? new Date(cur.ends_at) : now;
-  const end = new Date(start); end.setUTCMonth(end.getUTCMonth() + sub.months);
+  const end = new Date(start); end.setUTCDate(end.getUTCDate() + sub.days);
   await db.from("subscriptions").update({ status: "active", starts_at: start.toISOString(), ends_at: end.toISOString() }).eq("id", sub.id);
   await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id);
   return { ok: true as const, already: false };
