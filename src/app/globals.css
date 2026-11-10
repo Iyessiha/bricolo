@@ -524,4 +524,16 @@ html{scroll-padding-top:72px}
 .trust li.tb::before{content:none}
 .trust li.tb i{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--brand-soft);color:var(--brand)}
 .trust li.tb b{display:block;font-size:14px;font-weight:700;color:var(--ink)}
-@media(max-width:560px){.trust li.tb{flex:1 1 100%}}
+
+
+/* Toujours sur une seule ligne */
+.trust{flex-wrap:nowrap}
+.trust li.tb{min-width:0;white-space:nowrap}
+.trust li.tb span{min-width:0}
+@media(max-width:1100px){.trust li.tb span{font-size:0}.trust li.tb b{font-size:13px}}
+@media(max-width:560px){
+  .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .trust li.tb{flex-direction:column;justify-content:center;gap:6px;padding:10px 4px;border-radius:14px;text-align:center;white-space:normal}
+  .trust li.tb i{width:30px;height:30px}
+  .trust li.tb b{font-size:12.5px;line-height:1.2}
+}
