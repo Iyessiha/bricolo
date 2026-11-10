@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 /**
  * Adaptateur GeniusPay.
  * Mode « mock » : paiement simulé en local (aucun appel réseau).
- * Mode « live » : à ajuster avec la documentation officielle de GeniusPay (URL, champs, en-tête de signature).
+ * Mode « live » : API marchande GeniusPay (https://pay.genius.ci/doc), authentifiée par X-API-Key + X-API-Secret.
  * Tout le reste du code ne parle qu’à ces deux fonctions.
  */
 export const isLive = () => process.env.GENIUSPAY_MODE === "live";
@@ -12,39 +12,48 @@ export const isLive = () => process.env.GENIUSPAY_MODE === "live";
 export const isMock = () => process.env.GENIUSPAY_MODE === "mock" && process.env.VERCEL_ENV !== "production";
 export const paymentsOpen = () => isLive() || isMock();
 
+const API = () => (process.env.GENIUSPAY_API_URL || "https://pay.genius.ci/api/v1/merchant").replace(/\/$/, "");
+
 export async function createCheckout(o: { reference: string; amount: number; currency: string; description: string; returnUrl: string; webhookUrl: string; customerEmail: string }) {
   if (!paymentsOpen()) throw new Error("paiements_fermes");
   if (isMock()) return { checkoutUrl: `${new URL(o.returnUrl).origin}/api/dev/confirm?ref=${encodeURIComponent(o.reference)}` };
-  const res = await fetch(`${process.env.GENIUSPAY_API_URL}/payments`, {
+  // Retour en cas d'échec ou d'abandon : même page, sans « paye », avec un message.
+  const err = new URL(o.returnUrl); err.searchParams.delete("paye"); err.searchParams.set("erreur", "Le paiement n’a pas abouti. Aucun montant n’a été débité.");
+  const res = await fetch(`${API()}/payments`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${process.env.GENIUSPAY_API_KEY}` },
+    headers: { "content-type": "application/json", "x-api-key": process.env.GENIUSPAY_API_KEY ?? "", "x-api-secret": process.env.GENIUSPAY_API_SECRET ?? "" },
+    // Sans « payment_method », GeniusPay renvoie une page de paiement où le client choisit Wave, Orange Money, MTN, Moov ou carte.
     body: JSON.stringify({
-      reference: o.reference, amount: o.amount, currency: o.currency, description: o.description,
-      return_url: o.returnUrl, callback_url: o.webhookUrl, customer_email: o.customerEmail,
+      amount: o.amount, currency: o.currency, description: o.description.slice(0, 500),
+      customer: { email: o.customerEmail },
+      success_url: o.returnUrl, error_url: err.toString(),
+      metadata: { reference: o.reference }, // notre référence : elle revient dans le webhook
     }),
   });
   if (!res.ok) throw new Error(`GeniusPay a refusé la création du paiement (${res.status})`);
-  const json = (await res.json()) as { checkout_url?: string; url?: string };
-  const checkoutUrl = json.checkout_url ?? json.url;
+  const json = (await res.json()) as { data?: { checkout_url?: string; payment_url?: string } };
+  const checkoutUrl = json.data?.checkout_url ?? json.data?.payment_url;
   if (!checkoutUrl) throw new Error("Réponse GeniusPay sans lien de paiement");
   return { checkoutUrl };
 }
 
-/** Vérifie la signature HMAC-SHA256 du corps brut (en-tête x-geniuspay-signature à confirmer). */
-export function verifySignature(rawBody: string, signature: string | null) {
+/** Signature HMAC-SHA256 de « horodatage.corps » avec le secret du webhook (en-têtes X-Webhook-Signature et X-Webhook-Timestamp). Rejette aussi les envois vieux de plus de 5 minutes. */
+export function verifySignature(rawBody: string, signature: string | null, timestamp: string | null) {
   const secret = process.env.GENIUSPAY_WEBHOOK_SECRET;
-  if (!secret || !signature) return false;
-  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  if (!secret || !signature || !timestamp) return false;
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) return false;
+  const expected = createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex");
   const a = Buffer.from(expected);
-  const b = Buffer.from(signature.replace(/^sha256=/, ""));
+  const b = Buffer.from(signature.trim().replace(/^sha256=/, ""));
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-/** Lit la notification de paiement (noms de champs à confirmer avec la documentation). */
+/** Lit la notification : seul « payment.success » (statut « completed ») active un achat. Notre référence est dans data.metadata.reference. */
 export function parseWebhook(body: any): { reference: string; paid: boolean; amount: number } | null {
-  const reference = body?.reference ?? body?.data?.reference;
-  const status = String(body?.status ?? body?.data?.status ?? "").toLowerCase();
-  const amount = Number(body?.amount ?? body?.data?.amount ?? 0);
+  const d = body?.data;
+  const reference = d?.metadata?.reference;
   if (!reference) return null;
-  return { reference: String(reference), paid: ["paid", "success", "succeeded", "completed"].includes(status), amount };
+  const paid = body?.event === "payment.success" && String(d?.status ?? "").toLowerCase() === "completed";
+  return { reference: String(reference), paid, amount: Number(d?.amount ?? 0) };
 }
