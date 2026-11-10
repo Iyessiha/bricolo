@@ -13,6 +13,7 @@ const ITEMS = [
   ["/admin/prix", "🏷", "Pays et prix", ""],
   ["/admin/campagnes", "✉️", "Campagnes", ""],
   ["/admin/pixels", "📈", "Pixels et SEO", ""],
+  ["/admin/attente", "🌍", "Liste d’attente", ""],
   ["/admin/equipe", "👥", "Équipe", ""],
   ["/admin/journal", "🗂", "Journal", ""],
 ] as const;
