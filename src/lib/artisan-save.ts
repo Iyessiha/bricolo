@@ -54,10 +54,16 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
         db.from("subscriptions").select("id").eq("artisan_id", existing.id).eq("status", "active").gt("ends_at", new Date().toISOString()).limit(1),
         db.from("artisan_zones").select("zone_id", { count: "exact", head: true }).eq("artisan_id", existing.id),
       ]);
-      if ((sub?.length ?? 0) > 0) { allowed = Infinity; isPro = true; }
+      if ((sub?.length ?? 0) > 0) { allowed = Math.max(PRO_LIMITS.pro.zones, count ?? 0); isPro = true; }
       else allowed = Math.max(allowed, count ?? 0);
     }
-    if (uniq.length > allowed) return { ok: false, error: `Le forfait gratuit permet ${PRO_LIMITS.free.zones} zones d’intervention. Retirez-en ou passez au Forfait Pro.` };
+    if (uniq.length > allowed) return { ok: false, error: isPro ? `Le Forfait Pro permet ${PRO_LIMITS.pro.zones} zones d’intervention, ou une ville entière. Retirez-en quelques-unes.` : `Le forfait gratuit permet ${PRO_LIMITS.free.zones} zones d’intervention. Retirez-en ou passez au Forfait Pro.` };
+    // Forfait Pro : une seule ville entière.
+    if (isPro) {
+      const { data: kids } = await db.from("zones").select("parent_id").in("parent_id", uniq);
+      const cities = new Set((kids ?? []).map((k) => k.parent_id));
+      if (cities.size > PRO_LIMITS.pro.cities) return { ok: false, error: "Le Forfait Pro couvre une seule ville entière. Pour plusieurs villes, choisissez leurs quartiers." };
+    }
     // « Toute la ville » (une zone qui a des quartiers) est réservé au Forfait Pro.
     if (!isPro) {
       const [{ data: kids }, { data: had }] = await Promise.all([

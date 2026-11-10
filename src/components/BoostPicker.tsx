@@ -2,13 +2,13 @@
 import { useMemo, useState } from "react";
 
 type Plan = { id: "recherche" | "accueil" | "urgence"; icon: string; name: string; hook: string; bullets: string[]; star?: boolean };
-type Zone = { id: string; name: string; factor: number };
+type Zone = { id: string; name: string; factor: number; city?: boolean };
 const DUR: [number, string, string][] = [[24, "24 heures", "1 jour"], [72, "3 jours", "3 jours"], [168, "7 jours", "7 jours"]];
 const nf = new Intl.NumberFormat("fr-FR");
 
 /** Choix du boost en un écran : type, durée, zone, et un total qui se met à jour. Le prix réel est recalculé côté serveur au paiement. */
-export default function BoostPicker({ plans, prices, zones, left, caps }: {
-  plans: Plan[]; prices: Record<string, Record<number, number>>; zones: Zone[]; left: Record<string, Record<string, number>>; caps: Record<string, number>;
+export default function BoostPicker({ plans, prices, zones, left, caps, cityMult = 2 }: {
+  cityMult?: number; plans: Plan[]; prices: Record<string, Record<number, number>>; zones: Zone[]; left: Record<string, Record<string, number>>; caps: Record<string, number>;
 }) {
   const [plan, setPlan] = useState<Plan["id"]>("recherche");
   const [dur, setDur] = useState(72);
@@ -16,7 +16,8 @@ export default function BoostPicker({ plans, prices, zones, left, caps }: {
   const z = zones.find((x) => x.id === zone);
   const price = (p: Plan["id"], d: number) => {
     const base = prices[p]?.[d] ?? 0;
-    return p === "recherche" && z && z.factor > 1 ? Math.round((base * z.factor) / 100) * 100 : base;
+    const f = (p === "recherche" && z ? z.factor : 1) * (p !== "accueil" && z?.city ? cityMult : 1);
+    return f !== 1 ? Math.round((base * f) / 100) * 100 : base;
   };
   const slots = (p: Plan["id"]) => (p === "accueil" ? left.accueil?.[""] : left[p]?.[zone]) ?? 0;
   const total = price(plan, dur);
@@ -65,9 +66,9 @@ export default function BoostPicker({ plans, prices, zones, left, caps }: {
           <h2 className="bh">3. Dans quelle zone ?</h2>
           <div className="fld">
             <select id="zone" value={zone} onChange={(e) => setZone(e.target.value)} aria-label="Zone du boost">
-              {zones.map((x) => <option key={x.id} value={x.id}>{x.name}{x.factor > 1 && plan === "recherche" ? " · zone très demandée" : ""}</option>)}
+              {zones.map((x) => <option key={x.id} value={x.id}>{x.name}{x.city ? " · toute la ville" : x.factor > 1 && plan === "recherche" ? " · zone très demandée" : ""}</option>)}
             </select>
-            <span className="hint">Votre boost apparaît quand un client cherche votre métier dans cette zone.</span>
+            <span className="hint">Votre boost apparaît quand un client cherche votre métier dans cette zone.{z?.city ? " Une ville entière touche plus de clients : le tarif est plus élevé que pour un quartier." : ""}</span>
           </div>
         </>
       )}

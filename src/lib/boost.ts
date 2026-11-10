@@ -21,6 +21,9 @@ export async function usedSlots(db: Admin, o: { type: string; tradeId: string; z
   return data?.length ?? 0;
 }
 
+/** Un boost sur une ville entière touche beaucoup plus de recherches qu’un quartier : il coûte plus cher. */
+export const CITY_BOOST_MULT = 2;
+
 export const capFor = (type: string) => (type === "accueil" ? MAX_HOME_SLOTS : MAX_SEARCH_SLOTS);
 
 /** Active le boost payé. Idempotent : un webhook reçu deux fois ne prolonge pas deux fois. */
@@ -52,7 +55,7 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
   return { ok: true as const, already: false };
 }
 
-export const PRO_LIMITS = { free: { services: 1, photos: 8, zones: 3 }, pro: { services: 10, photos: 20, zones: Infinity } } as const;
+export const PRO_LIMITS = { free: { services: 1, photos: 8, zones: 3 }, pro: { services: 10, photos: 20, zones: 10, cities: 1 } } as const;
 export async function isPro(db: Admin, artisanId: string) {
   const { data } = await db.from("subscriptions").select("id").eq("artisan_id", artisanId).eq("status", "active").gt("ends_at", new Date().toISOString()).limit(1);
   return (data?.length ?? 0) > 0;

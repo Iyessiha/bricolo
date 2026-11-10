@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "node:crypto";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { capFor, usedSlots } from "@/lib/boost";
+import { CITY_BOOST_MULT, capFor, usedSlots } from "@/lib/boost";
 import { createCheckout } from "@/lib/geniuspay";
 import { BOOST_TYPES, DURATIONS } from "@/lib/format";
 import { siteUrl } from "@/lib/env";
@@ -32,11 +32,17 @@ export async function POST(req: NextRequest) {
     if (!zone) return to("/boosts?erreur=1");
   }
 
+  let isCity = false;
+  if (zone) {
+    const { count } = await db.from("zones").select("id", { count: "exact", head: true }).eq("parent_id", zone.id);
+    isCity = (count ?? 0) > 0;
+  }
+
   // 3. Prix calculé côté serveur à partir de la grille du pays : jamais envoyé par le navigateur.
   const { data: g } = await db.from("price_grid").select("amount").eq("country_code", a.country_code)
     .eq("boost_type", type === "cible" ? "recherche" : type).eq("duration_hours", duration).single();
   if (!g) return to("/boosts?erreur=1");
-  const amount = Math.round((g.amount * (type === "cible" ? Number(zone!.price_factor) : 1)) / 100) * 100;
+  const amount = Math.round((g.amount * (type === "cible" ? Number(zone!.price_factor) : 1) * (isCity ? CITY_BOOST_MULT : 1)) / 100) * 100;
 
   // 4. Places : un renouvellement du même boost reste toujours possible.
   let sameQ = db.from("boosts").select("id").eq("artisan_id", a.id).eq("type", type).eq("status", "active").gt("ends_at", new Date().toISOString());

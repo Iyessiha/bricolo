@@ -50,7 +50,6 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
             <div className="pfphoto">{a.photo_url ? <img src={a.photo_url} alt={`Photo de ${a.name}`} /> : <span aria-hidden="true">{initials(a.name)}</span>}</div>
             <div className="pfid">
               <div className="tags">
-                {isPro && <span className="tag boost">Pro</span>}
                 {a.verified && <span className="tag ok">✓ Identité vérifiée</span>}
                 {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
                 {a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}

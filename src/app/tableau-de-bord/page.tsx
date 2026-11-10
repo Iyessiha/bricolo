@@ -61,7 +61,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const planOf = planRow ?? { amount: 0 };
   const pro = !!proSub, maxServices = pro ? 10 : 1, maxPhotos = pro ? 20 : 8;
   const zonesCount = (((artisan as any).zones ?? []) as any[]).length;
-  const maxZones = pro ? Infinity : Math.max(PRO_LIMITS.free.zones, zonesCount);
+  const maxZones = Math.max(pro ? PRO_LIMITS.pro.zones : PRO_LIMITS.free.zones, zonesCount);
   const nSvc = services?.length ?? 0, nPho = shots?.length ?? 0;
   const usage = [
     { l: "Prestations", n: nSvc, max: maxServices }, { l: "Photos de réalisations", n: nPho, max: maxPhotos }, { l: "Zones d’intervention", n: zonesCount, max: maxZones },
@@ -263,8 +263,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
           <div id="zones" className="card pad stack psec"><h2>Où j’interviens</h2>
-            <p className="sub">{pro ? "Forfait Pro : zones illimitées, « toute la ville » comprise." : `Forfait gratuit : jusqu’à ${PRO_LIMITS.free.zones} zones. Le Forfait Pro permet de couvrir « toute la ville » et de choisir des zones illimitées.`}</p>
-            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} max={pro ? undefined : maxZones} canCity={pro} proHref="/tableau-de-bord?s=forfait" />
+            <p className="sub">{pro ? `Forfait Pro : jusqu’à ${PRO_LIMITS.pro.zones} zones, ou une ville entière.` : `Forfait gratuit : jusqu’à ${PRO_LIMITS.free.zones} zones. Le Forfait Pro permet de couvrir une ville entière ou jusqu’à ${PRO_LIMITS.pro.zones} quartiers.`}</p>
+            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} max={maxZones} canCity={pro} proHref="/tableau-de-bord?s=forfait" />
             {!pro && <Link className="btn small boost" href="/tableau-de-bord?s=forfait" style={{ justifySelf: "start" }}>Couvrir plus de zones avec le Pro</Link>}
           </div>
           <div className="card pad stack psec"><h2>Prix et contact</h2>
@@ -325,11 +325,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   <input type="hidden" name="plan" value={pl.key} /><button className="btn boost" type="submit">{pro ? "Prolonger" : "Passer Pro"}</button>
                 </form>); })}
             </div>
-            <p className="hint">Paiement sécurisé par Mobile Money ou carte. Sans engagement : le forfait s’arrête à la fin de la période payée. Vos prestations, photos et zones en plus restent enregistrées mais ne sont plus affichées.</p>
+            <p className="hint">Paiement sécurisé par Mobile Money ou carte. Sans engagement : le forfait s’arrête à la fin de la période payée. Vos prestations et photos en plus restent enregistrées mais ne sont plus affichées.</p>
           </div>
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Gratuit ou Pro ?</h2><div className="tw"><table className="tbl"><thead><tr><th></th><th className="num">Gratuit</th><th className="num">Pro</th></tr></thead><tbody>
-          {[["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3 quartiers", "illimitées + toute la ville"], ["Badge « Pro » sur ma fiche et mes cartes", "—", "✓"], ["Visible dans les recherches", "✓", "✓"]].map(([l, f, p]) => <tr key={l}><td>{l}</td><td className="num">{f}</td><td className="num"><b>{p}</b></td></tr>)}</tbody></table></div></div>
+          {[["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3 quartiers", "10 quartiers ou une ville entière"], ["Visible dans les recherches", "✓", "✓"]].map(([l, f, p]) => <tr key={l}><td>{l}</td><td className="num">{f}</td><td className="num"><b>{p}</b></td></tr>)}</tbody></table></div></div>
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Historique</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>

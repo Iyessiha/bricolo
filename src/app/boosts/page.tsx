@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { usedSlots, capFor } from "@/lib/boost";
+import { usedSlots, capFor, CITY_BOOST_MULT } from "@/lib/boost";
 import { BOOST_TYPES, DURATIONS, fcfa } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import BoostPicker from "@/components/BoostPicker";
@@ -35,6 +35,8 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
 
   const { data: grid } = await db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", a.country_code);
   const zones = ((a as any).zones ?? []).map((z: any) => z.zone).filter(Boolean) as { id: string; name: string; price_factor: number }[];
+  const { data: kids } = zones.length ? await db.from("zones").select("parent_id").in("parent_id", zones.map((z) => z.id)) : { data: [] as { parent_id: string | null }[] };
+  const cityIds = new Set((kids ?? []).map((k) => k.parent_id));
   const prices: Record<string, Record<number, number>> = { recherche: {}, accueil: {}, urgence: {} };
   for (const g of grid ?? []) if (prices[g.boost_type]) prices[g.boost_type][g.duration_hours] = g.amount;
 
@@ -99,7 +101,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
         <div><span aria-hidden="true">💰</span><b>Un seul chantier le rembourse</b><p>Un boost coûte moins cher qu’une journée de travail perdue faute de clients.</p></div>
       </div>
 
-      <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor) }))} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
+      <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor), city: cityIds.has(z.id) }))} cityMult={CITY_BOOST_MULT} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
       <p className="hint bcenter"><Link href="/conditions-boosts">Conditions de vente des boosts</Link> · Emplacements limités pour rester efficaces.</p>
     </section>
   );
