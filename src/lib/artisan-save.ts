@@ -48,15 +48,25 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
   {
     const uniq = [...new Set(zoneIds)];
     let allowed: number = PRO_LIMITS.free.zones;
+    let isPro = false;
     if (existing?.id) {
       const [{ data: sub }, { count }] = await Promise.all([
         db.from("subscriptions").select("id").eq("artisan_id", existing.id).eq("status", "active").gt("ends_at", new Date().toISOString()).limit(1),
         db.from("artisan_zones").select("zone_id", { count: "exact", head: true }).eq("artisan_id", existing.id),
       ]);
-      if ((sub?.length ?? 0) > 0) allowed = Infinity;
+      if ((sub?.length ?? 0) > 0) { allowed = Infinity; isPro = true; }
       else allowed = Math.max(allowed, count ?? 0);
     }
     if (uniq.length > allowed) return { ok: false, error: `Le forfait gratuit permet ${PRO_LIMITS.free.zones} zones d’intervention. Retirez-en ou passez au Forfait Pro.` };
+    // « Toute la ville » (une zone qui a des quartiers) est réservé au Forfait Pro.
+    if (!isPro) {
+      const [{ data: kids }, { data: had }] = await Promise.all([
+        db.from("zones").select("parent_id").in("parent_id", uniq),
+        existing?.id ? db.from("artisan_zones").select("zone_id").eq("artisan_id", existing.id) : Promise.resolve({ data: [] as { zone_id: string }[] }),
+      ]);
+      const keep = new Set((had ?? []).map((r) => r.zone_id));
+      if ((kids ?? []).some((k) => k.parent_id && !keep.has(k.parent_id))) return { ok: false, error: "« Toute la ville » est réservé au Forfait Pro. Choisissez vos quartiers (3 au maximum) ou passez au Forfait Pro." };
+    }
     zoneIds.splice(0, zoneIds.length, ...uniq);
   }
   let artisanId = existing?.id as string | undefined, created = false;

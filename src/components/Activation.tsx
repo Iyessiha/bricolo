@@ -135,7 +135,7 @@ export default function Activation(p: ActivationProps) {
             <input id="experience_years" name="experience_years" type="number" inputMode="numeric" min={0} max={60} required defaultValue={d.experience_years} placeholder="Ex. 8" />
             <span className="hint">Mettez 0 si vous débutez. Cette information est affichée sur votre fiche.</span></div>
           <div className="fld"><span className="lbl">Zones couvertes ({p.countryName})</span>
-            <ZonePicker zones={p.zones} selected={p.defaults.zones} />
+            <ZonePicker zones={p.zones} selected={p.defaults.zones} max={3} canCity={false} />
           </div>
           <div className="fld"><label htmlFor="phone">Téléphone</label><input id="phone" name="phone" type="tel" required defaultValue={d.phone} placeholder="+225 07 00 00 00 00" autoComplete="tel" /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp <span className="hint">(si différent)</span></label><input id="whatsapp" name="whatsapp" type="tel" defaultValue={d.whatsapp} /></div>
