@@ -517,3 +517,11 @@ html{scroll-padding-top:72px}
 .aside details>summary::-webkit-details-marker{display:none}
 .reportbox>summary{padding:0 18px;border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--surface-raised);color:var(--ink);font-weight:600;font-size:16px;cursor:pointer;text-align:center}
 .reportbox>summary:hover{text-decoration:none;background:var(--surface-sunken)}
+
+/* Bandeau de confiance : vrais badges */
+.trust{gap:10px}
+.trust li.tb{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid var(--border-strong);background:var(--surface-raised);border-radius:999px;font-weight:500;font-size:13px;line-height:1.25;color:var(--ink-muted)}
+.trust li.tb::before{content:none}
+.trust li.tb i{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:var(--brand-soft);color:var(--brand)}
+.trust li.tb b{display:block;font-size:14px;font-weight:700;color:var(--ink)}
+@media(max-width:560px){.trust li.tb{flex:1 1 100%}}

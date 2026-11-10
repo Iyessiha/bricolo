@@ -69,9 +69,9 @@ export default async function Home() {
           <button className="btn primary" type="submit">Rechercher</button>
         </form>
         <ul className="trust">
-          <li>Contact direct, sans intermédiaire</li>
-          <li>Identité vérifiée par notre équipe (badge Vérifié)</li>
-          <li>7 pays d’Afrique de l’Ouest</li>
+          <li className="tb"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i><span><b>Contact direct</b>Sans intermédiaire</span></li>
+          <li className="tb"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></i><span><b>Badge Vérifié</b>Identité contrôlée</span></li>
+          <li className="tb"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></i><span><b>7 pays</b>Afrique de l’Ouest</span></li>
         </ul>
       </section>
       <div className="ruler" aria-hidden="true" />
