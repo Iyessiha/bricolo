@@ -10,5 +10,5 @@ export const dynamic = "force-dynamic";
 export default async function Login({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   if (!hasSupabase()) return <SetupNotice />;
   const sp = await searchParams;
-  return <AuthShell photo="/photos/jeune-casque-portrait.jpg" alt="Jeune artisan souriant, casque blanc sur la tête" title="Bon retour parmi les artisans" text="Suivez vos demandes, votre profil et votre forfait au même endroit." pos="50% 30%"><LoginFlow linkError={sp.erreur === "lien"} /></AuthShell>;
+  return <AuthShell photo="/photos/mecanicienne-portrait.jpg" alt="Mécanicienne en combinaison rouge, son casque sous le bras" title="Bon retour parmi les artisans" text="Suivez vos demandes, votre profil et votre forfait au même endroit." pos="50% 18%"><LoginFlow linkError={sp.erreur === "lien"} /></AuthShell>;
 }

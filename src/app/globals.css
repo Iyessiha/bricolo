@@ -463,7 +463,7 @@ h1 .flag{margin-inline:2px}
   .authwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);gap:32px;align-items:stretch}
   .authmain{display:flex;align-items:flex-start}
   .authmain>.narrow{margin:0;max-width:none;width:100%}
-  .authpic{display:block;position:relative;min-height:460px;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 14px 34px rgba(19,32,58,.16);background:var(--brand-soft)}
+  .authpic{display:block;position:relative;min-height:580px;border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 14px 34px rgba(19,32,58,.16);background:var(--brand-soft)}
   .authpic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .authcap{position:absolute;left:0;right:0;bottom:0;padding:48px 22px 22px;display:flex;flex-direction:column;gap:4px;color:#fff;background:linear-gradient(to top,rgba(10,18,36,.82),rgba(10,18,36,0))}
   .authcap b{font-family:var(--font-display,inherit);font-size:20px;line-height:1.2}
