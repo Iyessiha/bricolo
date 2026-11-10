@@ -100,7 +100,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <a className="btn wa dcall" href={`/api/contact?id=${id}&type=whatsapp`}>💬 Écrire sur WhatsApp</a>
           <a className="btn dcall" href={`/api/contact?id=${id}&type=call`}>📞 Appeler</a>
           <details id="message" open={!!sp.erreur || sp.message === "1"}>
-            <summary className="btn dcall" style={{ listStyle: "none", cursor: "pointer" }}>✉️ Message sur Bricolo</summary>
+            <summary className="btn dcall" style={{ listStyle: "none" }}>✉️ Message sur Bricolo</summary>
             <form action={action} className="stack" style={{ marginTop: 12 }}>
               <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
               <div className="fld"><label htmlFor="zone">Commune ou ville</label>
@@ -124,7 +124,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
             </ul>
           </div>
           <details id="signaler" className="reportbox" open={!!sp.signale || String(sp.erreur ?? "").startsWith("signal")}>
-            <summary>⚠️ Signaler cet artisan</summary>
+            <summary className="btn">⚠️ Signaler cet artisan</summary>
             {sp.signale === "1" ? <p className="notice ok" role="status">Merci. Votre signalement a été transmis à l’équipe Bricolo, qui l’examine et peut retirer le profil si nécessaire.</p> : (
               <form action={reportAction} className="stack" style={{ marginTop: 12 }}>
                 <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />

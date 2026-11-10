@@ -511,3 +511,9 @@ html{scroll-padding-top:72px}
 .reportbox>summary{cursor:pointer;color:var(--ink-muted);font-size:13px;text-align:center;list-style:none;padding:6px}
 .reportbox>summary::-webkit-details-marker{display:none}
 .reportbox>summary:hover{text-decoration:underline}
+
+/* Boutons de contact de la fiche : même largeur et même hauteur */
+.aside .dcall,.aside .reportbox>summary{display:flex;width:100%;box-sizing:border-box;min-height:44px;align-items:center;justify-content:center;gap:8px;margin:0}
+.aside details>summary::-webkit-details-marker{display:none}
+.reportbox>summary{padding:0 18px;border-radius:var(--radius-md);border:1px solid var(--border-strong);background:var(--surface-raised);color:var(--ink);font-weight:600;font-size:16px;cursor:pointer;text-align:center}
+.reportbox>summary:hover{text-decoration:none;background:var(--surface-sunken)}
