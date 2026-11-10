@@ -54,7 +54,7 @@ export async function giftBoost(f: FormData) {
   if (!["recherche", "accueil", "urgence"].includes(type) || ![24, 72, 168].includes(hours)) back(page, "erreur", "Boost ou durée invalide.");
   const now = new Date();
   const { error } = await ctx.db.from("boosts").insert({ artisan_id: a.id, type, duration_hours: hours, amount: 0, status: "active", starts_at: now.toISOString(), ends_at: new Date(now.getTime() + hours * 36e5).toISOString() });
-  if (error) back(page, "erreur", "Le boost n’a pas pu être créé.");
+  if (error) back(page, "erreur", /badge_requis/.test(error.message) ? "Impossible : un boost ne peut être offert qu’à un artisan dont l’identité est vérifiée (badge « Vérifié »)." : "Le boost n’a pas pu être créé.");
   await audit(ctx, "boost.offrir", { type: "artisan", id: a.id, label: a.name }, { type, hours });
   refresh(a.id); back(page, "ok", `Boost offert : ${type}, ${hours / 24} jour(s).`);
 }

@@ -15,13 +15,13 @@ export default function Boosts() {
       <ul>
         <li><b>Boost recherche</b> : mise en avant dans les résultats de votre métier.</li>
         <li><b>Boost accueil</b> : mise en avant sur la page d’accueil de votre pays.</li>
-        <li><b>Boost urgence</b> : priorité sur les demandes de dépannage.</li>
+        <li><b>Boost urgence</b> : badge « Urgences » sur votre fiche et priorité dans les recherches « Dépannage urgent ».</li>
         <li><b>Boost ciblé</b> : mise en avant dans une zone précise.</li>
       </ul>
-      <p>Durées proposées : 24 heures, 3 jours ou 7 jours. Les contenus boostés sont signalés par la mention « Sponsorisé ».</p>
+      <p>Durées proposées : 24 heures, 3 jours ou 7 jours. Les contenus boostés sont signalés par la mention « Mis en avant ».</p>
 
       <h2>2. Réservé aux profils validés</h2>
-      <p>Seuls les artisans dont le profil est validé peuvent acheter un boost.</p>
+      <p>Seuls les artisans dont le profil est validé et dont l’identité est vérifiée (badge « Vérifié ») peuvent acheter un boost. Un boost est suspendu pendant la suspension du profil ou si le badge « Vérifié » est retiré ; lorsque cela résulte d’un manquement à la charte de l’artisan, la durée restante n’est ni prolongée ni remboursée.</p>
 
       <h2>3. Prix</h2>
       <p>Les prix sont exprimés en francs CFA (FCFA) et affichés dans votre espace artisan avant le paiement, par pays, durée et type de boost. Le prix applicable est celui affiché au moment de votre commande. {C} peut modifier ses tarifs à tout moment, sans effet sur les boosts déjà payés.</p>

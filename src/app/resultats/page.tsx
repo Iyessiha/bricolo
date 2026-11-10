@@ -25,7 +25,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
 
   const { data: rows } = await db.rpc("search_artisans", {
     p_country: country, p_trade: trade?.id ?? null, p_zone: zone?.id ?? null,
-    p_verified: sp.verifie === "1", p_open: sp.ouvert === "1", p_seed: String(Math.floor(Date.now() / 60000)),
+    p_verified: sp.verifie === "1", p_open: sp.ouvert === "1", p_urgent: sp.urgence === "1", p_seed: String(Math.floor(Date.now() / 60000)),
   });
   const tradeName = (id: string) => trades?.find((t) => t.id === id)?.name;
   const list = (rows ?? []) as any[];
@@ -37,7 +37,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
         <p className="meta num"><Flag code={country} size={18} /> {countryName(country)} · {list.length} résultat{list.length > 1 ? "s" : ""}</p>
       </div>
       <input type="checkbox" id="ftog" className="ftog" />
-      <label htmlFor="ftog" className="fbtn"><span>⚙️ Filtres</span><small>{[trade?.plural, zone?.name, sp.verifie === "1" && "Vérifiés", sp.ouvert === "1" && "Ouverts"].filter(Boolean).join(" · ") || "Tous les artisans"}</small></label>
+      <label htmlFor="ftog" className="fbtn"><span>⚙️ Filtres</span><small>{[trade?.plural, zone?.name, sp.verifie === "1" && "Vérifiés", sp.ouvert === "1" && "Ouverts", sp.urgence === "1" && "Urgences"].filter(Boolean).join(" · ") || "Tous les artisans"}</small></label>
       <AutoSubmitForm className="card filters" action="/resultats">
         <div className="fld"><label htmlFor="metier">Métier</label>
           <select id="metier" name="metier" defaultValue={trade?.slug ?? ""}>
@@ -55,9 +55,12 @@ export default async function Results({ searchParams }: { searchParams: Promise<
         <label className="check" htmlFor="ouvert" style={{ minHeight: 44, alignItems: "center" }}>
           <input type="checkbox" id="ouvert" name="ouvert" value="1" defaultChecked={sp.ouvert === "1"} /> Ouverts maintenant
         </label>
+        <label className="check" htmlFor="urgence" style={{ minHeight: 44, alignItems: "center" }}>
+          <input type="checkbox" id="urgence" name="urgence" value="1" defaultChecked={sp.urgence === "1"} /> 🚨 Dépannage urgent
+        </label>
         <button className="btn primary" type="submit">Filtrer</button>
       </AutoSubmitForm>
-      {list.some((a) => a.sponsored) && <p className="hint" style={{ marginBottom: 12 }}>Les résultats sponsorisés passent en premier. Leur ordre change régulièrement pour rester équitable.</p>}
+      {list.some((a) => a.sponsored) && <p className="hint" style={{ marginBottom: 12 }}>Les artisans « Mis en avant » passent en premier : ils ont choisi de se mettre en avant et leur identité est vérifiée. Leur ordre change régulièrement pour rester équitable.</p>}
       {list.length ? (
         <div className="cards">{list.map((a) => <ArtisanCard country={country} key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
       ) : (

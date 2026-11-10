@@ -10,7 +10,7 @@ export const DURATIONS: Record<number, string> = { 24: "24 h", 72: "3 jours", 16
 export const BOOST_TYPES: Record<string, { name: string; text: string }> = {
   recherche: { name: "Boost recherche", text: "Passe en tête des résultats de votre métier dans la zone choisie." },
   accueil: { name: "Boost accueil", text: "Apparaît dans « Artisans à la une » sur la page d’accueil." },
-  urgence: { name: "Boost urgence", text: "Reçoit en premier les demandes de dépannage." },
+  urgence: { name: "Boost urgence", text: "En tête des recherches « Dépannage urgent », avec le badge « Urgences »." },
   cible: { name: "Boost ciblé", text: "Mise en avant dans une zone précise, au prix de la demande de la zone." },
 };
 

@@ -20,8 +20,9 @@ export async function POST(req: NextRequest) {
   const user = await (await supabaseServer()).auth.getUser();
   if (!user.data.user) return to("/connexion");
   const db = supabaseAdmin();
-  const { data: a } = await db.from("artisans").select("id, country_code, trade_id, status").eq("user_id", user.data.user.id).single();
+  const { data: a } = await db.from("artisans").select("id, country_code, trade_id, status, verified").eq("user_id", user.data.user.id).single();
   if (!a || a.status !== "approved") return to("/tableau-de-bord");
+  if (!a.verified) return to("/boosts?erreur=badge"); // réservé aux artisans dont l'identité est vérifiée
 
   // 2. La zone doit être l’une des zones de l’artisan (sauf accueil).
   let zone: { id: string; price_factor: number } | null = null;

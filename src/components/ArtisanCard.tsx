@@ -10,6 +10,16 @@ export type ArtisanRow = {
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
+/** Pourquoi cet artisan est en tête : transparence sur la mise en avant, accessible au clavier et au toucher. */
+function Why() {
+  return (
+    <span className="why" tabIndex={0} role="button" aria-label="Pourquoi cet artisan est mis en avant ?">
+      <i aria-hidden="true">i</i>
+      <span role="tooltip">Cet artisan a choisi de se mettre en avant. Son identité est vérifiée par Bricolo.</span>
+    </span>
+  );
+}
+
 export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: string }) {
   const st = openStatus(a.hours, a.open_24_7, country ?? a.country_code ?? "ci");
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
@@ -18,11 +28,10 @@ export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: s
       <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
         {a.cover_url ? <img src={a.cover_url} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
         {a.cover_url && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
-        {a.sponsored && !a.cover_url && <span className="acard-flag">Sponsorisé</span>}
+        {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         <div className="acard-badges">
-          {a.sponsored && a.cover_url && <span className="tag boost">Sponsorisé</span>}
-          {a.is_pro && <span className="tag boost">Pro</span>}
           {a.verified && <span className="tag ok">✓ Vérifié</span>}
+          {a.is_pro && <span className="tag boost">Pro</span>}
           {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
         </div>
       </div>

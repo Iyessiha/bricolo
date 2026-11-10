@@ -22,6 +22,17 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   const { data: a } = await db.from("artisans").select("id, name, description, price_label, photo_url, experience_years, diploma_verified, verified, avg_rating, review_count, hours, open_24_7, takes_urgent, country_code, trade_id, status, trade:trades(name), zones:artisan_zones(zone:zones(id, name, price_factor))").eq("user_id", user.id).maybeSingle();
   if (!a || a.status !== "approved") redirect("/tableau-de-bord");
 
+  if (!a.verified) return (
+    <section className="inner sec stack boostpage">
+      <p><Link href="/tableau-de-bord">← Mon espace</Link></p>
+      <div className="notice stack" style={{ gap: 8 }}>
+        <b>Les boosts sont réservés aux artisans vérifiés.</b>
+        <p>Le client voit votre fiche « Mis en avant » en tête des résultats : il doit pouvoir vous faire confiance. Votre badge « Vérifié » est accordé quand notre équipe a contrôlé votre identité. Dès que c’est fait, vous pouvez booster votre fiche ici.</p>
+        <div><Link className="btn" href="/tableau-de-bord">Voir l’état de mon dossier</Link></div>
+      </div>
+    </section>
+  );
+
   const { data: grid } = await db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", a.country_code);
   const zones = ((a as any).zones ?? []).map((z: any) => z.zone).filter(Boolean) as { id: string; name: string; price_factor: number }[];
   const prices: Record<string, Record<number, number>> = { recherche: {}, accueil: {}, urgence: {} };
@@ -50,17 +61,17 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
 
   const PLANS = [
     { id: "recherche" as const, icon: "🔝", name: "Boost recherche", hook: "Soyez le premier que le client voit.", star: true,
-      bullets: ["En tête des résultats de votre métier", "Pastille « Sponsorisé » et contour orange", "Rotation équitable avec les autres boostés"] },
+      bullets: ["En tête des résultats de votre métier", "Pastille « Mis en avant » et contour orange", "Rotation équitable avec les autres boostés"] },
     { id: "accueil" as const, icon: "🏠", name: "Boost accueil", hook: "Affichez-vous dès la page d’accueil.",
       bullets: ["Visible de tous les visiteurs du pays", "Section « Artisans à la une »", "Idéal pour se faire connaître"] },
     { id: "urgence" as const, icon: "🚨", name: "Boost urgence", hook: "Recevez les dépannages en premier.",
-      bullets: ["Priorité sur les demandes urgentes", "Badge « Prend les urgences »", "Les clients pressés appellent vite"] },
+      bullets: ["En tête des recherches « Dépannage urgent »", "Badge « Urgences » sur votre fiche", "Les clients pressés appellent vite"] },
   ];
 
   return (
     <section className="inner sec stack boostpage">
       <p><Link href="/tableau-de-bord">← Mon espace</Link></p>
-      {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : sp.erreur === "ferme" ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
+      {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : sp.erreur === "badge" ? "Le boost est réservé aux artisans dont l’identité est vérifiée (badge « Vérifié »)." : sp.erreur === "ferme" ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
       {sp.paye && <p className="notice ok">Paiement confirmé. Votre boost est actif : votre fiche passe devant les autres.</p>}
 
       <div className="bhero">
@@ -78,7 +89,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
       </div>
 
       <div className="card pad bprev">
-        <div className="bprev-t"><h2 style={{ fontSize: 18 }}>Voici votre fiche avec un boost</h2><p className="meta">Elle passe en tête, avec la pastille Sponsorisé et un contour orange qui attire l’œil.</p></div>
+        <div className="bprev-t"><h2 style={{ fontSize: 18 }}>Voici votre fiche avec un boost</h2><p className="meta">Elle passe en tête, avec la pastille « Mis en avant » et un contour orange qui attire l’œil.</p></div>
         <div className="bprev-c"><ArtisanCard country={a.country_code} a={{ ...(a as any), trade: tradeName, sponsored: true, zones: zones.map((z) => z.name) }} /></div>
       </div>
 

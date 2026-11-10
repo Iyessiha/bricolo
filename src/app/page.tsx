@@ -12,7 +12,7 @@ import ArtisanNudge from "@/components/ArtisanNudge";
 const FAQ = [
   ["Est-ce payant pour un client ?", "Non. Chercher un artisan, voir son profil et lui envoyer une demande est gratuit, sans compte. Vous réglez l’artisan directement, après avoir convenu du prix avec lui."],
   ["Comment contacter un artisan ?", "Depuis sa fiche : un bouton pour l’appeler, un bouton WhatsApp, ou un formulaire de demande. Vous parlez directement à l’artisan, sans intermédiaire."],
-  ["Pourquoi certains artisans sont-ils en tête ?", "Certains profils sont mis en avant par leurs propriétaires. Ils portent toujours la mention « Sponsorisé ». Les autres sont classés selon leur badge Vérifié, leurs avis et la qualité de leur profil."],
+  ["Pourquoi certains artisans sont-ils en tête ?", "Certains profils sont mis en avant par leurs propriétaires. Ils portent toujours la mention « Mis en avant » et leur identité est vérifiée. Les autres sont classés selon leur badge Vérifié, leurs avis et la qualité de leur profil."],
   ["Comment sont vérifiés les artisans ?", "Chaque artisan envoie une pièce d’identité et un selfie avec cette pièce. Notre équipe les contrôle avant la mise en ligne. Les artisans validés reçoivent le badge « Vérifié ». Vos documents ne sont jamais montrés aux clients."],
   ["Comment devenir artisan sur Bricolo ?", "Créez votre compte avec votre e-mail et un mot de passe, remplissez votre profil (métier, zones, tarif, photo), puis envoyez votre pièce d’identité. Après validation par notre équipe, en général sous 24 à 48 heures, les clients de votre pays peuvent vous trouver."],
   ["Combien coûte Bricolo pour un artisan ?", "Le profil est gratuit. Des options sont disponibles si vous voulez aller plus loin : les boosts pour apparaître en tête des résultats, et le Forfait Pro pour afficher plus de prestations et de photos. Bricolo ne prend aucune commission sur vos travaux."],
@@ -32,15 +32,18 @@ export default async function Home() {
   ]);
   const ids = [...new Set((boosts ?? []).map((b) => b.artisan_id))];
   const { data: featured } = ids.length
-    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, cover_url, headline, experience_years, diploma_verified, hours, open_24_7, takes_urgent, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").limit(6)
+    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, cover_url, headline, experience_years, diploma_verified, hours, open_24_7, takes_urgent, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").eq("verified", true).limit(24)
     : { data: [] };
+  // Rotation équitable des artisans à la une : l'ordre change toutes les heures.
+  const rot = String(Math.floor(Date.now() / 3600000));
+  const hash = (t: string) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
   const have = new Set((featured ?? []).map((f: any) => f.id));
   const { data: top } = await db.rpc("search_artisans", { p_country: country, p_trade: null, p_zone: null, p_verified: false, p_seed: String(Math.floor(Date.now() / 3600000)) });
   const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
   const POPULAR = ["plombier", "electricien", "frigoriste", "macon", "peintre", "mecanicien", "menuisier", "carreleur", "serrurier", "electromenager"];
   const topTrades = [...(trades ?? [])].sort((a, b) => (POPULAR.indexOf(a.slug) + 1 || 99) - (POPULAR.indexOf(b.slug) + 1 || 99)).slice(0, 9);
   const shown: any[] = [
-    ...(featured ?? []).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
+    ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
     ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).slice(0, 6).map((a) => ({ ...a, trade: tradeName(a.trade_id) })),
   ].slice(0, 6);
   return (
