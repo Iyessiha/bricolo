@@ -58,7 +58,7 @@ export const profileReceived = (name: string) => layout({
   body: p("Notre équipe vérifie votre pièce d'identité et votre profil. Vous recevrez un e-mail dès que votre profil est en ligne, en général sous 24 à 48 heures.") +
     p("Vos documents ne sont jamais montrés aux clients : seule l'administration peut les consulter.") +
     guide("En attendant, préparez votre fiche : c'est elle qui vous fera gagner des clients. Voici comment la réussir.") +
-    btn("Compléter ma fiche", `${siteUrl()}/tableau-de-bord#profil`),
+    btn("Compléter ma fiche", `${siteUrl()}/tableau-de-bord?s=profil`),
 });
 
 export const profileDecision = (name: string, approved: boolean, artisanId: string, reason?: string) => approved
@@ -68,7 +68,7 @@ export const profileDecision = (name: string, approved: boolean, artisanId: stri
     body: p("Votre identité est vérifiée et votre profil est visible dans les résultats de recherche. Les clients peuvent vous appeler, vous écrire sur WhatsApp ou vous envoyer une demande.") +
       btn("Voir ma fiche", `${siteUrl()}/artisan/${artisanId}`) +
       guide("Dernier conseil avant les premiers appels : les 3 choses qui font choisir votre fiche.", 3) +
-      btn("Améliorer ma fiche", `${siteUrl()}/tableau-de-bord#profil`) +
+      btn("Améliorer ma fiche", `${siteUrl()}/tableau-de-bord?s=profil`) +
       p("Quand votre fiche est complète, vous pouvez aussi apparaître en tête des résultats de votre métier avec un boost, depuis votre tableau de bord."),
   })
   : layout({

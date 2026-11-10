@@ -17,7 +17,7 @@ import { PLANS, planPrice } from "@/lib/plans";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
 import ServiceDetails from "@/components/ServiceDetails";
-import { addService, markAnswered, removeService, updateService, saveHours, saveProfile } from "./actions";
+import { addService, markAnswered, removeService, saveZones, updateService, saveHours, saveProfile } from "./actions";
 import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
@@ -94,6 +94,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const PSUBS = [["infos", "Infos"], ["photos", "Photos"], ["zones", "Zones et horaires"], ["diplomes", "Diplômes"]] as const;
+  const ptab = PSUBS.find(([k]) => k === (sp.s === "horaires" ? "zones" : sp.p))?.[0] ?? "infos";
   const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
   const hasHours = !!(artisan as any).open_24_7 || Object.keys(cleanHours((artisan as any).hours)).length > 0;
   const checks = [
@@ -103,10 +105,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
     { ok: nSvc > 0, l: "Ajouter au moins une prestation avec son prix", s: "prestations" },
     { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
-    { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil" },
-    { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", s: "profil" },
-    { ok: hasHours, l: "Renseigner vos horaires", s: "horaires" },
-    { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", s: "profil" },
+    { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil&p=zones" },
+    { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", s: "profil&p=photos" },
+    { ok: hasHours, l: "Renseigner vos horaires", s: "profil&p=zones" },
+    { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", s: "profil&p=diplomes" },
   ];
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
@@ -249,13 +251,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="card pad stack">
             <ol className="gsteps">
               {([
-                [!!(artisan as any).cover_url || (shots ?? []).length > 0, "Une couverture en paysage", "Une belle image horizontale (1600 × 600 px) avec votre activité et votre nom. Gardez tout le texte dans la moitié centrale : sur les cartes de résultats, les bords sont coupés.", "/tableau-de-bord?s=profil#photos", "Ajouter ma couverture"],
-                [(shots ?? []).length >= 3, "3 à 8 réalisations", "Avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.", "/tableau-de-bord?s=profil#photos", "Ajouter des photos"],
-                [!!(artisan as any).headline, "Une promesse « Je vais… »", "Une phrase simple sur ce que vous faites pour le client. Exemple : « Je vais installer votre climatisation ».", "/tableau-de-bord?s=profil#presentation", "Écrire ma promesse"],
-                [!!artisan.description && artisan.description.length >= 30, "Une description concrète", "Ce que vous faites, votre expérience, vos garanties. Écrivez comme vous parleriez à un client.", "/tableau-de-bord?s=profil#presentation", "Écrire ma présentation"],
+                [!!(artisan as any).cover_url || (shots ?? []).length > 0, "Une couverture en paysage", "Une belle image horizontale (1600 × 600 px) avec votre activité et votre nom. Gardez tout le texte dans la moitié centrale : sur les cartes de résultats, les bords sont coupés.", "/tableau-de-bord?s=profil&p=photos", "Ajouter ma couverture"],
+                [(shots ?? []).length >= 3, "3 à 8 réalisations", "Avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.", "/tableau-de-bord?s=profil&p=photos", "Ajouter des photos"],
+                [!!(artisan as any).headline, "Une promesse « Je vais… »", "Une phrase simple sur ce que vous faites pour le client. Exemple : « Je vais installer votre climatisation ».", "/tableau-de-bord?s=profil", "Écrire ma promesse"],
+                [!!artisan.description && artisan.description.length >= 30, "Une description concrète", "Ce que vous faites, votre expérience, vos garanties. Écrivez comme vous parleriez à un client.", "/tableau-de-bord?s=profil", "Écrire ma présentation"],
                 [nSvc > 0, "Des prestations avec leur prix", "Une ligne par service, avec un prix de départ : « À partir de … FCFA » et l’unité. Le prix final se discute avec le client.", "/tableau-de-bord?s=prestations", "Ajouter une prestation"],
                 [(services ?? []).some((x: any) => (x.included?.length ?? 0) > 0), "Ce qui est inclus, et ce qui est en supplément", "Pour chaque prestation, dites ce que le prix comprend. Exemple, entretien de climatisation : déplacement et nettoyage des filtres inclus ; recharge de gaz en supplément (500 g = … FCFA). Le client n’a aucune mauvaise surprise et appelle avec confiance.", "/tableau-de-bord?s=prestations", "Détailler mes prestations"],
-                [myZones.size >= 2 && hasHours, "Des zones et des horaires", "Plus vous couvrez de zones, plus vous apparaissez dans les recherches. Indiquez vos horaires pour être trouvé quand le client en a besoin.", "/tableau-de-bord?s=profil#zones", "Choisir mes zones"],
+                [myZones.size >= 2 && hasHours, "Des zones et des horaires", "Plus vous couvrez de zones, plus vous apparaissez dans les recherches. Indiquez vos horaires pour être trouvé quand le client en a besoin.", "/tableau-de-bord?s=profil&p=zones", "Choisir mes zones"],
                 [null, "Répondez vite", "Dans l’heure, c’est ce qui fait décrocher les chantiers. Un client qui n’a pas de réponse appelle le suivant.", "/tableau-de-bord?s=demandes", "Voir mes demandes"],
               ] as [boolean | null, string, string, string, string][]).map(([ok, t, d, href, cta], k) => (
                 <li key={t} className={ok ? "done" : undefined}>
@@ -268,19 +270,16 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "profil"}>
           <h1 className="dtitle">Mon profil</h1>
-          <nav className="subnav" aria-label="Aller à">
-            {[["limites", "Limites"], ["photos", "Photos"], ["activite", "Infos"], ["zones", "Zones"], ["diplomes", "Diplômes"], ["horaires", "Horaires"]].map(([k, l]) => <a key={k} href={`#${k}`}>{l}</a>)}
+          <nav className="subnav" aria-label="Sections du profil">
+            {PSUBS.map(([k, l]) => <Link key={k} href={`/tableau-de-bord?s=profil&p=${k}`} scroll={false} aria-current={ptab === k ? "page" : undefined}>{l}</Link>)}
           </nav>
-        <div id="limites" className="card pad stack psec"><h2>Mes limites {pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</h2>
-          {limitsEl}
-          <div className="row" style={{ justifyContent: "space-between" }}><span className="meta">Couverture : {(artisan as any).cover_url ? "✓ ajoutée" : "à ajouter"} (paysage 1600 × 600 px)</span><Link className={pro ? "" : "btn small boost"} href="/tableau-de-bord?s=forfait" scroll={false}>{pro ? "Gérer mon forfait" : "Voir le Forfait Pro"}</Link></div>
-        </div>
-        <div id="photos" className="card pad stack psec"><h2>Photos</h2>
-          <p className="sub">C’est la première chose que voient les clients : soignez-les.</p>
-          <Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} />
-          <h3 className="fh">Photo de profil <span className="hint">(pour vous identifier)</span></h3>
-          <PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
-        <form action={saveProfile} className="stack">
+
+          <div className="stack" hidden={ptab !== "infos"}>
+            <div id="photo-profil" className="card pad stack psec"><h2>Photo de profil</h2>
+              <p className="sub">Pour vous identifier : une photo de vous, bien nette.</p>
+              <PhotoUpdate uid={user.id} photoUrl={artisan.photo_url} name={artisan.name} /></div>
+            <form action={saveProfile} className="stack">
+              <input type="hidden" name="keep_zones" value="1" />
           <div id="activite" className="card pad stack psec"><h2>Mon activité</h2>
           <div className="fld"><span className="lbl" id="statut-l">Vous exercez</span>
             <div className="chips" role="radiogroup" aria-labelledby="statut-l">
@@ -299,11 +298,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <HeadlineField value={(artisan as any).headline} label="Ma promesse principale (affichée sur votre carte)" />
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
-          <div id="zones" className="card pad stack psec"><h2>Où j’interviens</h2>
-            <p className="sub">{pro ? `Forfait Pro : jusqu’à ${PRO_LIMITS.pro.zones} zones, ou une ville entière.` : `Forfait gratuit : jusqu’à ${PRO_LIMITS.free.zones} zones. Le Forfait Pro permet de couvrir une ville entière ou jusqu’à ${PRO_LIMITS.pro.zones} quartiers.`}</p>
-            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} max={maxZones} canCity={pro} proHref="/tableau-de-bord?s=forfait" />
-            {!pro && <Link className="btn small boost" href="/tableau-de-bord?s=forfait" style={{ justifySelf: "start" }}>Couvrir plus de zones avec le Pro</Link>}
-          </div>
           <div className="card pad stack psec"><h2>Prix et contact</h2>
           <PriceField value={artisan.price_label} label="Prix affiché sur votre carte" />
           <div className="fld"><label htmlFor="phone">Téléphone</label><input type="tel" id="phone" name="phone" required defaultValue={artisan.phone ?? ""} /></div>
@@ -311,6 +305,34 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
           <div className="savebar"><span className="meta">Pensez à enregistrer vos modifications.</span><button className="btn primary" type="submit">Enregistrer mes modifications</button></div>
         </form>
+          </div>
+
+          <div className="stack" hidden={ptab !== "photos"}>
+            <div id="photos" className="card pad stack psec"><h2>Couverture et réalisations</h2>
+              <p className="sub">C’est la première chose que voient les clients : soignez-les. Couverture en paysage (1600 × 600 px) : {(artisan as any).cover_url ? "✓ ajoutée" : "à ajouter"}.</p>
+              <Gallery uid={user.id} cover={(artisan as any).cover_url ?? null} shots={(shots ?? []) as any} max={maxPhotos} pro={pro} /></div>
+          </div>
+
+          <div className="stack" hidden={ptab !== "zones"}>
+            <form action={saveZones} className="stack">
+          <div id="zones" className="card pad stack psec"><h2>Où j’interviens</h2>
+            <p className="sub">{pro ? `Forfait Pro : jusqu’à ${PRO_LIMITS.pro.zones} zones, ou une ville entière.` : `Forfait gratuit : jusqu’à ${PRO_LIMITS.free.zones} zones. Le Forfait Pro permet de couvrir une ville entière ou jusqu’à ${PRO_LIMITS.pro.zones} quartiers.`}</p>
+            <ZonePicker zones={(zones ?? []) as any} selected={[...myZones] as string[]} max={maxZones} canCity={pro} proHref="/tableau-de-bord?s=forfait" />
+            {!pro && <Link className="btn small boost" href="/tableau-de-bord?s=forfait" style={{ justifySelf: "start" }}>Couvrir plus de zones avec le Pro</Link>}
+          </div>
+              <div className="savebar"><span className="meta">Pensez à enregistrer vos zones.</span><button className="btn primary" type="submit">Enregistrer mes zones</button></div>
+            </form>
+      <div id="horaires" className="card pad stack">
+        <h2 style={{ fontSize: 20 }}>Mes horaires</h2>
+        <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
+        <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
+      </div>
+
+
+
+          </div>
+
+          <div className="stack" hidden={ptab !== "diplomes"}>
       <div id="diplomes" className="card pad stack">
         <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
@@ -323,14 +345,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {(diplomas?.filter((d) => d.status !== "rejected").length ?? 0) < 3 && <DiplomaAdd uid={user.id} />}
       </div>
 
+          </div>
         </div>
-
-      <div id="horaires" className="card pad stack" hidden={sec !== "profil"}>
-        <h2 style={{ fontSize: 20 }}>Mes horaires</h2>
-        <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
-        <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
-      </div>
-
 
       <div id="forfait" className="stack" hidden={sec !== "forfait"}>
         <h1 className="dtitle">Mon forfait</h1>

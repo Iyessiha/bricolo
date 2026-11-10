@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
-import { saveArtisanProfile } from "@/lib/artisan-save";
+import { saveArtisanProfile, saveArtisanZones } from "@/lib/artisan-save";
 import { composeHeadline, lines, priceLabel } from "@/lib/compose";
 import sharp from "sharp";
 import { coverProblem, shotProblem } from "@/lib/cover-rules";
@@ -11,9 +11,17 @@ import { cleanHours } from "@/lib/hours";
 /** Formulaire « Modifier mon profil » du tableau de bord. */
 export async function saveProfile(formData: FormData) {
   const r = await saveArtisanProfile(formData);
-  if (!r.ok) redirect(`/tableau-de-bord?erreur=${encodeURIComponent(r.error)}#profil`);
+  if (!r.ok) redirect(`/tableau-de-bord?s=profil&erreur=${encodeURIComponent(r.error)}`);
   revalidatePath("/tableau-de-bord");
-  redirect("/tableau-de-bord?ok=1#profil");
+  redirect("/tableau-de-bord?s=profil&ok=1");
+}
+
+/** Onglet « Zones et horaires » : enregistre seulement les zones. */
+export async function saveZones(formData: FormData) {
+  const r = await saveArtisanZones(formData);
+  if (!r.ok) redirect(`/tableau-de-bord?s=profil&p=zones&erreur=${encodeURIComponent(r.error)}`);
+  revalidatePath("/tableau-de-bord");
+  redirect("/tableau-de-bord?s=profil&p=zones&ok=1");
 }
 
 export async function requestVerification() {
@@ -50,9 +58,9 @@ export async function saveHours(formData: FormData) {
   const { error } = await db.from("artisans").update({
     hours: cleanHours(parsed), open_24_7: formData.get("open_24_7") === "1", takes_urgent: formData.get("takes_urgent") === "1",
   }).eq("user_id", user.id);
-  if (error) redirect("/tableau-de-bord?s=horaires&erreur=" + encodeURIComponent("L’enregistrement a échoué. Réessayez."));
+  if (error) redirect("/tableau-de-bord?s=profil&p=zones&erreur=" + encodeURIComponent("L’enregistrement a échoué. Réessayez."));
   revalidatePath("/tableau-de-bord");
-  redirect("/tableau-de-bord?s=horaires&ok=1");
+  redirect("/tableau-de-bord?s=profil&p=zones&ok=1");
 }
 
 async function me() {
@@ -118,7 +126,6 @@ export async function removePortfolio(id: string): Promise<{ ok: boolean }> {
   revalidatePath("/tableau-de-bord"); return { ok: true };
 }
 
-const to = (kind: "ok" | "erreur", msg: string): never => redirect(`/tableau-de-bord?${kind}=${encodeURIComponent(msg)}#profil`);
 const svcTo = (kind: "ok" | "erreur", msg: string): never => redirect(`/tableau-de-bord?s=prestations&${kind}=${encodeURIComponent(msg)}`);
 export async function addService(formData: FormData) {
   const c = await me(); if (!c) redirect("/connexion");
