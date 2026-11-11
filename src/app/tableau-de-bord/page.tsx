@@ -414,6 +414,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <div id="aide" className="stack" hidden={sec !== "aide"}>
         <h1 className="dtitle">Contacter Bricolo</h1>
         <p className="meta">Un problème, une question, un doute sur votre dossier ou un paiement ? Écrivez-nous ici : l’équipe vous répond directement, et vous prévient par notification et par e-mail.</p>
+        {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell where="reglage" publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
         {sec === "aide" && <SupportChat as="artisan" empty="Aucun message pour le moment. Écrivez-nous, nous répondons en général sous 24 heures." />}
       </div>
       </main>
