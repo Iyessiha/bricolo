@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Progress } from "./Funnel";
 import { HeadlineField, PriceField } from "./ProfileFields";
 import ImagePick from "./ImagePick";
+import LiveSelfie from "./LiveSelfie";
 import { prepareImage, IMAGE_ERRORS } from "@/lib/images";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { saveProfileStep, savePhoto, submitDossier, type StepState } from "@/app/activation/actions";
@@ -179,7 +180,7 @@ export default function Activation(p: ActivationProps) {
         <>
           <h1 style={{ fontSize: 30 }}>Selfie de contrôle</h1>
           <p className="key">Prenez-vous en photo <b>en tenant votre pièce d’identité</b> à côté de votre visage. Cela nous permet de vérifier que la pièce est bien la vôtre. <b>Ce selfie sert uniquement au contrôle : il n’est jamais affiché sur votre fiche.</b></p>
-          <ImagePick label="Votre selfie avec la pièce" hint="Visage et pièce visibles sur la même photo." file={selfie} onFile={setSelfie} capture="user" />
+          <LiveSelfie file={selfie} onFile={setSelfie} />
           {nav(3, <button className="btn primary" type="button" disabled={!selfie} onClick={() => { setErr(""); setStep(5); }}>Continuer</button>)}
         </>
       )}
