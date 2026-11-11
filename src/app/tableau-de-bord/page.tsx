@@ -98,7 +98,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const unreadHelp = await unreadForArtisan(artisan.id);
-  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "aide"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
@@ -121,7 +121,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["aide", "💬", "Contacter Bricolo"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -411,10 +411,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </div>
         {act?.length ? <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Boosts actifs</h2>{act.map((b) => (<div key={b.id} className="row" style={{ justifyContent: "space-between" }}><b>{BOOST_TYPES[b.type].name}</b><span className="tag ok">reste {timeLeft(b.ends_at)}</span></div>))}</div> : null}
       </div>
+      <div id="notifs" className="stack" hidden={sec !== "notifs"}>
+        <h1 className="dtitle">Notifications</h1>
+        <p className="meta">Recevez une alerte sur votre téléphone dès qu’un client vous écrit, même quand l’application est fermée.</p>
+        {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell where="menu" publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
+      </div>
       <div id="aide" className="stack" hidden={sec !== "aide"}>
         <h1 className="dtitle">Contacter Bricolo</h1>
         <p className="meta">Un problème, une question, un doute sur votre dossier ou un paiement ? Écrivez-nous ici : l’équipe vous répond directement, et vous prévient par notification et par e-mail.</p>
-        {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell where="reglage" publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
         {sec === "aide" && <SupportChat as="artisan" empty="Aucun message pour le moment. Écrivez-nous, nous répondons en général sous 24 heures." />}
       </div>
       </main>

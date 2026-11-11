@@ -5,7 +5,7 @@ const b64 = (s: string) => { const p = "=".repeat((4 - (s.length % 4)) % 4); con
 type State = "chargement" | "non-supporte" | "iphone-installer" | "refuse" | "inactif" | "actif";
 
 /** Bouton « Activer les notifications » de l'espace artisan : alertes de nouvelles demandes et nombre sur l'icône de l'application. */
-export default function PushBell({ publicKey, where = "haut" }: { publicKey: string; where?: "haut" | "reglage" }) {
+export default function PushBell({ publicKey, where = "haut" }: { publicKey: string; where?: "haut" | "menu" }) {
   const [st, setSt] = useState<State>("chargement");
   const [busy, setBusy] = useState(false);
 
@@ -46,7 +46,6 @@ export default function PushBell({ publicKey, where = "haut" }: { publicKey: str
 
   if (st === "chargement" || st === "non-supporte") return null;
   if (where === "haut" && st === "actif") return null; // une fois activé, le bandeau disparaît du haut : le réglage se trouve dans « Contacter Bricolo »
-  if (where === "reglage" && st !== "actif") return null;
   return (
     <div className="notice" role="region" aria-label="Notifications">
       <b>🔔 Notifications</b>
