@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { buildCsp } from "@/lib/csp";
+import { isCountry } from "@/lib/countries";
 import { parseSnippet } from "@/lib/custom-pixels";
 
 /** Domaines des pixels personnalisés, relus au plus une fois par minute et par instance. En cas d'erreur : aucun domaine ajouté (jamais d'ouverture par défaut). */
@@ -25,6 +26,10 @@ async function extraHosts(): Promise<string[]> {
 /** Rafraîchit la session Supabase à chaque requête et pose la politique de sécurité des contenus. */
 export async function middleware(request: NextRequest) {
   const csp = buildCsp({ supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, dev: process.env.NODE_ENV !== "production", extraHosts: await extraHosts() });
+  // Premier passage sans choix de pays : on prend le pays de la connexion (en-tête Vercel) s'il fait partie des 7 pays. Le choix manuel du visiteur reste prioritaire.
+  const geo = (request.headers.get("x-vercel-ip-country") ?? "").toLowerCase();
+  const autoCountry = !request.cookies.get("pays") && isCountry(geo) ? geo : null;
+  if (autoCountry) request.cookies.set("pays", autoCountry);
   let response = NextResponse.next({ request });
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
@@ -39,6 +44,7 @@ export async function middleware(request: NextRequest) {
     });
     await supabase.auth.getUser();
   }
+  if (autoCountry) response.cookies.set("pays", autoCountry, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   response.headers.set("Content-Security-Policy", csp);
   return response;
 }
