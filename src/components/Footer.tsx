@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { COMPANY, LEGAL_LINKS } from "@/lib/company";
+import { COMPANY, LEGAL_LINKS, SOCIALS } from "@/lib/company";
 import { COUNTRIES } from "@/lib/countries";
 import InstallApp from "@/components/InstallApp";
 
@@ -10,6 +10,9 @@ export default function Footer() {
         <div className="stack" style={{ gap: 8 }}>
           <b className="footbrand">{COMPANY.brand}</b>
           <p>L’annuaire des artisans de l’Afrique de l’Ouest francophone : Côte d’Ivoire, Sénégal, Burkina Faso, Mali, Niger, Bénin et Togo.</p>
+          <nav aria-label="Réseaux sociaux" className="socials">
+            {SOCIALS.map((x) => <a key={x.name} href={x.href} target="_blank" rel="noopener noreferrer me" aria-label={`Bricolo sur ${x.name} (${x.handle})`}>{x.name}</a>)}
+          </nav>
         </div>
         <nav aria-label="Service" className="footcol">
           <b>Service</b>

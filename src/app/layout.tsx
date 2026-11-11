@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { COMPANY } from "@/lib/company";
+import { COMPANY, SOCIALS } from "@/lib/company";
 import Trackers from "@/components/Trackers";
 import BadgeSync from "@/components/BadgeSync";
 import { getSettings } from "@/lib/site-settings";
@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const base = siteUrl();
   const custom: CustomItem[] = (["custom_pixel_1", "custom_pixel_2", "custom_pixel_3"] as const).flatMap((k) => { const p = s[k] ? parseSnippet(s[k]!) : null; return p?.ok ? p.items : []; });
   const site = [
-    { "@context": "https://schema.org", "@type": "Organization", "@id": `${base}/#organisation`, name: "Bricolo", legalName: COMPANY.name, url: base, logo: `${base}/icon`, email: COMPANY.email, areaServed: ["CI", "SN", "BF", "ML", "NE", "BJ", "TG"] },
+    { "@context": "https://schema.org", "@type": "Organization", "@id": `${base}/#organisation`, name: "Bricolo", legalName: COMPANY.name, url: base, logo: `${base}/icon`, email: COMPANY.email, sameAs: SOCIALS.map((x) => x.href), areaServed: ["CI", "SN", "BF", "ML", "NE", "BJ", "TG"] },
     { "@context": "https://schema.org", "@type": "WebSite", "@id": `${base}/#site`, name: "Bricolo", url: base, inLanguage: "fr", publisher: { "@id": `${base}/#organisation` }, potentialAction: { "@type": "SearchAction", target: `${base}/resultats?metier={search_term_string}`, "query-input": "required name=search_term_string" } },
   ];
   return (

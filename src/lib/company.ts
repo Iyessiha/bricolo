@@ -25,3 +25,11 @@ export const LEGAL_LINKS = [
 
 /** Conditions de vente des boosts : accessibles aux artisans depuis leur espace, pas listées dans le pied de page public. */
 export const BOOST_TERMS_LINK = "/conditions-boosts";
+
+/** Comptes officiels de Bricolo sur les réseaux sociaux : affichés dans le pied de page et déclarés à Google (sameAs). */
+export const SOCIALS = [
+  { name: "TikTok", handle: "@monbricolo", href: "https://www.tiktok.com/@monbricolo" },
+  { name: "Instagram", handle: "@mon_bricolo", href: "https://www.instagram.com/mon_bricolo" },
+  { name: "Facebook", handle: "Bricolo", href: "https://www.facebook.com/profile.php?id=61596076517383" },
+  { name: "YouTube", handle: "@monbricolo", href: "https://www.youtube.com/@monbricolo" },
+] as const;
