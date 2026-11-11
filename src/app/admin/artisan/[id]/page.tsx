@@ -78,6 +78,7 @@ export default async function Review({ params, searchParams }: { params: Promise
           <div className="tags"><span className={`tag ${a.status === "approved" ? "ok" : susp ? "err" : a.status === "rejected" ? "mute" : "wait"}`}>{a.status === "approved" ? "En ligne" : susp ? "Suspendu" : a.status === "rejected" ? "Refusé" : "À valider"}</span>{a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}{a.verified && <span className="tag ok">✓ Vérifié</span>}{a.diploma_verified && <span className="tag ok">🎓 Diplôme vérifié</span>}</div>
           <h1 style={{ fontSize: "clamp(22px,4vw,32px)" }}>{a.name}</h1>
           <p className="meta fl"><Flag code={a.country_code} size={16} />{one(a.trade as any)?.name} · {countryName(a.country_code)} · inscrit le {when(a.created_at)}</p>
+          <div><Link className="btn small" href={`/admin/support/${a.id}`}>💬 Écrire à l’artisan</Link></div>
         </div>
       </div>
 

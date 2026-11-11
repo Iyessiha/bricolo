@@ -12,10 +12,14 @@ function init() {
   ready = true; return true;
 }
 
-/** Nombre affiché sur l'icône : demandes de clients pas encore traitées. */
+/** Nombre affiché sur l'icône : demandes de clients pas encore traitées + réponses de l'équipe non lues. */
 export async function badgeCountFor(artisanId: string): Promise<number> {
-  const { count } = await supabaseAdmin().from("service_requests").select("id", { count: "exact", head: true }).eq("artisan_id", artisanId).eq("status", "new");
-  return Math.min(count ?? 0, 99);
+  const db = supabaseAdmin();
+  const [a, b] = await Promise.all([
+    db.from("service_requests").select("id", { count: "exact", head: true }).eq("artisan_id", artisanId).eq("status", "new"),
+    db.from("support_messages").select("id", { count: "exact", head: true }).eq("artisan_id", artisanId).eq("sender", "admin").is("read_at", null),
+  ]);
+  return Math.min((a.count ?? 0) + (b.count ?? 0), 99);
 }
 
 export type PushMsg = { title: string; body: string; url?: string; tag?: string };

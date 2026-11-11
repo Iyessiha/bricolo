@@ -188,3 +188,19 @@ export async function sendCampaign(o: { subject: string; body: string; audience:
 
 export const sendTest = (to: string, userId: string, subject: string, body: string) =>
   sendBatch([mail(to, T.campaign(subject, body, "Test", unsubPage(userId)), mk(userId))]);
+
+/** Prévient l'équipe d'un nouveau message d'artisan (un seul e-mail tant que la conversation n'a pas été lue). */
+export const notifySupportToAdmins = (artisanId: string, text: string) => safe(async () => {
+  const db = supabaseAdmin();
+  const { data: a } = await db.from("artisans").select("id, name").eq("id", artisanId).maybeSingle();
+  if (!a) return;
+  const { data: admins } = await db.from("profiles").select("email").eq("role", "admin");
+  const m = T.supportForAdmin({ artisan: a.name, artisanId: a.id, text });
+  await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("support_admin", `${a.id}:${Date.now()}:${x.email}`, mail(x.email as string, m))));
+});
+
+/** Prévient l'artisan d'une réponse de l'équipe (message de service, hors marketing). */
+export const notifySupportReply = (artisanId: string, text: string) => safe(async () => {
+  const c = await contactOf(artisanId); if (!c) return;
+  await sendOnce("support_reply", `${artisanId}:${Date.now()}`, mail(c.email, T.supportReplyForArtisan({ name: c.name, text })));
+});

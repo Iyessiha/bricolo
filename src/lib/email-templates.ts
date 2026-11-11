@@ -177,3 +177,19 @@ export const sanctionForArtisan = (o: { name: string; kind: "avertissement" | "b
       p("Vous pouvez répondre à ce message si vous pensez qu’il s’agit d’une erreur. Notre charte de l’artisan rappelle les règles à respecter.") + btn("Lire la charte", `${siteUrl()}/charte-artisan`),
   });
 };
+
+export const supportForAdmin = (o: { artisan: string; artisanId: string; text: string }) => layout({
+  subject: `Message de ${o.artisan}`, pre: o.text.slice(0, 90),
+  title: "Nouveau message d’un artisan",
+  body: p(`${o.artisan} vous écrit depuis son tableau de bord.`) +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(o.text).replace(/\n/g, "<br>")}</blockquote>` +
+    btn("Répondre", `${siteUrl()}/admin/support/${o.artisanId}`),
+});
+
+export const supportReplyForArtisan = (o: { name: string; text: string }) => layout({
+  subject: "Réponse de l’équipe Bricolo", pre: o.text.slice(0, 90),
+  title: "L’équipe Bricolo vous a répondu",
+  body: p(`Bonjour ${o.name},`) +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(o.text).replace(/\n/g, "<br>")}</blockquote>` +
+    p("Vous pouvez continuer la conversation depuis votre tableau de bord.") + btn("Ouvrir la conversation", `${siteUrl()}/tableau-de-bord?s=aide`),
+});

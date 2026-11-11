@@ -25,6 +25,8 @@ import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
+import SupportChat from "@/components/SupportChat";
+import { unreadForArtisan } from "@/lib/support";
 
 export const metadata: Metadata = { title: "Mon espace" };
 const day = (iso: string) => new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(new Date(iso));
@@ -95,7 +97,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
-  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const unreadHelp = await unreadForArtisan(artisan.id);
+  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "aide"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
@@ -118,7 +121,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["aide", "💬", "Contacter Bricolo"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -135,7 +138,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <nav className="dnav" aria-label="Sections">
           {NAV.map(([k, ic, l]) => (
             <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
-              <span aria-hidden="true">{ic}</span>{k === "guide" ? <><span className="lg">Réussir ma fiche</span><span className="sh">Réussir</span></> : <span>{l}</span>}{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
+              <span aria-hidden="true">{ic}</span>{k === "guide" ? <><span className="lg">Réussir ma fiche</span><span className="sh">Réussir</span></> : k === "aide" ? <><span className="lg">Contacter Bricolo</span><span className="sh">Aide</span></> : <span>{l}</span>}{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}{k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
             </Link>
           ))}
         </nav>
@@ -407,6 +410,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {approved ? <Link className="btn boost" href="/boosts">{act?.length ? "Prolonger ou ajouter un boost" : "Découvrir les boosts"}</Link> : <p className="hint">Disponible une fois votre profil validé.</p>}
         </div>
         {act?.length ? <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Boosts actifs</h2>{act.map((b) => (<div key={b.id} className="row" style={{ justifyContent: "space-between" }}><b>{BOOST_TYPES[b.type].name}</b><span className="tag ok">reste {timeLeft(b.ends_at)}</span></div>))}</div> : null}
+      </div>
+      <div id="aide" className="stack" hidden={sec !== "aide"}>
+        <h1 className="dtitle">Contacter Bricolo</h1>
+        <p className="meta">Un problème, une question, un doute sur votre dossier ou un paiement ? Écrivez-nous ici : l’équipe vous répond directement, et vous prévient par notification et par e-mail.</p>
+        {sec === "aide" && <SupportChat as="artisan" empty="Aucun message pour le moment. Écrivez-nous, nous répondons en général sous 24 heures." />}
       </div>
       </main>
     </section>
