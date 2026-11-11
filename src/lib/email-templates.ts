@@ -194,3 +194,12 @@ export const supportReplyForArtisan = (o: { name: string; text: string }) => lay
     `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(o.text).replace(/\n/g, "<br>")}</blockquote>` +
     p("Vous pouvez continuer la conversation depuis votre tableau de bord.") + btn("Ouvrir la conversation", `${siteUrl()}/tableau-de-bord?s=aide`),
 });
+
+export const signupFailureForAdmin = (o: { email: string; kind: string; message: string; count: number }) => layout({
+  subject: "Inscription échouée sur Bricolo", pre: `${o.count} inscription(s) échouée(s) récemment.`,
+  title: "Une inscription a échoué",
+  body: p(`${o.count > 1 ? `${o.count} personnes n'ont pas pu` : "Une personne n'a pas pu"} créer leur compte récemment (dernier cas : ${o.email}).`) +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid #b3261e;line-height:1.6"><b>${esc(o.kind)}</b><br>${esc(o.message).slice(0, 300)}</blockquote>` +
+    p("Cause fréquente : le mot de passe SMTP (clé API Resend) ou la limite d'envoi dans Supabase.") +
+    btn("Voir les inscriptions échouées", `${siteUrl()}/admin/inscriptions`),
+});

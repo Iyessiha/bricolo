@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 /** Menu rangé par usage : d'abord ce qui demande une action, puis l'activité, la visibilité, les réglages. */
 const GROUPS: { title: string; items: readonly (readonly [string, string, string, string])[] }[] = [
   { title: "", items: [["/admin", "📊", "Aperçu", ""]] },
-  { title: "À traiter", items: [["/admin/dossiers", "🪪", "Dossiers", "dossiers"], ["/admin/support", "💬", "Messages", "support"], ["/admin/signalements", "⚠️", "Signalements", "signalements"], ["/admin/avis", "⭐", "Avis", "avis"]] },
+  { title: "À traiter", items: [["/admin/dossiers", "🪪", "Dossiers", "dossiers"], ["/admin/support", "💬", "Messages", "support"], ["/admin/inscriptions", "🚫", "Inscriptions échouées", "inscriptions"], ["/admin/signalements", "⚠️", "Signalements", "signalements"], ["/admin/avis", "⭐", "Avis", "avis"]] },
   { title: "Activité", items: [["/admin/artisans", "🧰", "Artisans", ""], ["/admin/demandes", "📩", "Demandes", "demandes"], ["/admin/revenus", "💰", "Revenus", ""]] },
   { title: "Visibilité", items: [["/admin/campagnes", "✉️", "Campagnes", ""], ["/admin/seo", "🔎", "Titres Google", ""], ["/admin/pixels", "📈", "Pixels et mesure", ""], ["/admin/attente", "🌍", "Liste d’attente", ""]] },
   { title: "Réglages", items: [["/admin/prix", "🏷", "Pays et prix", ""], ["/admin/equipe", "👥", "Équipe", ""], ["/admin/journal", "🗂", "Journal", ""]] },

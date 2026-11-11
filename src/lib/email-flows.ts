@@ -204,3 +204,14 @@ export const notifySupportReply = (artisanId: string, text: string) => safe(asyn
   const c = await contactOf(artisanId); if (!c) return;
   await sendOnce("support_reply", `${artisanId}:${Date.now()}`, mail(c.email, T.supportReplyForArtisan({ name: c.name, text })));
 });
+
+/** Prévient l'équipe quand une inscription échoue côté serveur (au plus un e-mail toutes les 30 minutes). */
+export const notifySignupFailure = (o: { email: string; kind: string; message: string }) => safe(async () => {
+  const db = supabaseAdmin();
+  const since = new Date(Date.now() - 6 * 3600_000).toISOString();
+  const { count } = await db.from("signup_failures").select("id", { count: "exact", head: true }).eq("handled", false).gte("created_at", since);
+  const { data: admins } = await db.from("profiles").select("email").eq("role", "admin");
+  const m = T.signupFailureForAdmin({ ...o, count: count ?? 1 });
+  const bucket = Math.floor(Date.now() / 1800_000);
+  await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("signup_failure", `${bucket}:${x.email}`, mail(x.email as string, m))));
+});

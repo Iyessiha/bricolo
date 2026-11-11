@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin";
 import AdminNav from "@/components/AdminNav";
 import { signOut } from "../auth-actions";
@@ -7,15 +8,16 @@ import { signOut } from "../auth-actions";
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const { db, email } = await requireAdmin();
   const count = (q: any) => q.then((r: any) => r.count ?? 0);
-  const [dossiers, dipl, avis, demandes, signalements, support] = await Promise.all([
+  const [dossiers, dipl, avis, demandes, signalements, support, inscriptions] = await Promise.all([
     count(db.from("artisan_identity").select("artisan_id", { count: "exact", head: true }).eq("status", "pending")),
     count(db.from("artisan_diplomas").select("id", { count: "exact", head: true }).eq("status", "pending")),
     count(db.from("reviews").select("id", { count: "exact", head: true }).eq("status", "pending")),
     count(db.from("service_requests").select("id", { count: "exact", head: true }).eq("status", "new")),
     count(db.from("reports").select("id", { count: "exact", head: true }).eq("status", "new")),
     count(db.from("support_messages").select("id", { count: "exact", head: true }).eq("sender", "artisan").is("read_at", null)),
+    count(supabaseAdmin().from("signup_failures").select("id", { count: "exact", head: true }).eq("handled", false)),
   ]);
-  const badges = { dossiers: dossiers + dipl, avis, demandes, signalements, support };
+  const badges = { dossiers: dossiers + dipl, avis, demandes, signalements, support, inscriptions };
   return (
     <section className="inner adash">
       <aside className="aside-a">

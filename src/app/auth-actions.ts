@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/env";
 import { isCountry } from "@/lib/countries";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { notifySignupFailure } from "@/lib/email-flows";
 import { domainCanReceiveMail, isDisposableError } from "@/lib/email-guard";
 
 export type LinkState = { ok: boolean; email?: string; error?: string; sentAt?: number } | null;
@@ -49,6 +51,9 @@ export async function signupAccount(_prev: LinkState, fd: FormData): Promise<Lin
     if (isDisposableError(error.message)) return fail("Les adresses e-mail temporaires ne sont pas acceptées. Utilisez votre adresse personnelle.");
     if (/already|registered/i.test(error.message)) return fail("Cette adresse a déjà un compte. Connectez-vous, ou utilisez « Mot de passe oublié ».");
     if (/password/i.test(error.message)) return fail(PASSWORD_RULE);
+    const kind = limited(error) ? "limite" : /smtp|mail|email|535|sending|confirmation/i.test(`${error.code ?? ""} ${error.message}`) ? "envoi_email" : "autre";
+    await supabaseAdmin().from("signup_failures").insert({ email, country_code: pays, kind, message: `${error.code ?? ""} ${error.message}`.trim().slice(0, 500) }).then(() => {}, () => {});
+    await notifySignupFailure({ email, kind: kind === "envoi_email" ? "Envoi de l'e-mail de confirmation" : kind === "limite" ? "Limite d'envoi atteinte" : "Erreur inconnue", message: error.message });
     return fail(limited(error) ? "Trop de demandes pour le moment. Réessayez dans quelques minutes." : "L’inscription a échoué. Réessayez dans un instant.");
   }
   if (data.session) redirect("/activation"); // confirmation d'e-mail désactivée dans Supabase : on continue directement

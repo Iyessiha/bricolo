@@ -36,7 +36,7 @@ input:not([type]),input[type=text],input[type=password],input[type=search],input
 textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-muted)}
 .tag{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 9px;border-radius:var(--radius-pill);font:600 12px var(--font-sans);letter-spacing:.02em;white-space:nowrap}
 .tag.boost{background:var(--boost);color:var(--on-boost)}.tag.ok{background:var(--ok-soft);color:var(--ok)}
-.tag.wait{background:var(--boost-soft);color:var(--boost-ink)}.tag.mute{background:var(--surface-sunken);color:var(--ink-muted);border:1px solid var(--line)}
+.tag.danger{background:var(--danger-soft);color:var(--danger)}.tag.wait{background:var(--boost-soft);color:var(--boost-ink)}.tag.mute{background:var(--surface-sunken);color:var(--ink-muted);border:1px solid var(--line)}
 .tags{display:flex;flex-wrap:wrap;gap:6px;min-height:22px}
 .card{background:var(--surface-raised);border:1px solid var(--line);border-radius:var(--radius-lg)}
 .card.sponsored{background:var(--boost-soft);border-color:var(--boost)}
