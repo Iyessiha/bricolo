@@ -157,9 +157,9 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <div className="safetips">
             <b>🛡 Pour éviter les mauvaises surprises</b>
             <ul>
-              <li>Demandez un devis ou un prix clair avant le début du travail.</li>
-              <li>Ne payez jamais la totalité à l’avance : un petit acompte pour le matériel au maximum, le reste une fois le travail vu et accepté.</li>
-              <li>Gardez les messages et les reçus (WhatsApp, photos).</li>
+              <li><strong>Demandez un devis ou un prix clair</strong> avant le début du travail.</li>
+              <li><strong>Ne payez jamais la totalité à l’avance</strong> : un petit acompte pour le matériel au maximum, le reste une fois le travail vu et accepté.</li>
+              <li><strong>Gardez les messages et les reçus</strong> (WhatsApp, photos).</li>
             </ul>
           </div>
           <details id="signaler" className="reportbox" open={!!sp.signale || String(sp.erreur ?? "").startsWith("signal")}>

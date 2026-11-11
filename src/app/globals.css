@@ -505,7 +505,8 @@ html{scroll-padding-top:72px}
 .reqact{gap:8px;flex-wrap:wrap}.reqact .wa{background:#1f9d57;border-color:#1f9d57;color:#fff}
 
 /* Conseils de sécurité et signalement (fiche artisan) */
-.safetips{font-size:13px;line-height:1.5;background:var(--brand-soft);border-radius:10px;padding:12px 14px}
+.safetips{font-size:13px;line-height:1.5;background:var(--danger-soft);border:1px solid var(--danger);border-left-width:5px;border-radius:10px;padding:12px 14px;color:var(--ink)}
+.safetips>b{color:var(--danger);font-size:14px}.safetips li strong{color:var(--danger)}
 .safetips ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
 .reportbox{font-size:14px}
 .reportbox>summary{cursor:pointer;color:var(--ink-muted);font-size:13px;text-align:center;list-style:none;padding:6px}
