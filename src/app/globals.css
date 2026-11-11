@@ -646,3 +646,13 @@ html{scroll-padding-top:72px}
   .a-grp{display:grid;gap:2px}.a-grp+.a-grp{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
   .a-grp-t{display:block;margin:4px 12px 2px;font:700 11px/1.2 var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
 }
+
+/* Mises en évidence du parcours d'inscription : bleu = à savoir, rouge = condition importante */
+.key{padding:12px 14px;border-radius:10px;background:var(--brand-soft);border:1px solid var(--brand);border-left-width:5px;color:var(--ink);line-height:1.5}
+.key summary{cursor:pointer;color:var(--brand);font-size:15px}.key b{color:var(--brand)}.key .ticks li::before{color:var(--brand)}
+.must{padding:10px 12px;border-radius:10px;background:var(--danger-soft);border:1px solid var(--danger);border-left-width:5px}
+.must strong{color:var(--danger)}
+.card-check{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-raised)}
+.card-check.must{background:var(--danger-soft);border-color:var(--danger)}
+.sum{display:inline-block;margin:0;padding:6px 12px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-weight:600;font-size:14px}
+.mail{display:inline-block;padding:1px 8px;border-radius:6px;background:var(--brand-soft);color:var(--brand);overflow-wrap:anywhere}
