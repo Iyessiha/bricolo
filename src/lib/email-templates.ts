@@ -57,6 +57,7 @@ export const profileReceived = (name: string) => layout({
   title: `Merci ${name}, votre dossier est bien reçu`,
   body: p("Notre équipe vérifie votre pièce d'identité et votre profil. Vous recevrez un e-mail dès que votre profil est en ligne, en général sous 24 à 48 heures.") +
     p("Vos documents ne sont jamais montrés aux clients : seule l'administration peut les consulter.") +
+    p("Une question ? Écrivez-nous depuis « Contacter Bricolo » dans votre espace, ou à contact@monbricolo.com.") +
     guide("En attendant, préparez votre fiche : c'est elle qui vous fera gagner des clients. Voici comment la réussir.") +
     btn("Compléter ma fiche", `${siteUrl()}/tableau-de-bord?s=profil`),
 });
