@@ -149,7 +149,7 @@ export default function Activation(p: ActivationProps) {
       {step === 2 && (
         <>
           <h1 style={{ fontSize: 30 }}>Votre photo de profil</h1>
-          <p className="key">Une photo de vous, <b>visage bien visible</b>, rassure les clients. <b>Elle sera affichée sur votre fiche.</b></p>
+          <p className="key">Une photo de vous, <b>visage bien visible</b>, rassure les clients. <b>Elle sera affichée sur votre fiche</b> : ne montrez pas votre pièce d’identité sur cette photo.</p>
           {p.photoUrl && !photo && <img className="curphoto" src={p.photoUrl} alt="Votre photo actuelle" />}
           <ImagePick label="Votre photo" hint="Portrait net, bonne lumière, sans lunettes de soleil." file={photo} onFile={setPhoto} capture="user" round />
           {nav(1, <button className="btn primary" type="button" onClick={putPhoto} disabled={!!busy}>{busy || "Continuer"}</button>)}
@@ -178,7 +178,7 @@ export default function Activation(p: ActivationProps) {
       {step === 4 && (
         <>
           <h1 style={{ fontSize: 30 }}>Selfie de contrôle</h1>
-          <p className="key">Prenez-vous en photo <b>en tenant votre pièce d’identité</b> à côté de votre visage. Cela nous permet de vérifier que la pièce est bien la vôtre.</p>
+          <p className="key">Prenez-vous en photo <b>en tenant votre pièce d’identité</b> à côté de votre visage. Cela nous permet de vérifier que la pièce est bien la vôtre. <b>Ce selfie sert uniquement au contrôle : il n’est jamais affiché sur votre fiche.</b></p>
           <ImagePick label="Votre selfie avec la pièce" hint="Visage et pièce visibles sur la même photo." file={selfie} onFile={setSelfie} capture="user" />
           {nav(3, <button className="btn primary" type="button" disabled={!selfie} onClick={() => { setErr(""); setStep(5); }}>Continuer</button>)}
         </>
