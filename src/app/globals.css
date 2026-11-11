@@ -269,7 +269,7 @@ h1 .flag{margin-inline:2px}
 .dash .stat{align-content:start;gap:0}.dash .stat>span:first-child{font-size:20px}
 .dboost{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--boost-soft);border-color:var(--boost)}
 .dash .req.card{background:var(--surface-raised)}
-@media (min-width:900px){
+@media (min-width:1000px){
   .dash{grid-template-columns:260px minmax(0,1fr);gap:28px;align-items:start;padding-block:28px}
   .dside{position:sticky;top:84px}
   .dnav{position:static;display:grid;grid-template-columns:1fr;gap:2px;padding:6px;border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:none}
@@ -638,3 +638,10 @@ html{scroll-padding-top:72px}
 .chat-actions{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .chat-empty{margin:auto;text-align:center;max-width:36ch}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Menu admin rangé par groupes : en ligne défilante sur mobile, en colonne avec titres sur ordinateur */
+.a-grp{display:contents}.a-grp-t{display:none}
+@media (min-width:1000px){
+  .a-grp{display:grid;gap:2px}.a-grp+.a-grp{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .a-grp-t{display:block;margin:4px 12px 2px;font:700 11px/1.2 var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)}
+}
