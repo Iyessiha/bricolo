@@ -99,7 +99,7 @@ export default function Activation(p: ActivationProps) {
       <div className="narrow card pad stack" aria-live="polite">
         <span className="tag ok" style={{ width: "fit-content" }}>✓ Dossier envoyé</span>
         <h1 style={{ fontSize: 30 }}>Merci, votre dossier est en cours de vérification</h1>
-        <p>Notre équipe contrôle votre identité et votre profil, en général sous 24 à 48 heures. Vous recevrez un e-mail dès que votre profil est en ligne.</p>
+        <p className="key">Notre équipe contrôle votre identité et votre profil, <b>en général sous 24 à 48 heures</b>. <b>Vous recevrez un e-mail</b> dès que votre profil est en ligne.</p>
         <ul className="ticks"><li>Vos documents ne sont jamais montrés aux clients</li><li>Seule l’administration peut les consulter</li><li>Si un point est à corriger, nous vous disons lequel</li></ul>
         <div className="row"><Link className="btn primary" href="/tableau-de-bord">Aller à mon espace</Link></div>
       </div>
@@ -149,7 +149,7 @@ export default function Activation(p: ActivationProps) {
       {step === 2 && (
         <>
           <h1 style={{ fontSize: 30 }}>Votre photo de profil</h1>
-          <p className="muted">Une photo de vous, visage bien visible, rassure les clients. Elle sera affichée sur votre fiche.</p>
+          <p className="key">Une photo de vous, <b>visage bien visible</b>, rassure les clients. <b>Elle sera affichée sur votre fiche.</b></p>
           {p.photoUrl && !photo && <img className="curphoto" src={p.photoUrl} alt="Votre photo actuelle" />}
           <ImagePick label="Votre photo" hint="Portrait net, bonne lumière, sans lunettes de soleil." file={photo} onFile={setPhoto} capture="user" round />
           {nav(1, <button className="btn primary" type="button" onClick={putPhoto} disabled={!!busy}>{busy || "Continuer"}</button>)}
@@ -159,7 +159,7 @@ export default function Activation(p: ActivationProps) {
       {step === 3 && (
         <>
           <h1 style={{ fontSize: 30 }}>Votre pièce d’identité</h1>
-          <p className="muted">Obligatoire pour activer votre profil. Elle n’est jamais montrée aux clients.</p>
+          <p className="must"><strong>Obligatoire pour activer votre profil.</strong> Elle n’est jamais montrée aux clients.</p>
           <div className="opts two" role="radiogroup" aria-label="Type de pièce">
             {DOCS.map((o) => (
               <label key={o.v} className="opt"><input type="radio" name="doc" value={o.v} checked={docType === o.v} onChange={() => setDocType(o.v)} /><b>{o.t}</b><span>{o.s}</span></label>
@@ -178,7 +178,7 @@ export default function Activation(p: ActivationProps) {
       {step === 4 && (
         <>
           <h1 style={{ fontSize: 30 }}>Selfie de contrôle</h1>
-          <p className="muted">Prenez-vous en photo <b>en tenant votre pièce d’identité</b> à côté de votre visage. Cela nous permet de vérifier que la pièce est bien la vôtre.</p>
+          <p className="key">Prenez-vous en photo <b>en tenant votre pièce d’identité</b> à côté de votre visage. Cela nous permet de vérifier que la pièce est bien la vôtre.</p>
           <ImagePick label="Votre selfie avec la pièce" hint="Visage et pièce visibles sur la même photo." file={selfie} onFile={setSelfie} capture="user" />
           {nav(3, <button className="btn primary" type="button" disabled={!selfie} onClick={() => { setErr(""); setStep(5); }}>Continuer</button>)}
         </>
