@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { COMPANY, LEGAL_LINKS, SOCIALS } from "@/lib/company";
 import { COUNTRIES } from "@/lib/countries";
+import SocialIcon from "@/components/SocialIcon";
 import InstallApp from "@/components/InstallApp";
 
 export default function Footer() {
@@ -11,7 +12,7 @@ export default function Footer() {
           <b className="footbrand">{COMPANY.brand}</b>
           <p>L’annuaire des artisans de l’Afrique de l’Ouest francophone : Côte d’Ivoire, Sénégal, Burkina Faso, Mali, Niger, Bénin et Togo.</p>
           <nav aria-label="Réseaux sociaux" className="socials">
-            {SOCIALS.map((x) => <a key={x.name} href={x.href} target="_blank" rel="noopener noreferrer me" aria-label={`Bricolo sur ${x.name} (${x.handle})`}>{x.name}</a>)}
+            {SOCIALS.map((x) => <a key={x.name} href={x.href} target="_blank" rel="noopener noreferrer me" aria-label={`Bricolo sur ${x.name} (${x.handle})`} title={x.name}><SocialIcon name={x.name} /></a>)}
           </nav>
         </div>
         <nav aria-label="Service" className="footcol">
