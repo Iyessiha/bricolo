@@ -23,6 +23,7 @@ const P: Record<string, ReactNode> = {
   carrossier: <><path d="M3 14l2-6a2 2 0 0 1 2-1.4h10a2 2 0 0 1 2 1.4l2 6v4H3z" /><circle cx="7.5" cy="17" r="1.5" /><circle cx="16.5" cy="17" r="1.5" /><path d="M3 12h18" /></>,
   jardinier: <><path d="M12 21v-9" /><path d="M12 12C12 7 8 5 4 5c0 5 3 7 8 7z" /><path d="M12 14c0-4 3-6 8-6 0 4-3 6-8 6z" /></>,
   nettoyage: <><rect x="7" y="10" width="8" height="12" rx="2" /><path d="M9 10V7h5l3-2M17 8h3M17 5h3" /></>,
+  "femme-de-menage": <><path d="M12 2.5v8.5" /><path d="M8 11h8l2.5 10h-13z" /><path d="M9.5 16v5M12 16v5M14.5 16v5" /></>,
   puisatier: <><path d="M5 20V10M19 20V10M3 10h18M12 10v5" /><path d="M10 15h4l-.6 4h-2.8zM3 20h18" /></>,
   informatique: <><rect x="4" y="5" width="16" height="11" rx="1.5" /><path d="M2 19h20" /></>,
   tous: <><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></>,
