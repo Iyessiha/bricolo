@@ -10,9 +10,9 @@ import { MARK_D, MARK_VIEWBOX } from "@/lib/logo";
 
 export default async function Header() {
   const country = await getCountry();
-  let signedIn = false;
+  let signedIn = false; // simple affichage : la session est déjà vérifiée par le middleware, inutile de rappeler Supabase
   if (hasSupabase()) {
-    try { const db = await supabaseServer(); signedIn = Boolean((await db.auth.getUser()).data.user); } catch { /* en-tête toujours affiché */ }
+    try { const db = await supabaseServer(); signedIn = Boolean((await db.auth.getSession()).data.session); } catch { /* en-tête toujours affiché */ }
   }
   return (
     <>
