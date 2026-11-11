@@ -32,4 +32,5 @@ export const SOCIALS = [
   { name: "Instagram", handle: "@mon_bricolo", href: "https://www.instagram.com/mon_bricolo" },
   { name: "Facebook", handle: "Bricolo", href: "https://www.facebook.com/profile.php?id=61596076517383" },
   { name: "YouTube", handle: "@monbricolo", href: "https://www.youtube.com/@monbricolo" },
+  { name: "LinkedIn", handle: "Bricolo", href: "https://www.linkedin.com/company/bricolo/" },
 ] as const;
