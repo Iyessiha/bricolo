@@ -150,7 +150,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <label htmlFor="dmore" className="dback" aria-hidden="true" />
           <div className="dsheet">
             {NAV.slice(4).map(([k, ic, l]) => (
-              <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
+              <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={k === "boosts" ? "/boosts" : `/tableau-de-bord?s=${k}`} scroll={k === "boosts"} aria-current={sec === k ? "page" : undefined}>
                 <span aria-hidden="true">{ic}</span><span>{l}</span>
                 {k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
               </Link>

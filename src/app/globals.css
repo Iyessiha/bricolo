@@ -684,3 +684,4 @@ html{scroll-padding-top:72px}
   .dnav .dsheet a em{position:static;margin-left:auto}
   .dnav .dsheet a.gsep{margin-top:4px;border-top:1px solid var(--line);border-radius:0 0 var(--radius-md) var(--radius-md)}
 }
+@media(max-width:699px){.bhero{padding:18px}.bhero h1{font-size:26px;line-height:1.15}.bhero .lead{font-size:15px;margin-block:8px}.bstats{gap:8px}.bstats>div{padding:9px 10px}.bstats b{font-size:21px}.bstats span{font-size:11.5px}}

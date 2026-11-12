@@ -90,6 +90,9 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
         </div>
       </div>
 
+      <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor), city: cityIds.has(z.id) }))} cityMult={CITY_BOOST_MULT} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
+      <p className="hint bcenter"><Link href="/conditions-boosts">Conditions de vente des boosts</Link> · Emplacements limités pour rester efficaces.</p>
+
       <div className="card pad bprev">
         <div className="bprev-t"><h2 style={{ fontSize: 18 }}>Voici votre fiche avec un boost</h2><p className="meta">Elle passe en tête, avec la pastille « Mis en avant » et un contour orange qui attire l’œil.</p></div>
         <div className="bprev-c"><ArtisanCard country={a.country_code} a={{ ...(a as any), trade: tradeName, sponsored: true, zones: zones.map((z) => z.name) }} /></div>
@@ -101,9 +104,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
         <div><span aria-hidden="true">💰</span><b>Un seul chantier le rembourse</b><p>Un boost coûte moins cher qu’une journée de travail perdue faute de clients.</p></div>
       </div>
 
-      <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor), city: cityIds.has(z.id) }))} cityMult={CITY_BOOST_MULT} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
-      <p className="hint bcenter"><Link href="/conditions-boosts">Conditions de vente des boosts</Link> · Emplacements limités pour rester efficaces.</p>
-    </section>
+</section>
   );
 }
 
