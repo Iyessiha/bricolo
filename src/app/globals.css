@@ -285,7 +285,7 @@ h1 .flag{margin-inline:2px}
 .bhero h1{font-size:clamp(26px,5vw,40px);color:#fff}.bhero .eyebrow{color:#ffd2b3}.bhero .lead{font-size:16px;color:#e6ecff;max-width:60ch}.bhero b{color:#fff}
 .bstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:6px}
 .bstats>div{display:grid;gap:2px;padding:12px;border-radius:var(--radius-md);background:rgba(255,255,255,.12)}.bstats b{font:800 26px var(--font-display)}.bstats span{font-size:12.5px;color:#d6e0ff}
-.bprev{display:grid;gap:14px}.bprev-c{max-width:230px;margin-inline:auto;pointer-events:none}
+.bprev{display:grid;gap:14px}.bprev-c{width:100%;max-width:230px;margin-inline:auto;pointer-events:none}
 @media (min-width:700px){.bprev{grid-template-columns:1fr 230px;align-items:center}.bprev-c{margin:0}}
 .bwhy{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .bwhy>div{display:grid;gap:4px;padding:16px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-raised);align-content:start}.bwhy span{font-size:26px}.bwhy p{color:var(--ink-muted);font-size:14px}
