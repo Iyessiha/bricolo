@@ -368,7 +368,7 @@ h1 .flag{margin-inline:2px}
 .pfcover{margin:-20px -20px 0;aspect-ratio:16/6;overflow:hidden;border-radius:var(--radius-lg) var(--radius-lg) 0 0;background:var(--surface-sunken)}.pfcover img{width:100%;height:100%;object-fit:cover;display:block}
 .pfhead.hascover{padding-top:0;overflow:hidden}.pfhead.hascover .pfcover{flex:0 0 calc(100% + 40px);margin-bottom:0}
 .pfhead.hascover .pfphoto{margin-top:-52px;border:4px solid var(--surface-raised);box-shadow:var(--shadow-sm,0 2px 8px rgba(0,0,0,.15))}
-.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.gal a{display:block;aspect-ratio:4/3;border-radius:var(--radius-md);overflow:hidden;background:var(--surface-sunken)}.gal img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}.gal a:hover img{transform:scale(1.04)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.gal a,.galb{display:block;aspect-ratio:4/3;border-radius:var(--radius-md);overflow:hidden;background:var(--surface-sunken)}.gal img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}.galb:hover img{transform:scale(1.04)}
 .acard-media.cov .acard-badges{left:10px;right:62px;bottom:auto;top:calc(100% + 8px)}
 .acard-media .acard-av{position:absolute;right:10px;bottom:-14px;width:44px;height:44px;border-radius:50%;border:3px solid var(--surface-raised);overflow:hidden;background:var(--brand-soft);display:grid;place-items:center;font:700 15px var(--font-display);color:var(--brand);z-index:2}
 .acard-media .acard-av img{position:static;width:100%;height:100%}
@@ -690,3 +690,17 @@ html{scroll-padding-top:72px}
 @media(max-width:699px){.bhero{padding:18px}.bhero h1{font-size:26px;line-height:1.15}.bhero .lead{font-size:15px;margin-block:8px}.bstats{gap:8px}.bstats>div{padding:9px 10px}.bstats b{font-size:21px}.bstats span{font-size:11.5px}}
 /* Cartes étroites : WhatsApp sur toute la largeur, appel et message côte à côte dessous (plus de texte coupé) */
 @media(max-width:699px){.acard-cta{flex-wrap:wrap}.acard-cta .wa{flex:1 1 100%;order:-1}.acard-cta .call,.acard-cta .msg{flex:1 1 0;width:auto}}
+
+/* Galerie publique : vignettes cliquables, filigrane et visualiseur plein écran */
+.galb{position:relative;padding:0;border:0;cursor:zoom-in;width:100%}
+.wm{position:absolute;right:6px;bottom:6px;display:inline-flex;align-items:center;gap:3px;color:#fff;font:800 12px/1 var(--font-display);letter-spacing:-.02em;opacity:.8;text-shadow:0 1px 3px rgba(0,0,0,.55);pointer-events:none}
+.wm svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));font-size:15px}.wm.big{font-size:16px;right:12px;bottom:12px}.wm.big svg{font-size:20px}
+.lb{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(8,13,25,.94);touch-action:pan-y}
+.lb-f{margin:0;display:grid;gap:10px;justify-items:center;max-width:100vw;padding:0 56px}.lb-i{position:relative;display:inline-block;max-width:100%}
+.lb-i img{display:block;max-width:calc(100vw - 112px);max-height:calc(100dvh - 130px);object-fit:contain;border-radius:8px;user-select:none}
+.lb figcaption{color:#e7ecf8;font-size:14px;text-align:center;max-width:560px}
+.lb-x,.lb-a{position:absolute;display:grid;place-items:center;border:0;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:30px;line-height:1;cursor:pointer;width:44px;height:44px}
+.lb-x:hover,.lb-a:hover{background:rgba(255,255,255,.26)}.lb-x{top:max(12px,env(safe-area-inset-top));right:12px}
+.lb-a{top:50%;transform:translateY(-50%)}.lb-a.l{left:8px}.lb-a.r{right:8px}
+.lb-n{position:absolute;top:max(20px,calc(env(safe-area-inset-top) + 8px));left:16px;color:#e7ecf8;font-weight:600;font-size:14px}
+@media(max-width:699px){.lb-f{padding:0 8px}.lb-i img{max-width:calc(100vw - 16px)}.lb-a{top:auto;bottom:max(18px,env(safe-area-inset-bottom));transform:none;background:rgba(255,255,255,.2)}.lb-a.l{left:calc(50% - 56px)}.lb-a.r{right:calc(50% - 56px)}.lb-i img{max-height:calc(100dvh - 190px)}}

@@ -12,6 +12,7 @@ import SetupNotice from "@/components/SetupNotice";
 import { sendRequest, reportArtisan } from "./actions";
 import { REPORT_REASONS } from "@/lib/email-flows";
 import type { Metadata } from "next";
+import PublicGallery from "@/components/PublicGallery";
 import { siteUrl } from "@/lib/env";
 import { jsonLd, cut } from "@/lib/seo";
 import { loadArtisanMeta } from "@/lib/seo-data";
@@ -113,7 +114,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
 
 
 
-          {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><div className="gal">{shots.slice(0, isPro ? 20 : 8).map((s) => <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"><img src={s.url} alt={s.caption ?? `Réalisation de ${a.name}`} loading="lazy" /></a>)}</div></div>}
+          {shots && shots.length > 0 && <div className="card pad stack"><h2>Réalisations</h2><PublicGallery shots={shots.slice(0, isPro ? 20 : 8)} label={`Réalisation de ${a.name}`} /></div>}
 
           {zones.length > 0 && <div className="card pad stack"><h2>Zones d’intervention</h2><div className="chips">{zones.map((z) => <span className="chip" key={z.id}>📍 {z.name}</span>)}</div></div>}
 
