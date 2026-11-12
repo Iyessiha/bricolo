@@ -9,6 +9,7 @@ import Flag from "@/components/Flag";
 import { BOOST_TYPES, fcfa, timeLeft, initials } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import MomentPopup from "@/components/MomentPopup";
+import CloseMore from "@/components/CloseMore";
 import PushBell from "@/components/PushBell";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
@@ -135,12 +136,26 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <form action={signOut}><button className="dout" type="submit" aria-label="Se déconnecter" title="Se déconnecter">⎋</button></form>
         </div>
         {approved && <Link className="btn small dview" href={`/artisan/${artisan.id}`}>Voir ma fiche publique</Link>}
+        <input type="checkbox" id="dmore" className="dmore" aria-hidden="true" tabIndex={-1} />
+        <CloseMore section={sec} />
         <nav className="dnav" aria-label="Sections">
-          {NAV.map(([k, ic, l]) => (
-            <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
-              <span aria-hidden="true">{ic}</span>{k === "guide" ? <><span className="lg">Réussir ma fiche</span><span className="sh">Réussir</span></> : k === "aide" ? <><span className="lg">Contacter Bricolo</span><span className="sh">Aide</span></> : <span>{l}</span>}{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}{k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
+          {NAV.slice(0, 4).map(([k, ic, l]) => (
+            <Link key={k} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
+              <span aria-hidden="true">{ic}</span><span>{l}</span>{k === "demandes" && newReqs ? <em>{newReqs}</em> : null}
             </Link>
           ))}
+          <label htmlFor="dmore" className={`dplus${NAV.slice(4).some(([k]) => k === sec) ? " cur" : ""}`}>
+            <span aria-hidden="true">⋯</span><span>Plus</span>{unreadHelp ? <em>{unreadHelp}</em> : null}
+          </label>
+          <label htmlFor="dmore" className="dback" aria-hidden="true" />
+          <div className="dsheet">
+            {NAV.slice(4).map(([k, ic, l]) => (
+              <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={`/tableau-de-bord?s=${k}`} scroll={false} aria-current={sec === k ? "page" : undefined}>
+                <span aria-hidden="true">{ic}</span><span>{l}</span>
+                {k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
+              </Link>
+            ))}
+          </div>
         </nav>
       </aside>
 
