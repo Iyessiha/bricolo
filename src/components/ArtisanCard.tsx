@@ -31,7 +31,7 @@ export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: s
         {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         <div className="acard-badges">
           {a.verified && <span className="tag ok">✓ Vérifié</span>}
-          {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
+          {a.diploma_verified && <span className="tag ok" title="Diplôme vérifié">🎓<span className="dtx"> Diplômé</span></span>}
         </div>
       </div>
       <div className="acard-body">

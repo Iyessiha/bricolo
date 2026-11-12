@@ -428,6 +428,9 @@ h1 .flag{margin-inline:2px}
 .acard-media.cov .acard-badges{flex-wrap:nowrap;overflow:hidden}
 .acard-media.cov .acard-badges .tag{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acard-media.cov .acard-badges .tag:nth-child(n+3){display:none}
+/* Cartes étroites (téléphone) : « Vérifié » reste lisible en entier, « Diplômé » se réduit à son icône pour ne jamais être coupé */
+.acard-media.cov .acard-badges .tag{overflow:visible;text-overflow:clip;flex:none}
+@media(max-width:699px){.acard-media.cov .acard-badges .dtx{display:none}.acard-media.cov .acard-badges{right:58px}}
 .pgrid .todo{flex-wrap:wrap;row-gap:4px}
 .pgrid .todo b{flex:1 1 180px;min-width:0}
 .pgrid .todo .acard-price{margin-left:0!important}
@@ -685,3 +688,5 @@ html{scroll-padding-top:72px}
   .dnav .dsheet a.gsep{margin-top:4px;border-top:1px solid var(--line);border-radius:0 0 var(--radius-md) var(--radius-md)}
 }
 @media(max-width:699px){.bhero{padding:18px}.bhero h1{font-size:26px;line-height:1.15}.bhero .lead{font-size:15px;margin-block:8px}.bstats{gap:8px}.bstats>div{padding:9px 10px}.bstats b{font-size:21px}.bstats span{font-size:11.5px}}
+/* Cartes étroites : WhatsApp sur toute la largeur, appel et message côte à côte dessous (plus de texte coupé) */
+@media(max-width:699px){.acard-cta{flex-wrap:wrap}.acard-cta .wa{flex:1 1 100%;order:-1}.acard-cta .call,.acard-cta .msg{flex:1 1 0;width:auto}}
