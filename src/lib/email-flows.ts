@@ -215,3 +215,18 @@ export const notifySignupFailure = (o: { email: string; kind: string; message: s
   const bucket = Math.floor(Date.now() / 1800_000);
   await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("signup_failure", `${bucket}:${x.email}`, mail(x.email as string, m))));
 });
+
+/** Relance manuelle depuis l'admin. Même clé d'envoi que la tâche quotidienne : la personne ne reçoit jamais le même rappel deux fois. */
+export async function relanceNow(kind: "profile" | "documents", id: string): Promise<{ ok: boolean; why?: string }> {
+  const db = supabaseAdmin();
+  if (kind === "documents") {
+    const c = await contactOf(id); if (!c) return { ok: false, why: "Contact introuvable" };
+    const r = await sendOnce("nudge_documents", id, mail(c.email, T.documentsReminder(c.name)));
+    return r.ok ? { ok: true } : { ok: false, why: "Déjà relancé" };
+  }
+  const { data: pr } = await db.from("profiles").select("id, email, marketing_opt_out").eq("id", id).maybeSingle();
+  if (!pr?.email) return { ok: false, why: "Contact introuvable" };
+  if (pr.marketing_opt_out) return { ok: false, why: "A refusé les e-mails de relance" };
+  const r = await sendOnce("nudge_profile", pr.id, mail(pr.email, T.completeProfileNudge(unsubPage(pr.id)), mk(pr.id)));
+  return r.ok ? { ok: true } : { ok: false, why: "Déjà relancé" };
+}
