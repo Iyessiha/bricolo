@@ -155,6 +155,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 {k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
               </Link>
             ))}
+            <form action={signOut} className="dsout"><button type="submit"><span aria-hidden="true">⎋</span><span>Se déconnecter</span></button></form>
           </div>
         </nav>
       </aside>

@@ -1,3 +1,4 @@
+import { signOut } from "@/app/auth-actions";
 import Link from "next/link";
 import { COUNTRIES } from "@/lib/countries";
 import { getCountry } from "@/lib/country";
@@ -35,7 +36,10 @@ export default async function Header() {
                   <CountrySelect value={country} options={COUNTRIES.map((c) => ({ code: c.code, name: `${c.emoji} ${c.name}` }))} />
                 </form>
                 {signedIn ? (
-                  <Link className="btn primary navbtn" href="/tableau-de-bord">Mon espace</Link>
+                  <>
+                    <Link className="btn primary navbtn" href="/tableau-de-bord">Mon espace</Link>
+                    <form action={signOut}><button type="submit" className="btn navbtn signout">Se déconnecter</button></form>
+                  </>
                 ) : (
                   <>
                     <Link className="btn navbtn plogin" href="/connexion">Connexion</Link>

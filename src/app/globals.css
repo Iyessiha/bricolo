@@ -704,3 +704,7 @@ html{scroll-padding-top:72px}
 .lb-a{top:50%;transform:translateY(-50%)}.lb-a.l{left:8px}.lb-a.r{right:8px}
 .lb-n{position:absolute;top:max(20px,calc(env(safe-area-inset-top) + 8px));left:16px;color:#e7ecf8;font-weight:600;font-size:14px}
 @media(max-width:699px){.lb-f{padding:0 8px}.lb-i img{max-width:calc(100vw - 16px)}.lb-a{top:auto;bottom:max(18px,env(safe-area-inset-bottom));transform:none;background:rgba(255,255,255,.2)}.lb-a.l{left:calc(50% - 56px)}.lb-a.r{right:calc(50% - 56px)}.lb-i img{max-height:calc(100dvh - 190px)}}
+
+/* Déconnexion bien visible sur mobile */
+.signout{width:100%;margin-top:8px}.dsout{display:none}
+@media(max-width:699px){.dsout{display:block;margin-top:4px;border-top:1px solid var(--line)}.dsout button{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;padding:0 14px;border:0;background:transparent;font:600 16px var(--font-body,inherit);color:var(--danger);text-align:left;cursor:pointer;border-radius:0 0 var(--radius-md) var(--radius-md)}.dsout button:active{background:var(--surface-sunken)}.dsout span:first-child{font-size:22px;width:28px;text-align:center}.dside .dout{display:none}}
