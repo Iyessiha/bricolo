@@ -41,7 +41,7 @@ export const notifyBadge = (artisanId: string) => safe(async () => {
   await sendOnce("badge_granted", c.artisanId, mail(c.email, T.badgeGranted(c.name, c.artisanId)));
 });
 
-export const notifyServiceRequest = (requestId: string) => safe(async () => {
+export const notifyServiceRequest = (requestId: string, opts: { confirm?: boolean } = {}) => safe(async () => {
   const db = supabaseAdmin();
   const { data: r } = await db.from("service_requests").select("*").eq("id", requestId).maybeSingle();
   if (!r?.artisan_id) return;
@@ -49,8 +49,18 @@ export const notifyServiceRequest = (requestId: string) => safe(async () => {
   await Promise.all([
     pushToArtisan(r.artisan_id, { title: r.urgent ? "🚨 Demande urgente" : "Nouvelle demande", body: `${r.client_name || "Un client"} : ${String(r.description).slice(0, 90)}`, tag: `req-${r.id}` }),
     sendOnce("request_artisan", r.id, mail(c.email, T.requestForArtisan({ client: r.client_name, email: r.client_email, phone: r.client_phone, description: r.description, urgent: r.urgent, artisanId: c.artisanId }), r.client_email ? { replyTo: r.client_email } : undefined)),
-    r.client_email ? sendOnce("request_client", r.id, mail(r.client_email, T.requestForClient(c.name, r.description))) : Promise.resolve(),
+    r.client_email && opts.confirm !== false ? sendOnce("request_client", r.id, mail(r.client_email, T.requestForClient(c.name, r.description))) : Promise.resolve(),
   ]);
+});
+
+/** Devis envoyé à plusieurs artisans : chaque artisan est prévenu, le client ne reçoit qu'une seule confirmation. */
+export const notifyQuote = (requestIds: string[]) => safe(async () => {
+  await Promise.all(requestIds.map((id) => notifyServiceRequest(id, { confirm: false })));
+  const { data } = await supabaseAdmin().from("service_requests").select("id, client_email, description, artisan:artisans(name)").in("id", requestIds);
+  const first = data?.[0]; if (!first?.client_email) return;
+  const one = (x: any) => (Array.isArray(x) ? x[0] : x);
+  const names = (data ?? []).map((r) => one((r as any).artisan)?.name).filter(Boolean) as string[];
+  await sendOnce("quote_client", [...requestIds].sort()[0], mail(first.client_email, T.quoteForClient(names, first.description)));
 });
 
 export const notifyReviewRequest = (linkId: string) => safe(async () => {

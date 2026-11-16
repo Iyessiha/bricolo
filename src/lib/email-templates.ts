@@ -211,3 +211,11 @@ export const appErrorForAdmin = (o: { path: string; method: string; message: str
     `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid #b3261e;line-height:1.6;word-break:break-word">${esc(o.message).slice(0, 400)}${o.digest ? `<br><span style="color:#5b6478">Référence : ${esc(o.digest)}</span>` : ""}</blockquote>` +
     p("Pour éviter les doublons, un seul message de ce type part par demi-heure. Les détails sont dans les journaux Vercel (Runtime Logs)."),
 });
+
+export const quoteForClient = (names: string[], description: string) => layout({
+  subject: `Votre demande de devis a été envoyée à ${names.length} artisans`, pre: "Les artisans vous répondent directement.",
+  title: "Votre demande de devis est envoyée",
+  body: p(`Votre demande a été envoyée à ${names.length} artisans vérifiés : ${names.map(esc).join(", ")}. Ils vous répondent directement, par téléphone, WhatsApp ou e-mail.`) +
+    p("Comparez les réponses : prix, délai, ce qui est inclus. Demandez un prix clair avant le début du travail et ne payez jamais la totalité à l’avance. En cas de problème, vous pouvez signaler un artisan depuis sa fiche sur Bricolo.") +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(description).replace(/\n/g, "<br>")}</blockquote>`,
+});
