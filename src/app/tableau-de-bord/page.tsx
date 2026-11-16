@@ -28,6 +28,7 @@ import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
 import SupportChat from "@/components/SupportChat";
 import DeleteAccount from "@/components/DeleteAccount";
+import { listPaid } from "@/lib/receipts";
 import { unreadForArtisan } from "@/lib/support";
 
 export const metadata: Metadata = { title: "Mon espace" };
@@ -87,20 +88,26 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const approved = artisan.status === "approved", rejected = artisan.status === "rejected", suspended = artisan.status === "suspended";
   const myZones = new Set(((artisan as any).zones ?? []).map((z: any) => z.zone_id));
-  const since = new Date(Date.now() - 7 * 864e5).toISOString();
-  const [{ data: ev }, { data: act }, { data: reqs }, { data: grid }] = await Promise.all([
-    db.from("events").select("type").eq("artisan_id", artisan.id).gte("created_at", since),
+  const days = [7, 30, 90].includes(Number(sp.p)) ? Number(sp.p) : 7;
+  const sinceMs = Date.now() - days * 864e5, prevMs = sinceMs - days * 864e5;
+  const count = (type: string, from: number, to: number) => db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", artisan.id).eq("type", type).gte("created_at", new Date(from).toISOString()).lt("created_at", new Date(to).toISOString());
+  const TYPES = ["view", "call", "whatsapp", "request"] as const;
+  const [cur, prev, { data: act }, { data: reqs }, { data: grid }] = await Promise.all([
+    Promise.all(TYPES.map((t) => count(t, sinceMs, Date.now() + 6e4))),
+    Promise.all(TYPES.map((t) => count(t, prevMs, sinceMs))),
     db.from("boosts").select("id, type, status, ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()),
     db.from("service_requests").select("id, client_name, client_email, client_phone, description, urgent, status, created_at").eq("artisan_id", artisan.id).order("created_at", { ascending: false }).limit(15),
     db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", country),
   ]);
-  const stats = { vues: 0, appels: 0, wa: 0, demandes: 0 };
-  for (const e of ev ?? []) { if (e.type === "view") stats.vues++; else if (e.type === "call") stats.appels++; else if (e.type === "whatsapp") stats.wa++; else stats.demandes++; }
+  const stats = { vues: cur[0].count ?? 0, appels: cur[1].count ?? 0, wa: cur[2].count ?? 0, demandes: cur[3].count ?? 0 };
+  const before = [prev[0].count ?? 0, prev[1].count ?? 0, prev[2].count ?? 0, prev[3].count ?? 0];
+  const trend = (now: number, was: number) => was === 0 ? (now > 0 ? "nouveau" : "") : `${now >= was ? "▲" : "▼"} ${Math.abs(Math.round(((now - was) / was) * 100))} %`;
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const unreadHelp = await unreadForArtisan(artisan.id);
   const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const paid = sec === "forfait" ? await listPaid(artisan.id) : [];
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
@@ -207,11 +214,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {artisan.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
         </div>
           {approved && (
-            <div className="stats">
-              <div className="card stat"><span aria-hidden="true">👁</span><b>{stats.vues}</b><span>Vues, 7 jours</span></div>
-              <div className="card stat"><span aria-hidden="true">📞</span><b>{stats.appels}</b><span>Appels</span></div>
-              <div className="card stat"><span aria-hidden="true">💬</span><b>{stats.wa}</b><span>WhatsApp</span></div>
-              <div className="card stat"><span aria-hidden="true">📩</span><b>{stats.demandes}</b><span>Demandes</span></div>
+            <div className="stack" style={{ gap: 8 }}>
+              <div className="row" style={{ gap: 8, flexWrap: "wrap" }} role="group" aria-label="Période des statistiques">
+                {[7, 30, 90].map((d) => <Link key={d} className={`chip${d === days ? " on" : ""}`} aria-current={d === days ? "true" : undefined} href={`/tableau-de-bord?p=${d}`} scroll={false}>{d} jours</Link>)}
+              </div>
+              <div className="stats">
+                {([["👁", stats.vues, "Vues"], ["📞", stats.appels, "Appels"], ["💬", stats.wa, "WhatsApp"], ["📩", stats.demandes, "Demandes"]] as const).map(([ic, n, l], i) => (
+                  <div key={l} className="card stat"><span aria-hidden="true">{ic}</span><b>{n}</b><span>{l}, {days} j</span>{trend(n, before[i]) && <small className="meta" title="Par rapport aux jours précédents de même durée">{trend(n, before[i])}</small>}</div>
+                ))}
+              </div>
             </div>
           )}
           {approved && (
@@ -397,6 +408,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <p>{pro && proSub ? <><b>Forfait Pro actif jusqu’au {day(proSub.ends_at)}</b> · il reste {leftLabel}. Prolonger ajoute la durée à la fin de la période en cours.</> : <><b>Offre gratuite.</b> Elle suffit pour démarrer ; le Pro vous donne plus de place pour convaincre.</>}</p>
           {limitsEl}
         </div>
+        {paid.length > 0 && (
+          <div className="card pad stack">
+            <h2 style={{ fontSize: 18 }}>Mes paiements</h2>
+            {paid.map((r) => (
+              <div key={r.id} className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <span><b>{r.label}</b><br /><span className="meta">{new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(r.paidAt))} · {fcfa(r.amount)}</span></span>
+                <Link className="btn small ghost" href={`/recu/${r.id}`}>Reçu</Link>
+              </div>
+            ))}
+          </div>
+        )}
         {approved ? (monthPrice > 0 ? (
           <div className="stack">
             <h2 style={{ fontSize: 18 }}>{pro ? "Prolonger mon Forfait Pro" : "Passer au Forfait Pro"}</h2>
