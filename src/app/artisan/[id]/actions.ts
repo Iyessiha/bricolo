@@ -5,6 +5,8 @@ import { notifyServiceRequest, notifyReport, REPORT_REASONS } from "@/lib/email-
 import { headers } from "next/headers";
 import { domainCanReceiveMail, ipHash } from "@/lib/email-guard";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { tooMany, visitorIp } from "@/lib/rate-limit";
+import { turnstileOk } from "@/lib/turnstile";
 
 /** Numéro saisi (local ou +indicatif) → chiffres avec indicatif pays, ou null si invalide. */
 function normalizePhone(raw: string, prefix: string): string | null {
@@ -24,6 +26,9 @@ export async function sendRequest(artisanId: string, formData: FormData) {
   const rawPhone = String(formData.get("phone") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   if (formData.get("website")) redirect(`/artisan/${artisanId}?envoye=1`); // robot
+  const ip = await visitorIp();
+  if (tooMany(`req:${ip}`, 6, 10 * 60_000)) redirect(`/artisan/${artisanId}?erreur=limite`);
+  if (!(await turnstileOk(formData, ip))) redirect(`/artisan/${artisanId}?erreur=robot`);
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
   const { data: country } = await db.from("countries").select("phone_prefix").eq("code", a.country_code).maybeSingle();
   const phone = normalizePhone(rawPhone, country?.phone_prefix ?? "");
@@ -45,6 +50,7 @@ export async function sendRequest(artisanId: string, formData: FormData) {
 export async function reportArtisan(artisanId: string, formData: FormData) {
   const back = (k: string): never => redirect(`/artisan/${artisanId}?${k}#signaler`);
   if (formData.get("website")) redirect(`/artisan/${artisanId}?signale=1#signaler`); // robot
+  if (tooMany(`report:${await visitorIp()}`, 4, 10 * 60_000)) back("erreur=signal_limite");
   const db = supabaseAdmin();
   const { data: a } = await db.from("artisans").select("id").eq("id", artisanId).maybeSingle();
   if (!a) redirect("/resultats");

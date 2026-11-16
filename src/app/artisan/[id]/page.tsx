@@ -14,6 +14,7 @@ import { REPORT_REASONS } from "@/lib/email-flows";
 import type { Metadata } from "next";
 import PublicGallery from "@/components/PublicGallery";
 import { siteUrl } from "@/lib/env";
+import Turnstile from "@/components/Turnstile";
 import { jsonLd, cut } from "@/lib/seo";
 import { loadArtisanMeta } from "@/lib/seo-data";
 
@@ -150,10 +151,11 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
               <div className="fld"><label htmlFor="name">Votre nom</label><input type="text" id="name" name="name" maxLength={80} autoComplete="name" /></div>
               <div className="fld"><label htmlFor="phone">Votre numéro WhatsApp ou téléphone</label><input type="tel" id="phone" name="phone" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="Ex. 07 00 00 00 00" /></div>
               <div className="fld"><label htmlFor="email">Ou votre e-mail</label><input type="email" id="email" name="email" autoComplete="email" /><span className="hint">Indiquez au moins un des deux pour que l’artisan puisse vous répondre. Vos coordonnées ne servent qu’à cette réponse.</span></div>
+              <Turnstile />
               <button className="btn primary" type="submit">Envoyer mon message</button>
             </form>
           </details>
-          {sp.erreur === "signal" || sp.erreur === "signal_doublon" || sp.erreur === "signal_limite" ? <p className="notice err" role="alert">{sp.erreur === "signal_doublon" ? "Vous avez déjà signalé cet artisan aujourd’hui." : sp.erreur === "signal_limite" ? "Trop de signalements aujourd’hui. Réessayez demain." : "Choisissez un motif, décrivez la situation (10 caractères minimum) et indiquez un téléphone ou une adresse e-mail valide."}</p> : sp.erreur && <p className="notice err" role="alert">{sp.erreur === "doublon" ? "Vous avez déjà contacté cet artisan il y a moins d’une heure." : sp.erreur === "limite" ? "Trop de demandes aujourd’hui. Réessayez demain." : sp.erreur === "contact" ? "Indiquez un numéro valide ou une adresse e-mail pour que l’artisan puisse vous répondre." : "Vérifiez votre adresse e-mail et votre message."}</p>}
+          {sp.erreur === "signal" || sp.erreur === "signal_doublon" || sp.erreur === "signal_limite" ? <p className="notice err" role="alert">{sp.erreur === "signal_doublon" ? "Vous avez déjà signalé cet artisan aujourd’hui." : sp.erreur === "signal_limite" ? "Trop de signalements aujourd’hui. Réessayez demain." : "Choisissez un motif, décrivez la situation (10 caractères minimum) et indiquez un téléphone ou une adresse e-mail valide."}</p> : sp.erreur && <p className="notice err" role="alert">{sp.erreur === "doublon" ? "Vous avez déjà contacté cet artisan il y a moins d’une heure." : sp.erreur === "limite" ? "Trop de demandes aujourd’hui. Réessayez demain." : sp.erreur === "robot" ? "La vérification anti-robot a échoué. Réessayez." : sp.erreur === "contact" ? "Indiquez un numéro valide ou une adresse e-mail pour que l’artisan puisse vous répondre." : "Vérifiez votre adresse e-mail et votre message."}</p>}
           {sp.envoye === "1" && <p className="notice ok">Message envoyé. L’artisan vous répondra bientôt, par WhatsApp, téléphone ou e-mail selon ce que vous avez indiqué.</p>}
           <div className="safetips">
             <b>🛡 Pour éviter les mauvaises surprises</b>

@@ -216,6 +216,14 @@ export const notifySignupFailure = (o: { email: string; kind: string; message: s
   await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("signup_failure", `${bucket}:${x.email}`, mail(x.email as string, m))));
 });
 
+/** Alerte d'erreur serveur : un seul message par administrateur et par demi-heure. */
+export const notifyAppError = (o: { path: string; method: string; message: string; digest?: string }) => safe(async () => {
+  const { data: admins } = await supabaseAdmin().from("profiles").select("email").eq("role", "admin");
+  const m = T.appErrorForAdmin(o);
+  const bucket = Math.floor(Date.now() / 1800_000);
+  await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("app_error", `${bucket}:${x.email}`, mail(x.email as string, m))));
+});
+
 /** Relance manuelle depuis l'admin. Même clé d'envoi que la tâche quotidienne : la personne ne reçoit jamais le même rappel deux fois. */
 export async function relanceNow(kind: "profile" | "documents", id: string): Promise<{ ok: boolean; why?: string }> {
   const db = supabaseAdmin();

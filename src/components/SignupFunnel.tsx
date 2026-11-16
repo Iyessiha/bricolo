@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
+import Turnstile from "@/components/Turnstile";
 import { signupAccount, resendConfirmation, type LinkState } from "@/app/auth-actions";
 import { Progress, useCooldown } from "./Funnel";
 import Flag from "./Flag";
@@ -143,6 +144,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
             <span>J’ai lu et j’accepte les <Link href="/conditions-utilisation" target="_blank">conditions d’utilisation</Link> et la <Link href="/confidentialite" target="_blank">politique de confidentialité</Link>.</span></label>
           <label className="check card-check must"><input type="checkbox" name="charter" checked={charter} onChange={(e) => setCharter(e.target.checked)} required />
             <span>Je m’engage à respecter la <Link href="/charte-artisan" target="_blank">charte de l’artisan</Link> (honnêteté, travail soigné, pas de paiement abusif). <strong>Je sais qu’un manquement peut entraîner la suspension de mon profil.</strong></span></label>
+          <Turnstile />
           <div className="row">
             <button className="btn" type="button" onClick={() => setStep(3)}>Retour</button>
             <button className="btn primary" type="submit" disabled={pending || !accept || !charter || !email || pw.length < 8 || pw !== pw2 || (type === "entreprise" && !authorized)}>{pending ? "Création…" : "Créer mon compte"}</button>

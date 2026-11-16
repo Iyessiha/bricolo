@@ -29,7 +29,8 @@ const FAQ = [
   ["Mes informations sont-elles protégées ?", "Seules les informations de votre fiche (activité, zones, téléphone, description, photos) sont visibles des clients. Votre e-mail, vos documents d’identité et les informations de votre entreprise restent privés."],
 ] as const;
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ compte?: string }> }) {
+  const sp = await searchParams;
   if (!hasSupabase()) return <SetupNotice />;
   const country = await getCountry();
   const db = await supabaseServer();
@@ -61,6 +62,7 @@ export default async function Home() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqLd) }} />
       {!user && <ArtisanNudge />}
+      {sp.compte === "supprime" && <section className="inner"><p className="notice ok" role="status">Votre compte et vos données ont été supprimés. Merci d’avoir utilisé Bricolo.</p></section>}
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>
           <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>

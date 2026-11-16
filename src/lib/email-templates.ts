@@ -203,3 +203,11 @@ export const signupFailureForAdmin = (o: { email: string; kind: string; message:
     p("Cause fréquente : le mot de passe SMTP (clé API Resend) ou la limite d'envoi dans Supabase.") +
     btn("Voir les inscriptions échouées", `${siteUrl()}/admin/inscriptions`),
 });
+
+export const appErrorForAdmin = (o: { path: string; method: string; message: string; digest?: string }) => layout({
+  subject: "Erreur sur monbricolo.com", pre: `${o.method} ${o.path}`,
+  title: "Une erreur serveur est survenue",
+  body: p(`Une page a planté (${esc(o.method)} ${esc(o.path)}).`) +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid #b3261e;line-height:1.6;word-break:break-word">${esc(o.message).slice(0, 400)}${o.digest ? `<br><span style="color:#5b6478">Référence : ${esc(o.digest)}</span>` : ""}</blockquote>` +
+    p("Pour éviter les doublons, un seul message de ce type part par demi-heure. Les détails sont dans les journaux Vercel (Runtime Logs)."),
+});
