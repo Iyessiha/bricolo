@@ -24,7 +24,7 @@ export default async function Recu({ params }: { params: Promise<{ id: string }>
       <div className="card pad stack">
         <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <div><h1 style={{ fontSize: 26 }}>Reçu de paiement</h1><p className="meta">N° {r.no}</p></div>
-          <div style={{ textAlign: "right" }}><b>{COMPANY.brand}</b><br /><span className="meta">{COMPANY.name}<br />{COMPANY.activityPlace}</span></div>
+          <div style={{ textAlign: "right" }}><b>{COMPANY.brand}</b><br /><span className="meta">{COMPANY.name}<br />Société de droit américain (Nouveau-Mexique)<br />{COMPANY.postalAddress}<br />{COMPANY.registrationNumber}</span></div>
         </div>
         <table className="hours-tbl wide"><tbody>
           <tr><th scope="row">Payé par</th><td>{r.artisanName}{r.email ? <><br /><span className="meta">{r.email}</span></> : null}</td></tr>

@@ -8,8 +8,8 @@ export const COMPANY = {
   email: "monweci@gmail.com",
   activityPlace: "Bingerville, Abidjan, Côte d’Ivoire",
   /** Facultatifs : renseignez-les, ils s’affichent automatiquement dans les mentions légales. */
-  registrationNumber: "" as string,
-  postalAddress: "" as string,
+  registrationNumber: "New Mexico Secretary of State, dossier n° 3213688 (déposé le 20 avril 2026)" as string,
+  postalAddress: "1209 Mountain Road PL NE, Ste R, Albuquerque, NM 87110, États-Unis" as string,
   phone: "" as string,
 } as const;
 
