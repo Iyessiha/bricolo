@@ -68,7 +68,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
-          <p className="row" style={{ margin: 0 }}><Link className="btn ghost" href="/inscription">🔧 Vous êtes artisan ? Créer mon profil gratuit</Link></p>
         </div>
         <div className="heroimg collage" aria-label="Artisans de l’Afrique de l’Ouest au travail">
           <figure className="c1"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></figure>
