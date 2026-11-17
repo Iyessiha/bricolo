@@ -17,7 +17,9 @@ export default function ArtisanNudge() {
       try { if (sessionStorage.getItem("bricolo:popup-shown")) return; sessionStorage.setItem("bricolo:popup-shown", "1"); } catch {}
       done = true; setMode(m);
     };
-    const timer = setTimeout(() => show("bar"), 25000);
+    // Visiteur venu d'un réseau social (navigateur intégré de Facebook, Instagram, TikTok, ou lien d'influenceur) : il reste rarement 25 s, on lui montre l'invitation plus tôt.
+    const social = /FBAN|FBAV|Instagram|musical_ly|TikTok|Bytedance|Snapchat/i.test(navigator.userAgent) || /facebook|instagram|tiktok|t\.co|lnk\.bio|linktr\.ee|whatsapp/i.test(document.referrer) || /[?&](utm_|fbclid|ttclid|igshid)/.test(location.search);
+    const timer = setTimeout(() => show("bar"), social ? 6000 : 25000);
     const onScroll = () => { const h = document.documentElement; if (window.scrollY > (h.scrollHeight - innerHeight) * 0.5 && window.scrollY > 600) show("bar"); };
     window.addEventListener("scroll", onScroll, { passive: true });
     // Intention de sortie : PC uniquement (souris précise), après 15 s sur la page.

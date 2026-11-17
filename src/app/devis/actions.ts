@@ -20,7 +20,7 @@ export async function sendQuote(formData: FormData) {
   const back = (q: string): never => redirect(`/devis?metier=${encodeURIComponent(trade)}&zone=${encodeURIComponent(zone)}&${q}`);
   if (formData.get("website")) redirect("/devis?envoye=1"); // robot
   const ip = await visitorIp();
-  if (tooMany(`quote:${ip}`, 4, 10 * 60_000)) back("erreur=limite");
+  if (tooMany(`quote:${ip}`, 12, 10 * 60_000)) back("erreur=limite");
   if (!(await turnstileOk(formData, ip))) back("erreur=robot");
 
   const email = String(formData.get("email") ?? "").trim();
