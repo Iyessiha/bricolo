@@ -145,11 +145,11 @@ textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-mu
 /* Mobile : cibles tactiles, lisibilité, pas de zoom iOS */
 input,select,textarea{font-size:16px}
 a,button,summary,label{-webkit-tap-highlight-color:transparent}
-.hero2{grid-template-areas:"intro photo" "form photo" "tmq photo" "trust photo"}.tmq{grid-area:tmq}.heroin{grid-area:intro}.heroform{grid-area:form}.trust{grid-area:trust}.heroimg{grid-area:photo;align-self:center}
+.hero2{grid-template-areas:"intro photo" "trust photo" "form photo" "tmq photo"}.tmq{grid-area:tmq}.heroin{grid-area:intro}.heroform{grid-area:form}.trust{grid-area:trust}.heroimg{grid-area:photo;align-self:center}
 .opts.two{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .mbar{display:none}
 @media (max-width:860px){
-  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "form" "tmq" "trust";gap:20px}
+  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "trust" "form" "tmq";gap:14px}
   .btn{min-height:48px}.btn.small{min-height:44px}.chip{min-height:44px;padding:0 16px}
   .pad{padding:16px}.sec{padding-block:20px}.sec-head{margin-bottom:12px}
   h1{font-size:clamp(28px,8.5vw,38px)}h2{font-size:clamp(21px,6vw,26px)}
@@ -540,9 +540,10 @@ html{scroll-padding-top:72px}
 @media(max-width:1100px){.trust li.tb span{font-size:0}.trust li.tb b{font-size:13px}}
 @media(max-width:560px){
   .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .trust li.tb{flex-direction:column;justify-content:center;gap:6px;padding:10px 4px;border-radius:14px;text-align:center;white-space:normal}
-  .trust li.tb i{width:30px;height:30px}
-  .trust li.tb b{font-size:12.5px;line-height:1.2}
+  .trust li.tb{flex-direction:row;justify-content:flex-start;gap:7px;padding:7px 8px;min-height:48px;border-radius:12px;text-align:left;white-space:normal}
+  .trust li.tb i{width:26px;height:26px}
+  .trust li.tb i svg{width:15px;height:15px}
+  .trust li.tb b{font-size:12px;line-height:1.15}
 }
 
 /* Couleurs des badges : bleu (contact), vert (vérifié), orange (pays) */
