@@ -8,6 +8,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
 import ArtisanNudge from "@/components/ArtisanNudge";
+import TradeMarquee from "@/components/TradeMarquee";
 import ZoneOptions from "@/components/ZoneOptions";
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/site-settings";
@@ -68,6 +69,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
+          <p style={{ margin: 0 }}><Link className="heroart" href="/inscription">🔧 Vous êtes artisan ? Créez votre profil</Link></p>
         </div>
         <div className="heroimg collage" aria-label="Artisans de l’Afrique de l’Ouest au travail">
           <figure className="c1"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></figure>
@@ -87,6 +89,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             </select></div>
           <button className="btn primary" type="submit">Rechercher</button>
         </form>
+        <TradeMarquee country={country} trades={(trades ?? []).map((t) => ({ slug: t.slug, plural: t.plural }))} />
         <ul className="trust">
           <li className="tb t1"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i><span><b>Contact direct</b>Sans intermédiaire</span></li>
           <li className="tb t2"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></i><span><b>Badge Vérifié</b>Identité contrôlée</span></li>
