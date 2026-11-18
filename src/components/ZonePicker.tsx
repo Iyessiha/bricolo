@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { requestMissingZone } from "@/app/tableau-de-bord/actions";
 
 type Z = { id: string; name: string; parent_id?: string | null };
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -15,6 +16,16 @@ export default function ZonePicker({ zones, selected, max, canCity = true, proHr
   const isCity = (id: string) => zones.some((z) => z.parent_id === id);
   const label = (z: Z) => (isCity(z.id) ? `${z.name} (toute la ville)` : z.parent_id && byId.get(z.parent_id) ? `${z.name} · ${byId.get(z.parent_id)!.name}` : z.name);
   const full = max !== undefined && sel.length >= max;
+  const [ask, setAsk] = useState(false);
+  const [missing, setMissing] = useState("");
+  const [sent, setSent] = useState<"" | "ok" | string>("");
+  const [busy, setBusy] = useState(false);
+  async function send() {
+    setBusy(true); setSent("");
+    const r = await requestMissingZone(missing || q);
+    setBusy(false); setSent(r.ok ? "ok" : (r.error ?? "L’envoi a échoué."));
+    if (r.ok) setMissing("");
+  }
 
   const add = (z: Z) => {
     // Une ville entière remplace les quartiers déjà choisis ; un quartier est inutile si sa ville est déjà choisie.
@@ -46,6 +57,17 @@ export default function ZonePicker({ zones, selected, max, canCity = true, proHr
           {!matches.length && <span className="hint">Aucun résultat. Essayez une autre orthographe.</span>}
         </div>
         <span className="hint">{canCity ? (q ? "« Toute la ville » compte pour une seule zone et vous rend visible dans tous ses quartiers." : `Tapez le nom de votre ville ou de votre quartier pour le trouver parmi ${zones.length} zones. « Toute la ville » compte pour une seule zone.`) : (q ? "Choisissez vos quartiers. « Toute la ville » est réservé au Forfait Pro." : `Tapez le nom de votre quartier pour le trouver parmi ${zones.length} zones. « Toute la ville » est réservé au Forfait Pro.`)}</span>
+        <div className="stack" style={{ gap: 8 }}>
+          {sent === "ok"
+            ? <p className="notice ok" role="status">Merci ! Nous ajoutons cette zone au plus vite et nous vous répondons dans « Contacter Bricolo ».</p>
+            : !ask
+              ? <button type="button" className="linklike" onClick={() => { setAsk(true); setMissing(q); }}>📍 Ma ville ou mon quartier n’est pas dans la liste</button>
+              : <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+                  <input value={missing} onChange={(e) => setMissing(e.target.value)} placeholder="Nom de votre ville ou quartier" aria-label="Nom de la zone à ajouter" maxLength={80} style={{ flex: "1 1 200px" }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }} />
+                  <button type="button" className="btn small" onClick={send} disabled={busy || missing.trim().length < 2}>{busy ? "Envoi…" : "Envoyer"}</button>
+                </div>}
+          {sent && sent !== "ok" && <p className="notice err" role="alert">{sent}</p>}
+        </div>
       </>}
     </div>
   );

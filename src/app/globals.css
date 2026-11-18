@@ -727,3 +727,4 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
 .tmq-chip i svg{width:18px;height:18px}
 @keyframes tmq{to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.tmq{overflow-x:auto;-webkit-mask-image:none;mask-image:none}.tmq-track{animation:none}}
+.linklike{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:var(--brand);font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}

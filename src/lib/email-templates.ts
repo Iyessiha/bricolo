@@ -219,3 +219,10 @@ export const quoteForClient = (names: string[], description: string) => layout({
     p("Comparez les réponses : prix, délai, ce qui est inclus. Demandez un prix clair avant le début du travail et ne payez jamais la totalité à l’avance. En cas de problème, vous pouvez signaler un artisan depuis sa fiche sur Bricolo.") +
     `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(description).replace(/\n/g, "<br>")}</blockquote>`,
 });
+
+export const zoneMissingForAdmin = (o: { zone: string; country: string; who: string }) => layout({
+  subject: `Zone demandée : ${o.zone} (${o.country})`, pre: `Un artisan ne trouve pas « ${o.zone} » dans la liste.`,
+  title: "Une ville ou un quartier manque",
+  body: p(`Un artisan (${esc(o.who)}) ne trouve pas <b>${esc(o.zone)}</b> dans la liste des zones de <b>${esc(o.country)}</b>.`) +
+    p("Ajoutez-la depuis l’administration (Prix, « Ajouter une zone ou une ville »), puis répondez-lui depuis la messagerie pour qu’il la choisisse."),
+});

@@ -226,6 +226,14 @@ export const notifySignupFailure = (o: { email: string; kind: string; message: s
   await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("signup_failure", `${bucket}:${x.email}`, mail(x.email as string, m))));
 });
 
+/** Un artisan ne trouve pas sa ville ou son quartier : les administrateurs reçoivent la demande (une fois par zone et par personne et par jour). */
+export const notifyMissingZone = (o: { zone: string; country: string; who: string }) => safe(async () => {
+  const { data: admins } = await supabaseAdmin().from("profiles").select("email").eq("role", "admin");
+  const m = T.zoneMissingForAdmin(o);
+  const key = `${new Date().toISOString().slice(0, 10)}:${o.who}:${o.zone.toLowerCase()}`;
+  await Promise.all((admins ?? []).filter((x) => x.email).map((x) => sendOnce("zone_missing", `${key}:${x.email}`, mail(x.email as string, m))));
+});
+
 /** Alerte d'erreur serveur : un seul message par administrateur et par demi-heure. */
 export const notifyAppError = (o: { path: string; method: string; message: string; digest?: string }) => safe(async () => {
   const { data: admins } = await supabaseAdmin().from("profiles").select("email").eq("role", "admin");
