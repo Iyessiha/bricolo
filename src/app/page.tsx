@@ -62,7 +62,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqLd) }} />
-      {!user && <ArtisanNudge />}
+      {!user && <ArtisanNudge trades={(trades ?? []).map((t) => ({ slug: t.slug, plural: t.plural }))} />}
       {sp.compte === "supprime" && <section className="inner"><p className="notice ok" role="status">Votre compte et vos données ont été supprimés. Merci d’avoir utilisé Bricolo.</p></section>}
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>

@@ -713,6 +713,9 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
 .nudge-pop{padding:0;overflow:hidden;gap:0;width:min(420px,100%);max-height:calc(100dvh - 32px);overflow-y:auto}
 .nudge-pop-img{display:block;width:100%;height:clamp(140px,26dvh,200px);object-fit:cover}
 .nudge-pop-body{display:grid;gap:10px;padding:18px 22px 14px}
+.nudge-trades{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.nudge-trades li{padding:4px 10px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-size:13px;font-weight:600}
+.nudge-trades li.more{background:transparent;color:var(--ink-muted);font-weight:500}
 .nudge-pop-x{position:absolute;top:10px;right:10px;z-index:1;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.92);color:#13203a;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 
 /* Bouton « Vous êtes artisan ? » du hero : contour, visible sur fond clair comme sur la photo sombre */
