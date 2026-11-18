@@ -110,7 +110,12 @@ export async function loginPassword(_prev: LinkState, fd: FormData): Promise<Lin
   if (tooMany(`login:${await visitorIp()}`, 60, 10 * 60_000) || tooMany(`login:${email}`, 8, 10 * 60_000)) return fail(SLOW);
   const db = await supabaseServer();
   const { error } = await db.auth.signInWithPassword({ email, password });
-  if (error) return fail(/rate|limit/i.test(`${error.code ?? ""} ${error.message ?? ""}`) ? "Trop d’essais. Patientez quelques minutes." : "Adresse e-mail ou mot de passe incorrect.");
+  if (error) {
+    const why = `${error.code ?? ""} ${error.message ?? ""}`;
+    // Supabase ne répond « non confirmé » que si le mot de passe est le bon : on peut le dire sans révéler quoi que ce soit.
+    if (/email_not_confirmed|not confirmed/i.test(why)) return { ok: false, email, error: "Votre adresse e-mail n’est pas encore confirmée. Ouvrez le message que nous vous avons envoyé (regardez aussi dans les courriers indésirables) et cliquez sur le lien. Vous ne le trouvez plus ? Renvoyez-le ci-dessous." };
+    return fail(/rate|limit/i.test(why) ? "Trop d’essais. Patientez quelques minutes." : "Adresse e-mail ou mot de passe incorrect.");
+  }
   const { data: { user } } = await db.auth.getUser();
   const { data: p } = user ? await db.from("profiles").select("role").eq("id", user.id).single() : { data: null };
   redirect(p?.role === "admin" ? "/admin" : "/tableau-de-bord");

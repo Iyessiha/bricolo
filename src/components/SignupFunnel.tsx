@@ -127,7 +127,8 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
         <form action={action} className="stack">
           <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
           <h1 style={{ fontSize: 30 }}>Votre compte</h1>
-          <p className="muted">Elle servira à vous connecter, avec le mot de passe que vous choisissez ci-dessous.</p>
+          <p className="muted">Votre adresse e-mail servira à vous connecter, avec le mot de passe que vous choisissez ci-dessous.</p>
+          <p className="key"><b>Un message de confirmation vous sera envoyé.</b> Utilisez une adresse que vous pouvez ouvrir maintenant sur ce téléphone : vous devrez cliquer sur le lien reçu pour continuer.</p>
           <p className="sum">{name} · {type === "entreprise" ? "Entreprise" : "Individuel"} · {trades.find((t) => t.id === trade)?.name} · {country?.name}</p>
           <input type="hidden" name="pays" value={pays} /><input type="hidden" name="trade_id" value={trade} /><input type="hidden" name="name" value={name} />
           <input type="hidden" name="account_type" value={type} /><input type="hidden" name="registration" value={registration} /><input type="hidden" name="docs_ack" value="on" />
