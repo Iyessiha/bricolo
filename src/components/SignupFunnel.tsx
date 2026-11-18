@@ -59,7 +59,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
       {step === 1 && (
         <>
           <h1 style={{ fontSize: 30 }}>Dans quel pays travaillez-vous ?</h1>
-          <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
+          <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite. Vous indiquerez ensuite <b>vos villes et vos quartiers</b> : vous n’avez pas besoin d’habiter la capitale.</p>
           <details className="key" open>
             <summary><b>Avant de commencer : préparez vos documents</b></summary>
             <div className="stack" style={{ gap: 8, marginTop: 8 }}>
@@ -74,7 +74,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
           </details>
           <div className="opts two">
             {countries.map((c) => (
-              <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b><span>{c.capital}</span></label>
+              <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b></label>
             ))}
           </div>
           <label className="check must">

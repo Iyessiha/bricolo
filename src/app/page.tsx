@@ -1,7 +1,7 @@
 import Link from "next/link";
 import TradeIcon from "@/components/TradeIcon";
 import { getCountry } from "@/lib/country";
-import { COUNTRIES, countryCapital, countryName } from "@/lib/countries";
+import { COUNTRIES, countryName } from "@/lib/countries";
 import Flag from "@/components/Flag";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -66,7 +66,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       {sp.compte === "supprime" && <section className="inner"><p className="notice ok" role="status">Votre compte et vos données ont été supprimés. Merci d’avoir utilisé Bricolo.</p></section>}
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>
-          <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>
+          <p className="eyebrow fl"><Flag code={country} size={22} />{countryName(country)}</p>
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
           <p style={{ margin: 0 }}><Link className="heroart" href="/inscription">🔧 Vous êtes artisan ? Créez votre profil</Link></p>
