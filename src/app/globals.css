@@ -279,6 +279,16 @@ h1 .flag{margin-inline:2px}
   .dnav em{position:static;margin-left:auto}
 }
 
+/* ── Menu de l'espace artisan sur les pages hors tableau de bord ── */
+.dtabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.dtabs::-webkit-scrollbar{display:none}
+.dtabs a{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface-raised);color:var(--ink-muted);font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
+.dtabs a[aria-current=page]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+@media (min-width:1000px){
+  .dtabs{display:grid;gap:2px;padding:6px;overflow:visible;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-raised)}
+  .dtabs a{border:0;border-radius:var(--radius-md);min-height:46px;padding:0 12px;gap:12px;font-size:15px;background:transparent}
+  .dtabs a:hover{background:var(--surface-sunken)}.dtabs a[aria-current=page],.dtabs a[aria-current=page]:hover{background:var(--brand-soft)}
+}
+
 /* ── Page Boost ── */
 .boostpage{padding-bottom:40px}
 .bhero{display:grid;gap:10px;padding:22px 20px;border-radius:var(--radius-lg);background:linear-gradient(135deg,#27489a,#1b3374);color:#fff}

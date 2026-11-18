@@ -9,6 +9,7 @@ import { BOOST_TYPES, DURATIONS, fcfa } from "@/lib/format";
 import SetupNotice from "@/components/SetupNotice";
 import BoostPicker from "@/components/BoostPicker";
 import ArtisanCard from "@/components/ArtisanCard";
+import DashTabs from "@/components/DashTabs";
 import { countryName } from "@/lib/countries";
 
 export const metadata: Metadata = { title: "Booster mon profil" };
@@ -23,14 +24,13 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   if (!a || a.status !== "approved") redirect("/tableau-de-bord");
 
   if (!a.verified) return (
-    <section className="inner sec stack boostpage">
-      <p><Link href="/tableau-de-bord">← Mon espace</Link></p>
+    <DashTabs current="boosts">
       <div className="notice stack" style={{ gap: 8 }}>
         <b>Les boosts sont réservés aux artisans vérifiés.</b>
         <p>Le client voit votre fiche « Mis en avant » en tête des résultats : il doit pouvoir vous faire confiance. Votre badge « Vérifié » est accordé quand notre équipe a contrôlé votre identité. Dès que c’est fait, vous pouvez booster votre fiche ici.</p>
         <div><Link className="btn" href="/tableau-de-bord">Voir l’état de mon dossier</Link></div>
       </div>
-    </section>
+    </DashTabs>
   );
 
   const { data: grid } = await db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", a.country_code);
@@ -71,8 +71,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   ];
 
   return (
-    <section className="inner sec stack boostpage">
-      <p><Link href="/tableau-de-bord">← Mon espace</Link></p>
+    <DashTabs current="boosts">
       {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : sp.erreur === "badge" ? "Le boost est réservé aux artisans dont l’identité est vérifiée (badge « Vérifié »)." : sp.erreur === "ferme" ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
       {sp.paye && <p className="notice ok">Paiement confirmé. Votre boost est actif : votre fiche passe devant les autres.</p>}
 
@@ -104,7 +103,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
         <div><span aria-hidden="true">💰</span><b>Un seul chantier le rembourse</b><p>Un boost coûte moins cher qu’une journée de travail perdue faute de clients.</p></div>
       </div>
 
-</section>
+</DashTabs>
   );
 }
 
