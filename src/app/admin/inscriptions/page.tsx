@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin, day } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { siteUrl } from "@/lib/env";
+import { normalizePhone } from "@/lib/phone";
 import { markHandled, relancer } from "./actions";
 
 export const metadata: Metadata = { title: "Inscriptions échouées", robots: { index: false } };
@@ -17,10 +18,12 @@ export default async function Inscriptions({ searchParams }: { searchParams: Pro
   // Inscrits restés en route : compte sans fiche, ou fiche créée sans dossier d'identité.
   const db = supabaseAdmin();
   const { data: users } = await db.from("profiles").select("id, email, country_code, created_at, marketing_opt_out").eq("role", "artisan").order("created_at", { ascending: false }).limit(200);
-  const { data: arts } = await db.from("artisans").select("id, user_id, name, status, created_at, phone, whatsapp, photo_url, description").in("user_id", (users ?? []).map((u) => u.id));
+  const { data: arts } = await db.from("artisans").select("id, user_id, name, status, created_at, country_code, phone, whatsapp, photo_url, description").in("user_id", (users ?? []).map((u) => u.id));
   const byUser = new Map((arts ?? []).map((a) => [a.user_id, a]));
   const { data: idr } = await db.from("artisan_identity").select("artisan_id").in("artisan_id", (arts ?? []).map((a) => a.id));
   const withId = new Set((idr ?? []).map((x) => x.artisan_id));
+  const { data: cs } = await db.from("countries").select("code, phone_prefix");
+  const prefixOf = new Map((cs ?? []).map((c) => [c.code, c.phone_prefix as string]));
   const { data: zr } = await db.from("artisan_zones").select("artisan_id").in("artisan_id", (arts ?? []).map((a) => a.id));
   const hasZone = new Set((zr ?? []).map((x) => x.artisan_id));
   const { data: sentRows } = await db.from("email_log").select("template, ref").in("template", ["nudge_profile", "nudge_documents"]);
@@ -28,9 +31,10 @@ export default async function Inscriptions({ searchParams }: { searchParams: Pro
   type Stuck = { key: string; kind: "profile" | "documents"; id: string; who: string; step: string; since: string; sent: boolean; blocked?: string; wa?: string };
   const stuck: Stuck[] = [];
   /** Lien WhatsApp avec le message de rappel déjà écrit, selon ce qui manque au profil : un clic ouvre la conversation. */
-  const waLink = (a: { name: string; phone: string | null; whatsapp: string | null; photo_url: string | null; description: string | null }, id: string) => {
-    const num = (a.whatsapp ?? a.phone ?? "").replace(/[^\d]/g, "");
-    if (num.length < 9) return undefined;
+  const waLink = (a: { name: string; country_code: string; phone: string | null; whatsapp: string | null; photo_url: string | null; description: string | null }, id: string) => {
+    // Numéro saisi en local (0759…) ou avec indicatif (+225…) : WhatsApp veut toujours l'indicatif du pays.
+    const num = normalizePhone(a.whatsapp ?? a.phone ?? "", prefixOf.get(a.country_code) ?? "");
+    if (!num) return undefined;
     const todo = [!a.photo_url && "votre photo", !(a.description ?? "").trim() && "une courte description", !hasZone.has(id) && "vos zones", "votre pièce d’identité et un selfie"].filter(Boolean) as string[];
     const list = todo.length > 1 ? `${todo.slice(0, -1).join(", ")} et ${todo[todo.length - 1]}` : todo[0];
     const text = `🔧 *Bricolo* — Bonjour, c’est l’équipe Bricolo. Votre profil « ${a.name} » est presque prêt. Il reste à ajouter : ${list}. Cela prend quelques minutes, puis notre équipe vérifie votre identité avant la mise en ligne. Reprenez ici : ${siteUrl()}/connexion`;
