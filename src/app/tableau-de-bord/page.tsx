@@ -438,23 +438,42 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             ))}
           </div>
         )}
+        <div className="offers">
+          <section className={`offer${pro ? "" : " cur"}`} aria-label="Offre gratuite">
+            <header><h2>Gratuit</h2>{!pro && <span className="tag mute">Votre offre</span>}</header>
+            <p className="offer-p"><b>0 FCFA</b></p>
+            <ul>
+              <li>1 prestation sur votre fiche</li><li>8 photos de réalisations</li><li>3 quartiers d’intervention</li>
+              <li>Visible dans les recherches</li><li>Badge « Vérifié » après contrôle d’identité</li>
+            </ul>
+          </section>
+          <section className={`offer pro${pro ? " cur" : ""}`} aria-label="Forfait Pro">
+            <header><h2>Pro</h2>{pro ? <span className="tag boost">Votre offre</span> : <span className="tag boost">Pour aller plus loin</span>}</header>
+            <p className="offer-p">{monthPrice > 0 ? <><b>{fcfa(monthPrice)}</b> <span>/ mois</span></> : <span>Bientôt disponible dans votre pays</span>}</p>
+            <ul>
+              <li><b>Jusqu’à 10 prestations</b> sur votre fiche</li><li><b>Jusqu’à 20 photos</b> de réalisations</li>
+              <li><b>10 quartiers</b> ou une <b>ville entière</b></li><li>Badge « Pro » sur votre fiche</li><li>Tout ce que contient l’offre gratuite</li>
+            </ul>
+          </section>
+        </div>
         {approved ? (monthPrice > 0 ? (
           <div className="stack">
-            <h2 style={{ fontSize: 18 }}>{pro ? "Prolonger mon Forfait Pro" : "Passer au Forfait Pro"}</h2>
+            <h2 style={{ fontSize: 18 }}>{pro ? "Prolonger mon Forfait Pro" : "Choisissez la durée de votre Forfait Pro"}</h2>
             <div className="agrid plans">
               {PLANS.map((pl) => { const amount = planPrice(planOf, pl.key); const perMonth = Math.round((amount / (pl.days / 30)) / 100) * 100; return (
                 <form key={pl.key} method="post" action="/api/forfait/checkout" className={`card pad stack plan${pl.key === "month" ? " best" : ""}`}>
-                  <span className="tag mute">{pl.note}</span>
-                  <h3 style={{ fontSize: 18 }}>{pl.label}</h3><p className="price">{fcfa(amount)}</p>
-                  <p className="meta">{pl.key === "week" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "quarter" ? `Soit ${fcfa(perMonth)} par mois · économisez ${fcfa(monthPrice * 3 - amount)}` : pl.key === "year" ? `Soit ${fcfa(perMonth)} par mois · économisez ${fcfa(monthPrice * 12 - amount)}` : "Sans engagement"}</p>
+                  <span className={`tag ${pl.key === "month" ? "boost" : "mute"}`}>{pl.note}</span>
+                  <h3 style={{ fontSize: 18 }}>{pl.label}</h3>
+                  <p className="price">{fcfa(amount)}</p>
+                  <p className="meta">{pl.key === "week" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "quarter" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "year" ? `Soit ${fcfa(perMonth)} par mois` : "Sans engagement"}</p>
+                  {pl.key === "quarter" && monthPrice * 3 - amount > 0 && <span className="tag ok">Vous économisez {fcfa(monthPrice * 3 - amount)}</span>}
+                  {pl.key === "year" && monthPrice * 12 - amount > 0 && <span className="tag ok">Vous économisez {fcfa(monthPrice * 12 - amount)}</span>}
                   <input type="hidden" name="plan" value={pl.key} /><button className="btn boost" type="submit">{pro ? "Prolonger" : "Passer Pro"}</button>
                 </form>); })}
             </div>
             <p className="hint">Paiement sécurisé par Mobile Money ou carte. Sans engagement : le forfait s’arrête à la fin de la période payée. Vos prestations et photos en plus restent enregistrées mais ne sont plus affichées. Vos 3 premières zones restent actives ; les autres, et « toute la ville », se réactivent si vous reprenez le Pro.</p>
           </div>
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
-        <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Gratuit ou Pro ?</h2><div className="tw"><table className="tbl"><thead><tr><th></th><th className="num">Gratuit</th><th className="num">Pro</th></tr></thead><tbody>
-          {[["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3 quartiers", "10 quartiers ou une ville entière"], ["Visible dans les recherches", "✓", "✓"], ["Badge « Pro » sur ma fiche", "—", "✓"]].map(([l, f, p]) => <tr key={l}><td>{l}</td><td className="num">{f}</td><td className="num"><b>{p}</b></td></tr>)}</tbody></table></div></div>
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Historique</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>
