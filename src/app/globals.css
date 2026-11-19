@@ -741,3 +741,11 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
 @keyframes tmq{to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.tmq{overflow-x:auto;-webkit-mask-image:none;mask-image:none}.tmq-track{animation:none}}
 .linklike{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:var(--brand);font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+
+/* ── Résultats des boosts (artisan) ── */
+.bres-l{display:grid;align-items:start;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.bres-i{display:grid;gap:8px;align-content:start;padding:14px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-raised)}
+.bres-i.live{border-color:var(--boost);background:var(--boost-soft)}
+.bres-i header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.bres-t td,.bres-t th{padding:6px 4px}
+.bres-lift{font-weight:600;font-size:14px;margin:0}

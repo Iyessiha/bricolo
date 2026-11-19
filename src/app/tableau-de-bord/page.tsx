@@ -15,6 +15,7 @@ import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import ZonePicker from "@/components/ZonePicker";
 import { PRO_LIMITS } from "@/lib/boost";
+import { countWindows, liftPct } from "@/lib/boost-stats";
 import { PLANS, planPrice } from "@/lib/plans";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
@@ -108,6 +109,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const unreadHelp = await unreadForArtisan(artisan.id);
   const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
   const paid = sec === "forfait" ? await listPaid(artisan.id) : [];
+  // Indicateurs du forfait : activité des 30 derniers jours, et pour un Pro, comparaison avec les 30 jours avant son début.
+  const DAY = 864e5, nowMs = Date.now();
+  const proStart = sec === "forfait" && pro && history?.length ? Math.min(...history.filter((h) => h.starts_at && new Date(h.ends_at).getTime() > nowMs - 400 * DAY).map((h) => new Date(h.starts_at!).getTime())) : NaN;
+  const [act30, actProBefore, actProAfter] = sec === "forfait"
+    ? await countWindows(supabaseAdmin(), artisan.id, [{ from: nowMs - 30 * DAY, to: nowMs }, ...(Number.isFinite(proStart) && nowMs - proStart > 3 * DAY ? [{ from: proStart - 30 * DAY, to: proStart }, { from: proStart, to: Math.min(nowMs, proStart + 30 * DAY) }] : [])])
+    : [];
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
@@ -408,6 +415,18 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <p>{pro && proSub ? <><b>Forfait Pro actif jusqu’au {day(proSub.ends_at)}</b> · il reste {leftLabel}. Prolonger ajoute la durée à la fin de la période en cours.</> : <><b>Offre gratuite.</b> Elle suffit pour démarrer ; le Pro vous donne plus de place pour convaincre.</>}</p>
           {limitsEl}
         </div>
+        {act30 && (
+          <div className="card pad stack">
+            <h2 style={{ fontSize: 18 }}>Mon activité, 30 derniers jours</h2>
+            <div className="akpi">
+              <div className="kpi"><span>Vues de ma fiche</span><b>{act30.vues}</b></div>
+              <div className="kpi"><span>Appels</span><b>{act30.appels}</b></div>
+              <div className="kpi"><span>Messages WhatsApp</span><b>{act30.wa}</b></div>
+            </div>
+            {pro && actProBefore && actProAfter ? (() => { const lift = liftPct(actProBefore.contacts, actProAfter.contacts); return (
+              <p className={lift === null ? "meta" : lift >= 0 ? "up" : "down"}>{lift === null ? "Pas encore assez de données pour mesurer l’effet de votre Forfait Pro." : `Depuis le début de votre Forfait Pro : ${lift >= 0 ? "+" : ""}${lift} % d’appels et de WhatsApp, comparé aux 30 jours d’avant (${actProBefore.contacts} → ${actProAfter.contacts}). Indicatif : la saison joue aussi.`}</p>); })() : <p className="meta">{pro ? "La comparaison avant / après apparaîtra après quelques jours de Forfait Pro." : "Avec le Forfait Pro, vous verrez ici l’effet sur vos appels et vos messages."}</p>}
+          </div>
+        )}
         {paid.length > 0 && (
           <div className="card pad stack">
             <h2 style={{ fontSize: 18 }}>Mes paiements</h2>
@@ -435,7 +454,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Gratuit ou Pro ?</h2><div className="tw"><table className="tbl"><thead><tr><th></th><th className="num">Gratuit</th><th className="num">Pro</th></tr></thead><tbody>
-          {[["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3 quartiers", "10 quartiers ou une ville entière"], ["Visible dans les recherches", "✓", "✓"]].map(([l, f, p]) => <tr key={l}><td>{l}</td><td className="num">{f}</td><td className="num"><b>{p}</b></td></tr>)}</tbody></table></div></div>
+          {[["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3 quartiers", "10 quartiers ou une ville entière"], ["Visible dans les recherches", "✓", "✓"], ["Badge « Pro » sur ma fiche", "—", "✓"]].map(([l, f, p]) => <tr key={l}><td>{l}</td><td className="num">{f}</td><td className="num"><b>{p}</b></td></tr>)}</tbody></table></div></div>
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Historique</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>

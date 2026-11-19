@@ -11,6 +11,8 @@ import BoostPicker from "@/components/BoostPicker";
 import ArtisanCard from "@/components/ArtisanCard";
 import DashTabs from "@/components/DashTabs";
 import { countryName } from "@/lib/countries";
+import BoostResults from "@/components/BoostResults";
+import { boostResults } from "@/lib/boost-stats";
 
 export const metadata: Metadata = { title: "Booster mon profil" };
 
@@ -61,6 +63,8 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   const zoneName = zones[0]?.name;
   const contacts = st.appels + st.wa;
 
+  const results = await boostResults(admin, a.id);
+
   const PLANS = [
     { id: "recherche" as const, icon: "🔝", name: "Boost recherche", hook: "Soyez le premier que le client voit.", star: true,
       bullets: ["En tête des résultats de votre métier", "Pastille « Mis en avant » et contour orange", "Rotation équitable avec les autres boostés"] },
@@ -88,6 +92,8 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
           {asks ? <div><b className="num">{asks}</b><span>demandes de clients dans votre métier, 30 jours</span></div> : null}
         </div>
       </div>
+
+      <BoostResults results={results} />
 
       <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor), city: cityIds.has(z.id) }))} cityMult={CITY_BOOST_MULT} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
       <p className="hint bcenter"><Link href="/conditions-boosts">Conditions de vente des boosts</Link> · Emplacements limités pour rester efficaces.</p>
