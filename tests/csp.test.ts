@@ -12,5 +12,9 @@ describe("politique de sécurité des contenus", () => {
     expect(prod).toMatch(/script-src[^;]*https:\/\/googleads\.g\.doubleclick\.net/);
     expect(prod).toMatch(/img-src[^;]*https:\/\/www\.google\.ci/);
   });
+  it("autorise le contrôle anti-fraude et les cadres de conversion Google Ads", () => {
+    expect(prod).toMatch(/connect-src[^;]*adtrafficquality\.google/);
+    expect(prod).toMatch(/frame-src[^;]*googleads\.g\.doubleclick\.net/);
+  });
   it("autorise l'évaluation en développement seulement", () => expect(buildCsp({ dev: true })).toContain("'unsafe-eval'"));
 });
