@@ -18,7 +18,7 @@ export default async function Signup() {
   return (
     <>
     <section className="inner sec vsignup"><VideoPromo label="Regarder avant de commencer" /></section>
-    <AuthShell photo="/photos/portrait-artisan.jpg" alt="Portrait d’un artisan expérimenté, casque de chantier sur la tête" title="Soyez trouvé par vos futurs clients" text="Créez votre profil gratuitement. Il est activé après la vérification de votre identité." pos="50% 20%">
+    <AuthShell video photo="/photos/portrait-artisan.jpg" alt="Portrait d’un artisan expérimenté, casque de chantier sur la tête" title="Soyez trouvé par vos futurs clients" text="Créez votre profil gratuitement. Il est activé après la vérification de votre identité." pos="50% 20%">
       <SignupFunnel countries={COUNTRIES.map((c) => ({ ...c }))} trades={trades ?? []} initialCountry={country} />
     </AuthShell>
     </>
