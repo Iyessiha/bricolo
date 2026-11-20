@@ -7,6 +7,8 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Les navigateurs et Google demandent /favicon.ico par défaut : on le sert depuis l'icône du site au lieu de répondre 404.
+  async rewrites() { return [{ source: "/favicon.ico", destination: "/icon" }]; },
   async headers() {
     return [{ source: "/(.*)", headers: [
       { key: "X-Frame-Options", value: "DENY" },

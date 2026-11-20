@@ -145,11 +145,11 @@ textarea{min-height:96px;resize:vertical}.hint{font-size:13px;color:var(--ink-mu
 /* Mobile : cibles tactiles, lisibilité, pas de zoom iOS */
 input,select,textarea{font-size:16px}
 a,button,summary,label{-webkit-tap-highlight-color:transparent}
-.hero2{grid-template-areas:"intro photo" "form photo" "trust photo"}.heroin{grid-area:intro}.heroform{grid-area:form}.trust{grid-area:trust}.heroimg{grid-area:photo;align-self:center}
+.hero2{grid-template-areas:"intro photo" "trust photo" "form photo" "tmq photo"}.tmq{grid-area:tmq}.heroin{grid-area:intro}.heroform{grid-area:form}.trust{grid-area:trust}.heroimg{grid-area:photo;align-self:center}
 .opts.two{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .mbar{display:none}
 @media (max-width:860px){
-  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "form" "trust";gap:20px}
+  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "trust" "form" "tmq";gap:14px}
   .btn{min-height:48px}.btn.small{min-height:44px}.chip{min-height:44px;padding:0 16px}
   .pad{padding:16px}.sec{padding-block:20px}.sec-head{margin-bottom:12px}
   h1{font-size:clamp(28px,8.5vw,38px)}h2{font-size:clamp(21px,6vw,26px)}
@@ -277,6 +277,16 @@ h1 .flag{margin-inline:2px}
   .dnav a[aria-current=page]{background:var(--brand-soft)}.dnav a[aria-current=page]::before{display:none}
   .dnav a:hover{background:var(--surface-sunken)}.dnav a[aria-current=page]:hover{background:var(--brand-soft)}
   .dnav em{position:static;margin-left:auto}
+}
+
+/* ── Menu de l'espace artisan sur les pages hors tableau de bord ── */
+.dtabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.dtabs::-webkit-scrollbar{display:none}
+.dtabs a{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:var(--radius-pill);background:var(--surface-raised);color:var(--ink-muted);font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
+.dtabs a[aria-current=page]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+@media (min-width:1000px){
+  .dtabs{display:grid;gap:2px;padding:6px;overflow:visible;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-raised)}
+  .dtabs a{border:0;border-radius:var(--radius-md);min-height:46px;padding:0 12px;gap:12px;font-size:15px;background:transparent}
+  .dtabs a:hover{background:var(--surface-sunken)}.dtabs a[aria-current=page],.dtabs a[aria-current=page]:hover{background:var(--brand-soft)}
 }
 
 /* ── Page Boost ── */
@@ -475,10 +485,13 @@ h1 .flag{margin-inline:2px}
 
 /* Hero mobile : photo en fond du bloc titre */
 @media(max-width:860px){
-  .heroin{position:relative;overflow:hidden;padding:22px 18px;border-radius:var(--radius-lg);color:#fff;background:linear-gradient(100deg,rgba(14,24,48,.88) 0%,rgba(14,24,48,.66) 50%,rgba(14,24,48,.25) 100%),url(/photos/mecanicienne.jpg) 100% 15%/auto 120% no-repeat,#1c2f63}
+  .heroin{position:relative;overflow:hidden;min-height:340px;display:flex;flex-direction:column;justify-content:flex-end;padding:22px 18px;border-radius:var(--radius-lg);color:#fff;background:#13203a url(/photos/hero-artisane.jpg) 70% 18%/cover no-repeat}
+  .heroin::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,26,50,.15) 0%,rgba(15,26,50,.55) 45%,rgba(15,26,50,.92) 100%)}
+  .heroin>*{position:relative}
   .heroin h1{color:#fff}
   .heroin .eyebrow{color:#ffd9bd}
   .heroin .lead{color:#e8eeff}
+  .heroin .heroart{color:#fff;border-color:rgba(255,255,255,.8);background:rgba(255,255,255,.12)}
 }
 
 /* Cadrage de la photo de profil */
@@ -537,9 +550,10 @@ html{scroll-padding-top:72px}
 @media(max-width:1100px){.trust li.tb span{font-size:0}.trust li.tb b{font-size:13px}}
 @media(max-width:560px){
   .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .trust li.tb{flex-direction:column;justify-content:center;gap:6px;padding:10px 4px;border-radius:14px;text-align:center;white-space:normal}
-  .trust li.tb i{width:30px;height:30px}
-  .trust li.tb b{font-size:12.5px;line-height:1.2}
+  .trust li.tb{flex-direction:row;justify-content:flex-start;gap:7px;padding:7px 8px;min-height:48px;border-radius:12px;text-align:left;white-space:normal}
+  .trust li.tb i{width:26px;height:26px}
+  .trust li.tb i svg{width:15px;height:15px}
+  .trust li.tb b{font-size:12px;line-height:1.15}
 }
 
 /* Couleurs des badges : bleu (contact), vert (vérifié), orange (pays) */
@@ -558,16 +572,10 @@ html{scroll-padding-top:72px}
 .moment-x:hover{background:var(--surface-sunken)}
 .moment-act{display:grid;gap:8px;margin-top:6px}
 .moment-skip{border:0;background:transparent;color:var(--ink-muted);font-weight:600;min-height:40px;cursor:pointer}
-.nudge-bar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;gap:12px;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--surface-raised);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(10,20,40,.12);animation:mslide .25s ease-out}
-.nudge-bar p{margin:0;flex:1;min-width:0;font-size:14px;line-height:1.35}
-.nudge-bar p span{color:var(--ink-muted)}
-.nudge-bar .btn{flex:none}
-.nudge-x{flex:none;width:36px;height:36px;border:0;background:transparent;color:var(--ink-muted);font-size:24px;cursor:pointer;border-radius:50%}
-@media(max-width:560px){.nudge-bar p span{display:none}}
 @keyframes mfade{from{opacity:0}}
 @keyframes mpop{from{opacity:0;transform:translateY(10px) scale(.97)}}
 @keyframes mslide{from{transform:translateY(100%)}}
-@media(prefers-reduced-motion:reduce){.moment-back,.moment,.nudge-bar{animation:none}}
+@media(prefers-reduced-motion:reduce){.moment-back,.moment,.nudge-pop{animation:none}}
 
 /* « Mis en avant » : pastille d'explication (l'infobulle reste dans la largeur de la carte) */
 .acard{container-type:inline-size}
@@ -708,3 +716,63 @@ html{scroll-padding-top:72px}
 /* Déconnexion bien visible sur mobile */
 .signout{width:100%;margin-top:8px}.dsout{display:none}
 @media(max-width:699px){.dsout{display:block;margin-top:4px;border-top:1px solid var(--line)}.dsout button{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;padding:0 14px;border:0;background:transparent;font:600 16px var(--font-body,inherit);color:var(--danger);text-align:left;cursor:pointer;border-radius:0 0 var(--radius-md) var(--radius-md)}.dsout button:active{background:var(--surface-sunken)}.dsout span:first-child{font-size:22px;width:28px;text-align:center}.dside .dout{display:none}}
+a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent}
+.stat small{display:block;margin-top:2px;font-size:12px}
+@media print{header,footer,nav,.noprint,.skip{display:none!important}body{background:#fff}.receipt .card{box-shadow:none;border:1px solid #ccc}}
+
+.nudge-pop{padding:0;overflow:hidden;gap:0;width:min(420px,100%);max-height:calc(100dvh - 32px);overflow-y:auto}
+.nudge-pop-img{display:block;width:100%;height:clamp(140px,26dvh,200px);object-fit:cover}
+.nudge-pop-body{display:grid;gap:10px;padding:18px 22px 14px}
+.nudge-trades{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.nudge-trades li{padding:4px 10px;border-radius:var(--radius-pill);background:var(--brand-soft);color:var(--brand);font-size:13px;font-weight:600}
+.nudge-trades li.more{background:transparent;color:var(--ink-muted);font-weight:500}
+.nudge-pop-x{position:absolute;top:10px;right:10px;z-index:1;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.92);color:#13203a;font-size:26px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+
+/* Bouton « Vous êtes artisan ? » du hero : contour, visible sur fond clair comme sur la photo sombre */
+.heroart{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1.5px solid var(--brand);border-radius:var(--radius-pill);color:var(--brand);font-weight:700;font-size:14px;text-decoration:none}
+/* Métiers qui défilent */
+.tmq{overflow:hidden;margin-inline:-4px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.tmq-track{display:flex;width:max-content;animation:tmq 50s linear infinite}
+.tmq:hover .tmq-track,.tmq:active .tmq-track,.tmq:focus-within .tmq-track{animation-play-state:paused}
+.tmq-set{display:flex;gap:10px;padding:4px 10px 6px 0;margin:0;list-style:none}
+.tmq-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 10px;border:1px solid var(--border-strong);border-radius:var(--radius-pill);background:var(--surface-raised);color:var(--ink);font-weight:600;font-size:14px;white-space:nowrap;text-decoration:none}
+.tmq-chip i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand-soft);color:var(--brand)}
+.tmq-chip i svg{width:18px;height:18px}
+@keyframes tmq{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.tmq{overflow-x:auto;-webkit-mask-image:none;mask-image:none}.tmq-track{animation:none}}
+.linklike{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:var(--brand);font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+
+/* ── Résultats des boosts (artisan) ── */
+.bres-l{display:grid;align-items:start;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.bres-i{display:grid;gap:8px;align-content:start;padding:14px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-raised)}
+.bres-i.live{border-color:var(--boost);background:var(--boost-soft)}
+.bres-i header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.bres-t td,.bres-t th{padding:6px 4px}
+.bres-lift{font-weight:600;font-size:14px;margin:0}
+
+/* ── Offres Gratuit / Pro ── */
+.offers{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:640px){.offers{grid-template-columns:1fr 1fr}}
+.offer{display:grid;gap:10px;align-content:start;padding:18px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-raised)}
+.offer header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.offer h2{font-size:20px;margin:0}
+.offer-p{margin:0;color:var(--ink-muted)}.offer-p b{font:800 26px var(--font-display);color:var(--ink);font-variant-numeric:tabular-nums}
+.offer ul{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.offer li{position:relative;padding-left:26px;line-height:1.4}
+.offer li::before{content:"✓";position:absolute;left:0;top:0;width:18px;height:18px;border-radius:50%;background:var(--ok-soft,#e1f3e8);color:var(--ok);font-size:12px;font-weight:800;display:grid;place-items:center;line-height:1}
+.offer.pro{border-color:var(--boost);background:var(--boost-soft)}
+.offer.pro .offer-p b{color:var(--boost-ink)}
+.offer.cur{box-shadow:0 0 0 2px var(--brand)}.offer.pro.cur{box-shadow:0 0 0 2px var(--boost)}
+.plan .tag{justify-self:start}
+
+/* Vidéo de présentation (lecteur au clic) */
+.vpromo{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:var(--ink);aspect-ratio:16/9;box-shadow:0 14px 34px rgba(19,32,58,.2)}
+.vpromo video{display:block;width:100%;height:100%;object-fit:cover;background:var(--ink)}
+.vplay{position:absolute;inset:0;width:100%;border:0;cursor:pointer;display:flex;align-items:flex-end;padding:16px;color:#fff;text-align:left;font:inherit;background:linear-gradient(180deg,rgba(19,32,58,0) 45%,rgba(19,32,58,.65))}
+.vplay .vico{position:absolute;left:50%;top:50%;translate:-50% -50%;width:64px;height:64px;border-radius:50%;background:#fff;color:var(--brand);display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.vplay .vico svg{margin-left:4px}
+.vplay .vtxt{display:grid;gap:2px}
+.vplay .vtxt small{opacity:.85;font-weight:500}
+.vplay:focus-visible{outline:3px solid #8AA9FF;outline-offset:-3px}
+.vsignup{padding-bottom:0}.vsignup .vpromo{max-width:720px;margin-inline:auto}
+@media(max-width:860px){.vplay .vico{width:56px;height:56px}}

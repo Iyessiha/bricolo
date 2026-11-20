@@ -15,6 +15,7 @@ import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import ZonePicker from "@/components/ZonePicker";
 import { PRO_LIMITS } from "@/lib/boost";
+import { countWindows, liftPct } from "@/lib/boost-stats";
 import { PLANS, planPrice } from "@/lib/plans";
 import { HeadlineField, PriceField } from "@/components/ProfileFields";
 import DiplomaAdd from "@/components/DiplomaAdd";
@@ -27,6 +28,8 @@ import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
 import SupportChat from "@/components/SupportChat";
+import DeleteAccount from "@/components/DeleteAccount";
+import { listPaid } from "@/lib/receipts";
 import { unreadForArtisan } from "@/lib/support";
 
 export const metadata: Metadata = { title: "Mon espace" };
@@ -86,20 +89,32 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const approved = artisan.status === "approved", rejected = artisan.status === "rejected", suspended = artisan.status === "suspended";
   const myZones = new Set(((artisan as any).zones ?? []).map((z: any) => z.zone_id));
-  const since = new Date(Date.now() - 7 * 864e5).toISOString();
-  const [{ data: ev }, { data: act }, { data: reqs }, { data: grid }] = await Promise.all([
-    db.from("events").select("type").eq("artisan_id", artisan.id).gte("created_at", since),
+  const days = [7, 30, 90].includes(Number(sp.p)) ? Number(sp.p) : 7;
+  const sinceMs = Date.now() - days * 864e5, prevMs = sinceMs - days * 864e5;
+  const count = (type: string, from: number, to: number) => db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", artisan.id).eq("type", type).gte("created_at", new Date(from).toISOString()).lt("created_at", new Date(to).toISOString());
+  const TYPES = ["view", "call", "whatsapp", "request"] as const;
+  const [cur, prev, { data: act }, { data: reqs }, { data: grid }] = await Promise.all([
+    Promise.all(TYPES.map((t) => count(t, sinceMs, Date.now() + 6e4))),
+    Promise.all(TYPES.map((t) => count(t, prevMs, sinceMs))),
     db.from("boosts").select("id, type, status, ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()),
     db.from("service_requests").select("id, client_name, client_email, client_phone, description, urgent, status, created_at").eq("artisan_id", artisan.id).order("created_at", { ascending: false }).limit(15),
     db.from("price_grid").select("boost_type, duration_hours, amount").eq("country_code", country),
   ]);
-  const stats = { vues: 0, appels: 0, wa: 0, demandes: 0 };
-  for (const e of ev ?? []) { if (e.type === "view") stats.vues++; else if (e.type === "call") stats.appels++; else if (e.type === "whatsapp") stats.wa++; else stats.demandes++; }
+  const stats = { vues: cur[0].count ?? 0, appels: cur[1].count ?? 0, wa: cur[2].count ?? 0, demandes: cur[3].count ?? 0 };
+  const before = [prev[0].count ?? 0, prev[1].count ?? 0, prev[2].count ?? 0, prev[3].count ?? 0];
+  const trend = (now: number, was: number) => was === 0 ? (now > 0 ? "nouveau" : "") : `${now >= was ? "▲" : "▼"} ${Math.abs(Math.round(((now - was) / was) * 100))} %`;
   const from = (t: string) => { const v = (grid ?? []).filter((g) => g.boost_type === t).map((g) => g.amount); return v.length ? Math.min(...v) : null; };
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const unreadHelp = await unreadForArtisan(artisan.id);
-  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const paid = sec === "forfait" ? await listPaid(artisan.id) : [];
+  // Indicateurs du forfait : activité des 30 derniers jours, et pour un Pro, comparaison avec les 30 jours avant son début.
+  const DAY = 864e5, nowMs = Date.now();
+  const proStart = sec === "forfait" && pro && history?.length ? Math.min(...history.filter((h) => h.starts_at && new Date(h.ends_at).getTime() > nowMs - 400 * DAY).map((h) => new Date(h.starts_at!).getTime())) : NaN;
+  const [act30, actProBefore, actProAfter] = sec === "forfait"
+    ? await countWindows(supabaseAdmin(), artisan.id, [{ from: nowMs - 30 * DAY, to: nowMs }, ...(Number.isFinite(proStart) && nowMs - proStart > 3 * DAY ? [{ from: proStart - 30 * DAY, to: proStart }, { from: proStart, to: Math.min(nowMs, proStart + 30 * DAY) }] : [])])
+    : [];
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
@@ -122,7 +137,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"], ["compte", "⚙️", "Mon compte"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -206,11 +221,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {artisan.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
         </div>
           {approved && (
-            <div className="stats">
-              <div className="card stat"><span aria-hidden="true">👁</span><b>{stats.vues}</b><span>Vues, 7 jours</span></div>
-              <div className="card stat"><span aria-hidden="true">📞</span><b>{stats.appels}</b><span>Appels</span></div>
-              <div className="card stat"><span aria-hidden="true">💬</span><b>{stats.wa}</b><span>WhatsApp</span></div>
-              <div className="card stat"><span aria-hidden="true">📩</span><b>{stats.demandes}</b><span>Demandes</span></div>
+            <div className="stack" style={{ gap: 8 }}>
+              <div className="row" style={{ gap: 8, flexWrap: "wrap" }} role="group" aria-label="Période des statistiques">
+                {[7, 30, 90].map((d) => <Link key={d} className={`chip${d === days ? " on" : ""}`} aria-current={d === days ? "true" : undefined} href={`/tableau-de-bord?p=${d}`} scroll={false}>{d} jours</Link>)}
+              </div>
+              <div className="stats">
+                {([["👁", stats.vues, "Vues"], ["📞", stats.appels, "Appels"], ["💬", stats.wa, "WhatsApp"], ["📩", stats.demandes, "Demandes"]] as const).map(([ic, n, l], i) => (
+                  <div key={l} className="card stat"><span aria-hidden="true">{ic}</span><b>{n}</b><span>{l}, {days} j</span>{trend(n, before[i]) && <small className="meta" title="Par rapport aux jours précédents de même durée">{trend(n, before[i])}</small>}</div>
+                ))}
+              </div>
             </div>
           )}
           {approved && (
@@ -396,23 +415,65 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <p>{pro && proSub ? <><b>Forfait Pro actif jusqu’au {day(proSub.ends_at)}</b> · il reste {leftLabel}. Prolonger ajoute la durée à la fin de la période en cours.</> : <><b>Offre gratuite.</b> Elle suffit pour démarrer ; le Pro vous donne plus de place pour convaincre.</>}</p>
           {limitsEl}
         </div>
+        {act30 && (
+          <div className="card pad stack">
+            <h2 style={{ fontSize: 18 }}>Mon activité, 30 derniers jours</h2>
+            <div className="akpi">
+              <div className="kpi"><span>Vues de ma fiche</span><b>{act30.vues}</b></div>
+              <div className="kpi"><span>Appels</span><b>{act30.appels}</b></div>
+              <div className="kpi"><span>Messages WhatsApp</span><b>{act30.wa}</b></div>
+            </div>
+            {pro && actProBefore && actProAfter ? (() => { const lift = liftPct(actProBefore.contacts, actProAfter.contacts); return (
+              <p className={lift === null ? "meta" : lift >= 0 ? "up" : "down"}>{lift === null ? "Pas encore assez de données pour mesurer l’effet de votre Forfait Pro." : `Depuis le début de votre Forfait Pro : ${lift >= 0 ? "+" : ""}${lift} % d’appels et de WhatsApp, comparé aux 30 jours d’avant (${actProBefore.contacts} → ${actProAfter.contacts}). Indicatif : la saison joue aussi.`}</p>); })() : <p className="meta">{pro ? "La comparaison avant / après apparaîtra après quelques jours de Forfait Pro." : "Avec le Forfait Pro, vous verrez ici l’effet sur vos appels et vos messages."}</p>}
+          </div>
+        )}
+        {paid.length > 0 && (
+          <div className="card pad stack">
+            <h2 style={{ fontSize: 18 }}>Mes paiements</h2>
+            {paid.map((r) => (
+              <div key={r.id} className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <span><b>{r.label}</b><br /><span className="meta">{new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(r.paidAt))} · {fcfa(r.amount)}</span></span>
+                <Link className="btn small ghost" href={`/recu/${r.id}`}>Reçu</Link>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="offers">
+          <section className={`offer${pro ? "" : " cur"}`} aria-label="Offre gratuite">
+            <header><h2>Gratuit</h2>{!pro && <span className="tag mute">Votre offre</span>}</header>
+            <p className="offer-p"><b>0 FCFA</b></p>
+            <ul>
+              <li>1 prestation sur votre fiche</li><li>8 photos de réalisations</li><li>3 quartiers d’intervention</li>
+              <li>Visible dans les recherches</li><li>Badge « Vérifié » après contrôle d’identité</li>
+            </ul>
+          </section>
+          <section className={`offer pro${pro ? " cur" : ""}`} aria-label="Forfait Pro">
+            <header><h2>Pro</h2>{pro ? <span className="tag boost">Votre offre</span> : <span className="tag boost">Pour aller plus loin</span>}</header>
+            <p className="offer-p">{monthPrice > 0 ? <><b>{fcfa(monthPrice)}</b> <span>/ mois</span></> : <span>Bientôt disponible dans votre pays</span>}</p>
+            <ul>
+              <li><b>Jusqu’à 10 prestations</b> sur votre fiche</li><li><b>Jusqu’à 20 photos</b> de réalisations</li>
+              <li><b>10 quartiers</b> ou une <b>ville entière</b></li><li>Badge « Pro » sur votre fiche</li><li>Tout ce que contient l’offre gratuite</li>
+            </ul>
+          </section>
+        </div>
         {approved ? (monthPrice > 0 ? (
           <div className="stack">
-            <h2 style={{ fontSize: 18 }}>{pro ? "Prolonger mon Forfait Pro" : "Passer au Forfait Pro"}</h2>
+            <h2 style={{ fontSize: 18 }}>{pro ? "Prolonger mon Forfait Pro" : "Choisissez la durée de votre Forfait Pro"}</h2>
             <div className="agrid plans">
               {PLANS.map((pl) => { const amount = planPrice(planOf, pl.key); const perMonth = Math.round((amount / (pl.days / 30)) / 100) * 100; return (
                 <form key={pl.key} method="post" action="/api/forfait/checkout" className={`card pad stack plan${pl.key === "month" ? " best" : ""}`}>
-                  <span className="tag mute">{pl.note}</span>
-                  <h3 style={{ fontSize: 18 }}>{pl.label}</h3><p className="price">{fcfa(amount)}</p>
-                  <p className="meta">{pl.key === "week" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "quarter" ? `Soit ${fcfa(perMonth)} par mois · économisez ${fcfa(monthPrice * 3 - amount)}` : pl.key === "year" ? `Soit ${fcfa(perMonth)} par mois · économisez ${fcfa(monthPrice * 12 - amount)}` : "Sans engagement"}</p>
+                  <span className={`tag ${pl.key === "month" ? "boost" : "mute"}`}>{pl.note}</span>
+                  <h3 style={{ fontSize: 18 }}>{pl.label}</h3>
+                  <p className="price">{fcfa(amount)}</p>
+                  <p className="meta">{pl.key === "week" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "quarter" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "year" ? `Soit ${fcfa(perMonth)} par mois` : "Sans engagement"}</p>
+                  {pl.key === "quarter" && monthPrice * 3 - amount > 0 && <span className="tag ok">Vous économisez {fcfa(monthPrice * 3 - amount)}</span>}
+                  {pl.key === "year" && monthPrice * 12 - amount > 0 && <span className="tag ok">Vous économisez {fcfa(monthPrice * 12 - amount)}</span>}
                   <input type="hidden" name="plan" value={pl.key} /><button className="btn boost" type="submit">{pro ? "Prolonger" : "Passer Pro"}</button>
                 </form>); })}
             </div>
             <p className="hint">Paiement sécurisé par Mobile Money ou carte. Sans engagement : le forfait s’arrête à la fin de la période payée. Vos prestations et photos en plus restent enregistrées mais ne sont plus affichées. Vos 3 premières zones restent actives ; les autres, et « toute la ville », se réactivent si vous reprenez le Pro.</p>
           </div>
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
-        <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Gratuit ou Pro ?</h2><div className="tw"><table className="tbl"><thead><tr><th></th><th className="num">Gratuit</th><th className="num">Pro</th></tr></thead><tbody>
-          {[["Prestations sur ma fiche", "1", "jusqu’à 10"], ["Photos de réalisations", "8", "jusqu’à 20"], ["Zones d’intervention", "3 quartiers", "10 quartiers ou une ville entière"], ["Visible dans les recherches", "✓", "✓"]].map(([l, f, p]) => <tr key={l}><td>{l}</td><td className="num">{f}</td><td className="num"><b>{p}</b></td></tr>)}</tbody></table></div></div>
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Historique</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>
@@ -436,6 +497,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <h1 className="dtitle">Contacter Bricolo</h1>
         <p className="meta">Un problème, une question, un doute sur votre dossier ou un paiement ? Écrivez-nous ici : l’équipe vous répond directement, et vous prévient par notification et par e-mail.</p>
         {sec === "aide" && <SupportChat as="artisan" empty="Aucun message pour le moment. Écrivez-nous, nous répondons en général sous 24 heures." />}
+      </div>
+      <div id="compte" className="stack" hidden={sec !== "compte"}>
+        <h1 className="dtitle">Mon compte</h1>
+        <p className="meta">Connecté avec {user.email}. Pour changer d’adresse e-mail, écrivez-nous depuis « Contacter Bricolo ».</p>
+        {sec === "compte" && <DeleteAccount hasPaid={Boolean(pro || act?.length)} />}
       </div>
       </main>
     </section>

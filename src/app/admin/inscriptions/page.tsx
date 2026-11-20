@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireAdmin, day } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { siteUrl } from "@/lib/env";
+import { normalizePhone } from "@/lib/phone";
 import { markHandled, relancer } from "./actions";
 
 export const metadata: Metadata = { title: "Inscriptions échouées", robots: { index: false } };
@@ -16,18 +18,32 @@ export default async function Inscriptions({ searchParams }: { searchParams: Pro
   // Inscrits restés en route : compte sans fiche, ou fiche créée sans dossier d'identité.
   const db = supabaseAdmin();
   const { data: users } = await db.from("profiles").select("id, email, country_code, created_at, marketing_opt_out").eq("role", "artisan").order("created_at", { ascending: false }).limit(200);
-  const { data: arts } = await db.from("artisans").select("id, user_id, name, status, created_at").in("user_id", (users ?? []).map((u) => u.id));
+  const { data: arts } = await db.from("artisans").select("id, user_id, name, status, created_at, country_code, phone, whatsapp, photo_url, description").in("user_id", (users ?? []).map((u) => u.id));
   const byUser = new Map((arts ?? []).map((a) => [a.user_id, a]));
   const { data: idr } = await db.from("artisan_identity").select("artisan_id").in("artisan_id", (arts ?? []).map((a) => a.id));
   const withId = new Set((idr ?? []).map((x) => x.artisan_id));
+  const { data: cs } = await db.from("countries").select("code, phone_prefix");
+  const prefixOf = new Map((cs ?? []).map((c) => [c.code, c.phone_prefix as string]));
+  const { data: zr } = await db.from("artisan_zones").select("artisan_id").in("artisan_id", (arts ?? []).map((a) => a.id));
+  const hasZone = new Set((zr ?? []).map((x) => x.artisan_id));
   const { data: sentRows } = await db.from("email_log").select("template, ref").in("template", ["nudge_profile", "nudge_documents"]);
   const sent = new Set((sentRows ?? []).map((x) => `${x.template}:${x.ref}`));
-  type Stuck = { key: string; kind: "profile" | "documents"; id: string; who: string; step: string; since: string; sent: boolean; blocked?: string };
+  type Stuck = { key: string; kind: "profile" | "documents"; id: string; who: string; step: string; since: string; sent: boolean; blocked?: string; wa?: string };
   const stuck: Stuck[] = [];
+  /** Lien WhatsApp avec le message de rappel déjà écrit, selon ce qui manque au profil : un clic ouvre la conversation. */
+  const waLink = (a: { name: string; country_code: string; phone: string | null; whatsapp: string | null; photo_url: string | null; description: string | null }, id: string) => {
+    // Numéro saisi en local (0759…) ou avec indicatif (+225…) : WhatsApp veut toujours l'indicatif du pays.
+    const num = normalizePhone(a.whatsapp ?? a.phone ?? "", prefixOf.get(a.country_code) ?? "");
+    if (!num) return undefined;
+    const todo = [!a.photo_url && "votre photo", !(a.description ?? "").trim() && "une courte description", !hasZone.has(id) && "vos zones", "votre pièce d’identité et un selfie"].filter(Boolean) as string[];
+    const list = todo.length > 1 ? `${todo.slice(0, -1).join(", ")} et ${todo[todo.length - 1]}` : todo[0];
+    const text = `🔧 *Bricolo* — Bonjour, c’est l’équipe Bricolo. Votre profil « ${a.name} » est presque prêt. Il reste à ajouter : ${list}. Cela prend quelques minutes, puis notre équipe vérifie votre identité avant la mise en ligne. Reprenez ici : ${siteUrl()}/connexion`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
+  };
   for (const u of users ?? []) {
     const a = byUser.get(u.id);
     if (!a) stuck.push({ key: u.id, kind: "profile", id: u.id, who: u.email ?? "—", step: "Compte confirmé, profil non créé", since: u.created_at, sent: sent.has(`nudge_profile:${u.id}`), blocked: u.marketing_opt_out ? "a refusé les relances" : undefined });
-    else if (a.status === "pending" && !withId.has(a.id)) stuck.push({ key: a.id, kind: "documents", id: a.id, who: `${a.name} · ${u.email ?? ""}`, step: "Profil créé, documents non envoyés", since: a.created_at, sent: sent.has(`nudge_documents:${a.id}`) });
+    else if (a.status === "pending" && !withId.has(a.id)) stuck.push({ key: a.id, kind: "documents", id: a.id, who: `${a.name} · ${u.email ?? ""}`, step: "Profil créé, documents non envoyés", since: a.created_at, sent: sent.has(`nudge_documents:${a.id}`), wa: waLink(a, a.id) });
   }
   return (
     <>
@@ -40,7 +56,10 @@ export default async function Inscriptions({ searchParams }: { searchParams: Pro
         <p className="meta">Personnes qui ont commencé l’inscription sans la terminer. Une relance par e-mail leur est aussi envoyée automatiquement 2 jours après, une seule fois.</p>
         {stuck.length ? <div className="tw"><table className="tbl"><thead><tr><th>Qui</th><th>Où ça bloque</th><th>Depuis</th><th></th></tr></thead><tbody>
           {stuck.map((x) => <tr key={x.key}><td>{x.who}</td><td>{x.step}</td><td>{day(x.since)}</td>
-            <td>{x.sent ? <span className="tag ok">Relancé</span> : x.blocked ? <span className="tag mute">{x.blocked}</span> : <form action={relancer}><input type="hidden" name="kind" value={x.kind} /><input type="hidden" name="id" value={x.id} /><button className="btn small">Relancer par e-mail</button></form>}</td></tr>)}
+            <td><div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+              {x.wa && <a className="btn small wa" href={x.wa} target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>}
+              {x.sent ? <span className="tag ok">E-mail envoyé</span> : x.blocked ? <span className="tag mute">{x.blocked}</span> : <form action={relancer}><input type="hidden" name="kind" value={x.kind} /><input type="hidden" name="id" value={x.id} /><button className="btn small">Relancer par e-mail</button></form>}
+            </div></td></tr>)}
         </tbody></table></div> : <p className="empty">Personne à relancer.</p>}
       </div>
       <div className="card pad stack">

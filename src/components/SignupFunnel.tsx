@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
+import Turnstile from "@/components/Turnstile";
 import { signupAccount, resendConfirmation, type LinkState } from "@/app/auth-actions";
 import { Progress, useCooldown } from "./Funnel";
 import Flag from "./Flag";
@@ -58,7 +59,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
       {step === 1 && (
         <>
           <h1 style={{ fontSize: 30 }}>Dans quel pays travaillez-vous ?</h1>
-          <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite.</p>
+          <p className="muted">Votre profil sera montré aux clients de ce pays. La création est gratuite. Vous indiquerez ensuite <b>vos villes et vos quartiers</b> : vous n’avez pas besoin d’habiter la capitale.</p>
           <details className="key" open>
             <summary><b>Avant de commencer : préparez vos documents</b></summary>
             <div className="stack" style={{ gap: 8, marginTop: 8 }}>
@@ -73,7 +74,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
           </details>
           <div className="opts two">
             {countries.map((c) => (
-              <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b><span>{c.capital}</span></label>
+              <label key={c.code} className="opt"><input type="radio" name="p" value={c.code} checked={pays === c.code} onChange={() => setPays(c.code)} /><b className="fl"><Flag code={c.code} size={22} />{c.name}</b></label>
             ))}
           </div>
           <label className="check must">
@@ -126,7 +127,8 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
         <form action={action} className="stack">
           <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, width: 0, opacity: 0 }} />
           <h1 style={{ fontSize: 30 }}>Votre compte</h1>
-          <p className="muted">Elle servira à vous connecter, avec le mot de passe que vous choisissez ci-dessous.</p>
+          <p className="muted">Votre adresse e-mail servira à vous connecter, avec le mot de passe que vous choisissez ci-dessous.</p>
+          <p className="key"><b>Un message de confirmation vous sera envoyé.</b> Utilisez une adresse que vous pouvez ouvrir maintenant sur ce téléphone : vous devrez cliquer sur le lien reçu pour continuer.</p>
           <p className="sum">{name} · {type === "entreprise" ? "Entreprise" : "Individuel"} · {trades.find((t) => t.id === trade)?.name} · {country?.name}</p>
           <input type="hidden" name="pays" value={pays} /><input type="hidden" name="trade_id" value={trade} /><input type="hidden" name="name" value={name} />
           <input type="hidden" name="account_type" value={type} /><input type="hidden" name="registration" value={registration} /><input type="hidden" name="docs_ack" value="on" />
@@ -143,6 +145,7 @@ export default function SignupFunnel({ countries, trades, initialCountry }: { co
             <span>J’ai lu et j’accepte les <Link href="/conditions-utilisation" target="_blank">conditions d’utilisation</Link> et la <Link href="/confidentialite" target="_blank">politique de confidentialité</Link>.</span></label>
           <label className="check card-check must"><input type="checkbox" name="charter" checked={charter} onChange={(e) => setCharter(e.target.checked)} required />
             <span>Je m’engage à respecter la <Link href="/charte-artisan" target="_blank">charte de l’artisan</Link> (honnêteté, travail soigné, pas de paiement abusif). <strong>Je sais qu’un manquement peut entraîner la suspension de mon profil.</strong></span></label>
+          <Turnstile />
           <div className="row">
             <button className="btn" type="button" onClick={() => setStep(3)}>Retour</button>
             <button className="btn primary" type="submit" disabled={pending || !accept || !charter || !email || pw.length < 8 || pw !== pw2 || (type === "entreprise" && !authorized)}>{pending ? "Création…" : "Créer mon compte"}</button>

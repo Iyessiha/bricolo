@@ -8,6 +8,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import ZoneOptions from "@/components/ZoneOptions";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
+import Link from "next/link";
 
 /** Les combinaisons de filtres ne sont pas indexées (contenu en double) : Google passe par les pages /artisans/… */
 export const metadata: Metadata = { title: "Trouver un artisan", description: "Recherchez un artisan par métier et par commune : plombier, électricien, menuisier, frigoriste… Profils vérifiés, avis clients, contact direct.", robots: { index: false, follow: true }, alternates: { canonical: "/resultats" } };
@@ -62,6 +63,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
         <button className="btn primary" type="submit">Filtrer</button>
       </AutoSubmitForm>
       {list.some((a) => a.sponsored) && <p className="hint" style={{ marginBottom: 12 }}>Les artisans « Mis en avant » passent en premier : ils ont choisi de se mettre en avant et leur identité est vérifiée. Leur ordre change régulièrement pour rester équitable.</p>}
+      {trade && zone && list.length >= 2 && <div className="card pad row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}><span><b>Gagnez du temps</b><br /><span className="meta">Décrivez votre besoin une fois, 3 artisans vérifiés vous répondent.</span></span><Link className="btn primary" href={`/devis?metier=${trade.slug}&zone=${zone.id}`}>📨 Demander un devis</Link></div>}
       {list.length ? (
         <div className="cards">{list.map((a) => <ArtisanCard country={country} key={a.id} a={{ ...a, trade: tradeName(a.trade_id) }} />)}</div>
       ) : (

@@ -10,6 +10,11 @@ import { composeHeadline, lines, priceLabel } from "@/lib/compose";
 import sharp from "sharp";
 import { coverProblem, shotProblem } from "@/lib/cover-rules";
 import { cleanHours } from "@/lib/hours";
+import { addMessage, currentArtisan, currentUser } from "@/lib/support";
+import { tooMany } from "@/lib/rate-limit";
+import { getCountry } from "@/lib/country";
+import { countryName } from "@/lib/countries";
+import { notifyMissingZone } from "@/lib/email-flows";
 
 /** Formulaire « Modifier mon profil » du tableau de bord. */
 export async function saveProfile(formData: FormData) {
@@ -184,4 +189,19 @@ export async function removeService(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (/^[0-9a-f-]{36}$/i.test(id)) await c.db.from("artisan_services").delete().eq("id", id).eq("artisan_id", c.a.id);
   revalidatePath("/tableau-de-bord"); return svcTo("ok", "Prestation supprimée.");
+}
+
+
+/** « Ma ville n'est pas dans la liste » : prévient l'équipe, qui ajoute la zone. Fonctionne aussi pendant l'activation, avant que la fiche existe. */
+export async function requestMissingZone(raw: string): Promise<{ ok: boolean; error?: string }> {
+  const user = await currentUser();
+  if (!user) return { ok: false, error: "Connectez-vous pour envoyer votre demande." };
+  const zone = String(raw ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+  if (zone.length < 2) return { ok: false, error: "Écrivez le nom de votre ville ou de votre quartier." };
+  if (tooMany(`zone:${user.id}`, 5, 60 * 60_000)) return { ok: false, error: "Vous avez déjà envoyé plusieurs demandes. Patientez un peu." };
+  const country = countryName(await getCountry());
+  const a = await currentArtisan();
+  if (a) await addMessage(a.id, "artisan", a.userId, `📍 Zone manquante (${country}) : ${zone}`);
+  after(() => notifyMissingZone({ zone, country, who: user.email ?? a?.name ?? "artisan" }));
+  return { ok: true };
 }

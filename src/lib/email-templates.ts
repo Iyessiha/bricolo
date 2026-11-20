@@ -203,3 +203,26 @@ export const signupFailureForAdmin = (o: { email: string; kind: string; message:
     p("Cause fréquente : le mot de passe SMTP (clé API Resend) ou la limite d'envoi dans Supabase.") +
     btn("Voir les inscriptions échouées", `${siteUrl()}/admin/inscriptions`),
 });
+
+export const appErrorForAdmin = (o: { path: string; method: string; message: string; digest?: string }) => layout({
+  subject: "Erreur sur monbricolo.com", pre: `${o.method} ${o.path}`,
+  title: "Une erreur serveur est survenue",
+  body: p(`Une page a planté (${esc(o.method)} ${esc(o.path)}).`) +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid #b3261e;line-height:1.6;word-break:break-word">${esc(o.message).slice(0, 400)}${o.digest ? `<br><span style="color:#5b6478">Référence : ${esc(o.digest)}</span>` : ""}</blockquote>` +
+    p("Pour éviter les doublons, un seul message de ce type part par demi-heure. Les détails sont dans les journaux Vercel (Runtime Logs)."),
+});
+
+export const quoteForClient = (names: string[], description: string) => layout({
+  subject: `Votre demande de devis a été envoyée à ${names.length} artisans`, pre: "Les artisans vous répondent directement.",
+  title: "Votre demande de devis est envoyée",
+  body: p(`Votre demande a été envoyée à ${names.length} artisans vérifiés : ${names.map(esc).join(", ")}. Ils vous répondent directement, par téléphone, WhatsApp ou e-mail.`) +
+    p("Comparez les réponses : prix, délai, ce qui est inclus. Demandez un prix clair avant le début du travail et ne payez jamais la totalité à l’avance. En cas de problème, vous pouvez signaler un artisan depuis sa fiche sur Bricolo.") +
+    `<blockquote style="margin:0 0 16px;padding:12px 16px;background:${BG};border-left:4px solid ${BLUE};line-height:1.6">${esc(description).replace(/\n/g, "<br>")}</blockquote>`,
+});
+
+export const zoneMissingForAdmin = (o: { zone: string; country: string; who: string }) => layout({
+  subject: `Zone demandée : ${o.zone} (${o.country})`, pre: `Un artisan ne trouve pas « ${o.zone} » dans la liste.`,
+  title: "Une ville ou un quartier manque",
+  body: p(`Un artisan (${esc(o.who)}) ne trouve pas <b>${esc(o.zone)}</b> dans la liste des zones de <b>${esc(o.country)}</b>.`) +
+    p("Ajoutez-la depuis l’administration (Prix, « Ajouter une zone ou une ville »), puis répondez-lui depuis la messagerie pour qu’il la choisisse."),
+});

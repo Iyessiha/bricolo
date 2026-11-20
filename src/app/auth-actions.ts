@@ -6,6 +6,10 @@ import { isCountry } from "@/lib/countries";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { notifySignupFailure } from "@/lib/email-flows";
 import { domainCanReceiveMail, isDisposableError } from "@/lib/email-guard";
+import { tooMany, visitorIp } from "@/lib/rate-limit";
+import { turnstileOk } from "@/lib/turnstile";
+
+const SLOW = "Trop de tentatives. Patientez quelques minutes avant de réessayer.";
 
 export type LinkState = { ok: boolean; email?: string; error?: string; sentAt?: number } | null;
 
@@ -26,6 +30,9 @@ export async function signupAccount(_prev: LinkState, fd: FormData): Promise<Lin
   const name = String(fd.get("name") ?? "").trim();
   const type = fd.get("account_type") === "entreprise" ? "entreprise" : "individuel";
   const registration = String(fd.get("registration") ?? "").trim().slice(0, 60);
+  const ip = await visitorIp();
+  if (tooMany(`signup:${ip}`, 30, 10 * 60_000)) return fail(SLOW);
+  if (!(await turnstileOk(fd, ip))) return fail("La vérification anti-robot a échoué. Rechargez la page et réessayez.");
   if (!isCountry(pays)) return fail("Choisissez votre pays.");
   if (name.length < 2 || name.length > 80 || !UUID.test(tradeId)) return fail("Indiquez le nom de votre activité et votre métier.");
   if (!EMAIL.test(email)) return fail("Cette adresse e-mail n’est pas valide.");
@@ -73,6 +80,8 @@ export async function resendConfirmation(email: string): Promise<{ ok: boolean; 
 export async function forgotPassword(_prev: LinkState, fd: FormData): Promise<LinkState> {
   const email = String(fd.get("email") ?? "").trim().toLowerCase();
   if (!EMAIL.test(email)) return fail("Cette adresse e-mail n’est pas valide.");
+  const ip = await visitorIp();
+  if (tooMany(`forgot:${ip}`, 20, 10 * 60_000) || tooMany(`forgot:${email}`, 3, 10 * 60_000)) return fail(SLOW);
   const db = await supabaseServer();
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: `${siteUrl()}/auth/callback?next=/nouveau-mot-de-passe` });
   if (error && limited(error)) return fail("Un e-mail vient d’être envoyé. Patientez une minute avant d’en demander un autre.");
@@ -98,9 +107,15 @@ export async function loginPassword(_prev: LinkState, fd: FormData): Promise<Lin
   const email = String(fd.get("email") ?? "").trim().toLowerCase();
   const password = String(fd.get("password") ?? "");
   if (!EMAIL.test(email) || !password) return fail("Adresse e-mail ou mot de passe incorrect.");
+  if (tooMany(`login:${await visitorIp()}`, 60, 10 * 60_000) || tooMany(`login:${email}`, 8, 10 * 60_000)) return fail(SLOW);
   const db = await supabaseServer();
   const { error } = await db.auth.signInWithPassword({ email, password });
-  if (error) return fail(/rate|limit/i.test(`${error.code ?? ""} ${error.message ?? ""}`) ? "Trop d’essais. Patientez quelques minutes." : "Adresse e-mail ou mot de passe incorrect.");
+  if (error) {
+    const why = `${error.code ?? ""} ${error.message ?? ""}`;
+    // Supabase ne répond « non confirmé » que si le mot de passe est le bon : on peut le dire sans révéler quoi que ce soit.
+    if (/email_not_confirmed|not confirmed/i.test(why)) return { ok: false, email, error: "Votre adresse e-mail n’est pas encore confirmée. Ouvrez le message que nous vous avons envoyé (regardez aussi dans les courriers indésirables) et cliquez sur le lien. Vous ne le trouvez plus ? Renvoyez-le ci-dessous." };
+    return fail(/rate|limit/i.test(why) ? "Trop d’essais. Patientez quelques minutes." : "Adresse e-mail ou mot de passe incorrect.");
+  }
   const { data: { user } } = await db.auth.getUser();
   const { data: p } = user ? await db.from("profiles").select("role").eq("id", user.id).single() : { data: null };
   redirect(p?.role === "admin" ? "/admin" : "/tableau-de-bord");

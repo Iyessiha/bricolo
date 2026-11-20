@@ -5,11 +5,11 @@ export const COMPANY = {
   legalForm: "société à responsabilité limitée (Limited Liability Company, LLC) de droit américain, immatriculée dans l’État du Nouveau-Mexique (États-Unis)",
   manager: "Ilboudo Yessiha",
   managerTitle: "Gérante",
-  email: "monweci@gmail.com",
+  email: "contact@monbricolo.com",
   activityPlace: "Bingerville, Abidjan, Côte d’Ivoire",
   /** Facultatifs : renseignez-les, ils s’affichent automatiquement dans les mentions légales. */
-  registrationNumber: "" as string,
-  postalAddress: "" as string,
+  registrationNumber: "New Mexico Secretary of State, dossier n° 3213688 (déposé le 20 avril 2026)" as string,
+  postalAddress: "1209 Mountain Road PL NE, Ste R, Albuquerque, NM 87110, États-Unis" as string,
   phone: "" as string,
 } as const;
 

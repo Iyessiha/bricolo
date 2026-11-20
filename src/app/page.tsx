@@ -1,13 +1,15 @@
 import Link from "next/link";
+import VideoPromo from "@/components/VideoPromo";
 import TradeIcon from "@/components/TradeIcon";
 import { getCountry } from "@/lib/country";
-import { COUNTRIES, countryCapital, countryName } from "@/lib/countries";
+import { COUNTRIES, countryName } from "@/lib/countries";
 import Flag from "@/components/Flag";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import ArtisanCard from "@/components/ArtisanCard";
 import SetupNotice from "@/components/SetupNotice";
 import ArtisanNudge from "@/components/ArtisanNudge";
+import TradeMarquee from "@/components/TradeMarquee";
 import ZoneOptions from "@/components/ZoneOptions";
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/site-settings";
@@ -29,7 +31,8 @@ const FAQ = [
   ["Mes informations sont-elles protégées ?", "Seules les informations de votre fiche (activité, zones, téléphone, description, photos) sont visibles des clients. Votre e-mail, vos documents d’identité et les informations de votre entreprise restent privés."],
 ] as const;
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ compte?: string }> }) {
+  const sp = await searchParams;
   if (!hasSupabase()) return <SetupNotice />;
   const country = await getCountry();
   const db = await supabaseServer();
@@ -60,12 +63,14 @@ export default async function Home() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(faqLd) }} />
-      {!user && <ArtisanNudge />}
+      {!user && <ArtisanNudge trades={(trades ?? []).map((t) => ({ slug: t.slug, plural: t.plural }))} />}
+      {sp.compte === "supprime" && <section className="inner"><p className="notice ok" role="status">Votre compte et vos données ont été supprimés. Merci d’avoir utilisé Bricolo.</p></section>}
       <section className="inner hero2">
         <div className="heroin stack" style={{ gap: 14 }}>
-          <p className="eyebrow fl"><Flag code={country} size={22} />{countryCapital(country)} · {countryName(country)}</p>
+          <p className="eyebrow fl"><Flag code={country} size={22} />{countryName(country)}</p>
           <h1>Le bon artisan, près de chez vous.</h1>
           <p className="lead">Frigoristes, mécaniciens, menuisiers, électriciens, plombiers… Comparez les profils, puis appelez ou écrivez sur WhatsApp. C’est gratuit, sans compte.</p>
+          <p style={{ margin: 0 }}><Link className="heroart" href="/inscription">🔧 Vous êtes artisan ? Créez votre profil</Link></p>
         </div>
         <div className="heroimg collage" aria-label="Artisans de l’Afrique de l’Ouest au travail">
           <figure className="c1"><img src="/photos/hero-artisane.jpg" width={800} height={1000} alt="Artisane souriante en gilet orange, un casque de chantier sous le bras" fetchPriority="high" /></figure>
@@ -85,6 +90,7 @@ export default async function Home() {
             </select></div>
           <button className="btn primary" type="submit">Rechercher</button>
         </form>
+        <TradeMarquee country={country} trades={(trades ?? []).map((t) => ({ slug: t.slug, plural: t.plural }))} />
         <ul className="trust">
           <li className="tb t1"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i><span><b>Contact direct</b>Sans intermédiaire</span></li>
           <li className="tb t2"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></i><span><b>Badge Vérifié</b>Identité contrôlée</span></li>
@@ -131,7 +137,7 @@ export default async function Home() {
             <div className="row"><Link className="btn" href="/inscription">Créer mon profil gratuit</Link><Link className="btn ghost" href="/connexion">J’ai déjà un compte</Link></div>
           </div>
           <div className="stack" style={{ gap: 14 }}>
-          <img className="bandimg" src="/photos/artisane-chantier.jpg" width={800} height={600} alt="Artisane en gilet de chantier, un mètre ruban à la main" loading="lazy" />
+          <VideoPromo />
           <div className="offer" style={{ display: "grid", gap: 6 }}>
             <b>Votre espace artisan</b>
             <span>Suivez les vues de votre fiche, les appels et les demandes reçues, gérez votre profil et vos options de visibilité. Tout est réuni après votre inscription.</span>
