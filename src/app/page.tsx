@@ -1,4 +1,5 @@
 import Link from "next/link";
+import VideoPromo from "@/components/VideoPromo";
 import TradeIcon from "@/components/TradeIcon";
 import { getCountry } from "@/lib/country";
 import { COUNTRIES, countryName } from "@/lib/countries";
@@ -136,7 +137,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             <div className="row"><Link className="btn" href="/inscription">Créer mon profil gratuit</Link><Link className="btn ghost" href="/connexion">J’ai déjà un compte</Link></div>
           </div>
           <div className="stack" style={{ gap: 14 }}>
-          <img className="bandimg" src="/photos/artisane-chantier.jpg" width={800} height={600} alt="Artisane en gilet de chantier, un mètre ruban à la main" loading="lazy" />
+          <VideoPromo />
           <div className="offer" style={{ display: "grid", gap: 6 }}>
             <b>Votre espace artisan</b>
             <span>Suivez les vues de votre fiche, les appels et les demandes reçues, gérez votre profil et vos options de visibilité. Tout est réuni après votre inscription.</span>
