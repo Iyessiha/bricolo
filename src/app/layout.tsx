@@ -9,6 +9,7 @@ import { getSettings } from "@/lib/site-settings";
 import { siteUrl } from "@/lib/env";
 import { jsonLd, DEFAULT_TITLE, DEFAULT_DESC } from "@/lib/seo";
 import { parseSnippet, type CustomItem } from "@/lib/custom-pixels";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#27489a" }, { media: "(prefers-color-scheme: dark)", color: "#0e1525" }] };
 
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Footer />
         <BadgeSync />
         <Trackers ga4={s.ga4_id} ads={s.google_ads_id} gtm={s.gtm_id} meta={s.meta_pixel_id} tiktok={s.tiktok_pixel_id} custom={custom} />
+        <SpeedInsights />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(site) }} />
       </body>
     </html>
