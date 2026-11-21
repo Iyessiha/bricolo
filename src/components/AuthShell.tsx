@@ -7,7 +7,7 @@ export default function AuthShell({ children, photo, alt, title, text, pos = "50
     <section className="inner sec authwrap">
       <div className="authmain">{children}</div>
       <aside className={`authpic${video ? " withvid" : ""}`} aria-hidden={false}>
-        {video ? <VideoPromo label="Regarder avant de commencer" /> : <img src={photo} alt={alt} loading="lazy" style={{ objectPosition: pos }} />}
+        {video ? <VideoPromo /> : <img src={photo} alt={alt} loading="lazy" style={{ objectPosition: pos }} />}
         <div className="authcap"><b>{title}</b><span>{text}</span></div>
       </aside>
     </section>

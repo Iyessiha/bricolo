@@ -1,25 +1,44 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/** Vidéo de présentation : rien n’est téléchargé avant le clic, et la lecture démarre avec le son. */
-export default function VideoPromo({ label = "Voir comment ça marche", sub = "40 secondes · avec le son" }: { label?: string; sub?: string }) {
+/** Vidéo de présentation : lecture automatique en sourdine quand elle est visible, bouton pour activer le son. */
+export default function VideoPromo() {
   const ref = useRef<HTMLVideoElement>(null);
-  const [on, setOn] = useState(false);
-  function start() {
+  const box = useRef<HTMLDivElement>(null);
+  const [muted, setMuted] = useState(true);
+  const [auto, setAuto] = useState(true);
+
+  useEffect(() => {
+    const v = ref.current, b = box.current;
+    if (!v || !b) return;
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches || nav.connection?.saveData;
+    if (calm) { setAuto(false); return; }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) v.play().catch(() => {});
+      else v.pause();
+    }, { threshold: 0.35 });
+    io.observe(b);
+    return () => io.disconnect();
+  }, []);
+
+  function toggleSound() {
     const v = ref.current;
     if (!v) return;
-    v.preload = "auto";
-    v.muted = false;
-    setOn(true);
-    v.play().catch(() => {});
+    if (muted) { v.currentTime = 0; v.muted = false; setMuted(false); v.play().catch(() => {}); }
+    else { v.muted = true; setMuted(true); }
   }
+
   return (
-    <div className={`vpromo${on ? " on" : ""}`}>
-      <video ref={ref} controls playsInline preload="none" poster="/videos/bricolo-presentation.jpg" src="/videos/bricolo-presentation.mp4" aria-label="Présentation de Bricolo pour les artisans" />
-      {!on && (
-        <button type="button" className="vplay" onClick={start} aria-label={`${label} (vidéo avec le son)`}>
-          <span className="vico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor" /></svg></span>
-          <span className="vtxt"><b>{label}</b><small>{sub}</small></span>
+    <div className="vpromo" ref={box}>
+      <video ref={ref} autoPlay={auto} muted loop playsInline controls={!auto} preload={auto ? "auto" : "none"} poster="/videos/bricolo-presentation.jpg" src="/videos/bricolo-presentation.mp4" aria-label="Présentation de Bricolo pour les artisans" />
+      {auto && (
+        <button type="button" className="vsound" onClick={toggleSound} aria-pressed={!muted}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" />
+            {muted ? <path d="m16 9 5 6m0-6-5 6" /> : <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />}
+          </svg>
+          {muted ? "Activer le son" : "Couper le son"}
         </button>
       )}
     </div>
