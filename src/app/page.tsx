@@ -14,6 +14,12 @@ import ZoneOptions from "@/components/ZoneOptions";
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/site-settings";
 import { jsonLd, DEFAULT_TITLE, DEFAULT_DESC } from "@/lib/seo";
+import { unstable_cache } from "next/cache";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+/** Métiers et zones changent rarement : lus une fois toutes les 5 minutes au lieu d'un aller-retour base à chaque visite. */
+const getTrades = unstable_cache(async () => (await supabaseAdmin().from("trades").select("id, slug, plural, description").order("plural")).data ?? [], ["home-trades"], { revalidate: 300 });
+const getZones = unstable_cache(async (country: string) => (await supabaseAdmin().from("zones").select("id, name, parent_id").eq("country_code", country).order("name")).data ?? [], ["home-zones"], { revalidate: 300 });
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
@@ -38,10 +44,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const db = await supabaseServer();
   const { data: { user } } = await db.auth.getUser();
 
-  const [{ data: trades }, { data: zones }, { data: boosts }] = await Promise.all([
-    db.from("trades").select("id, slug, plural, description").order("plural"),
-    db.from("zones").select("id, name, parent_id").eq("country_code", country).order("name"),
+  const [trades, zones, { data: boosts }, { data: top }] = await Promise.all([
+    getTrades(),
+    getZones(country),
     db.from("boosts").select("artisan_id").eq("type", "accueil").eq("status", "active").gt("ends_at", new Date().toISOString()),
+    db.rpc("search_artisans", { p_country: country, p_trade: null, p_zone: null, p_verified: false, p_seed: String(Math.floor(Date.now() / 3600000)) }),
   ]);
   const ids = [...new Set((boosts ?? []).map((b) => b.artisan_id))];
   const { data: featured } = ids.length
@@ -51,7 +58,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const rot = String(Math.floor(Date.now() / 3600000));
   const hash = (t: string) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
   const have = new Set((featured ?? []).map((f: any) => f.id));
-  const { data: top } = await db.rpc("search_artisans", { p_country: country, p_trade: null, p_zone: null, p_verified: false, p_seed: String(Math.floor(Date.now() / 3600000)) });
   const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
   const POPULAR = ["plombier", "electricien", "frigoriste", "macon", "peintre", "mecanicien", "menuisier", "carreleur", "serrurier", "electromenager"];
   const topTrades = [...(trades ?? [])].sort((a, b) => (POPULAR.indexOf(a.slug) + 1 || 99) - (POPULAR.indexOf(b.slug) + 1 || 99)).slice(0, 9);

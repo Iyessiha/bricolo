@@ -72,7 +72,10 @@ export default function Trackers(ids: Ids) {
 
   useEffect(() => {
     if (!any || choice !== "oui" || started.current) return;
-    started.current = true; load(idsRef.current);
+    started.current = true;
+    // On laisse d'abord la page s'afficher : les scripts publicitaires démarrent quand le navigateur est au repos (3 s au plus).
+    const go = () => { const idle = (window as any).requestIdleCallback as ((f: () => void, o?: { timeout: number }) => void) | undefined; idle ? idle(() => load(idsRef.current), { timeout: 3000 }) : setTimeout(() => load(idsRef.current), 1500); };
+    if (document.readyState === "complete") go(); else window.addEventListener("load", go, { once: true });
   }, [any, choice]);
 
   useEffect(() => { if (started.current && choice === "oui") pageview(idsRef.current, path); }, [path, choice]);
