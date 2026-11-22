@@ -27,7 +27,7 @@ export const CITY_BOOST_MULT = 2;
 export const capFor = (type: string) => (type === "accueil" ? MAX_HOME_SLOTS : MAX_SEARCH_SLOTS);
 
 /** Active le boost payé. Idempotent : un webhook reçu deux fois ne prolonge pas deux fois. */
-export async function activateFromPayment(providerRef: string, paidAmount: number) {
+export async function activateFromPayment(providerRef: string, paidAmount: number, raw?: unknown) {
   const db = supabaseAdmin();
   const { data: pay } = await db.from("payments").select("*").eq("provider_ref", providerRef).maybeSingle();
   if (!pay) return { ok: false as const, reason: "paiement inconnu" };
@@ -36,7 +36,7 @@ export async function activateFromPayment(providerRef: string, paidAmount: numbe
 
   // Verrou : un seul des envois simultanés du même webhook passe (les autres voient « déjà payé »).
   const now = new Date();
-  const { data: claimed } = await db.from("payments").update({ status: "paid", paid_at: now.toISOString() }).eq("id", pay.id).neq("status", "paid").select("id");
+  const { data: claimed } = await db.from("payments").update({ status: "paid", paid_at: now.toISOString(), ...(raw ? { raw } : {}) }).eq("id", pay.id).neq("status", "paid").select("id");
   if (!claimed?.length) return { ok: true as const, already: true };
   const release = async () => { await db.from("payments").update({ status: "pending", paid_at: null }).eq("id", pay.id); };
 

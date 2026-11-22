@@ -30,7 +30,8 @@ import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
 import SupportChat from "@/components/SupportChat";
 import DeleteAccount from "@/components/DeleteAccount";
-import { listPaid } from "@/lib/receipts";
+import { listPayments } from "@/lib/receipts";
+import MyPayments from "@/components/MyPayments";
 import { unreadForArtisan } from "@/lib/support";
 
 export const metadata: Metadata = { title: "Mon espace" };
@@ -109,7 +110,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const unreadHelp = await unreadForArtisan(artisan.id);
   const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
-  const paid = sec === "forfait" ? await listPaid(artisan.id) : [];
+  const paid = sec === "forfait" ? await listPayments(artisan.id) : [];
   // Indicateurs du forfait : activité des 30 derniers jours, et pour un Pro, comparaison avec les 30 jours avant son début.
   const DAY = 864e5, nowMs = Date.now();
   const proStart = sec === "forfait" && pro && history?.length ? Math.min(...history.filter((h) => h.starts_at && new Date(h.ends_at).getTime() > nowMs - 400 * DAY).map((h) => new Date(h.starts_at!).getTime())) : NaN;
@@ -410,7 +411,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
       <div id="forfait" className="stack" hidden={sec !== "forfait"}>
         <h1 className="dtitle">Mon forfait</h1>
-        {sp.paye && <p className="notice ok" role="status">Paiement reçu. Votre Forfait Pro est actif.</p>}
+        {sp.paye && (paid[0]?.status === "paid" ? <p className="notice ok" role="status">Paiement reçu. Votre Forfait Pro est actif.</p> : <p className="notice" role="status">Merci ! Nous attendons la confirmation de GeniusPay. Votre forfait s’activera automatiquement dans quelques instants : rechargez cette page dans une minute.</p>)}
         <div className="card pad stack">
           <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Mon offre actuelle</h2>{pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</div>
           <p>{pro && proSub ? <><b>Forfait Pro actif jusqu’au {day(proSub.ends_at)}</b> · il reste {leftLabel}. Prolonger ajoute la durée à la fin de la période en cours.</> : <><b>Offre gratuite.</b> Elle suffit pour démarrer ; le Pro vous donne plus de place pour convaincre.</>}</p>
@@ -428,17 +429,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <p className={lift === null ? "meta" : lift >= 0 ? "up" : "down"}>{lift === null ? "Pas encore assez de données pour mesurer l’effet de votre Forfait Pro." : `Depuis le début de votre Forfait Pro : ${lift >= 0 ? "+" : ""}${lift} % d’appels et de WhatsApp, comparé aux 30 jours d’avant (${actProBefore.contacts} → ${actProAfter.contacts}). Indicatif : la saison joue aussi.`}</p>); })() : <p className="meta">{pro ? "La comparaison avant / après apparaîtra après quelques jours de Forfait Pro." : "Avec le Forfait Pro, vous verrez ici l’effet sur vos appels et vos messages."}</p>}
           </div>
         )}
-        {paid.length > 0 && (
-          <div className="card pad stack">
-            <h2 style={{ fontSize: 18 }}>Mes paiements</h2>
-            {paid.map((r) => (
-              <div key={r.id} className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                <span><b>{r.label}</b><br /><span className="meta">{new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(r.paidAt))} · {fcfa(r.amount)}</span></span>
-                <Link className="btn small ghost" href={`/recu/${r.id}`}>Reçu</Link>
-              </div>
-            ))}
-          </div>
-        )}
+        <MyPayments rows={paid} />
         <div className="offers">
           <section className={`offer${pro ? "" : " cur"}`} aria-label="Offre gratuite">
             <header><h2>Gratuit</h2>{!pro && <span className="tag mute">Votre offre</span>}</header>

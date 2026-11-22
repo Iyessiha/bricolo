@@ -40,3 +40,19 @@ export async function listPaid(artisanId: string): Promise<Receipt[]> {
   const { data } = await db.from("payments").select(COLS).eq("status", "paid").or(parts.join(",")).order("paid_at", { ascending: false }).limit(30);
   return (data ?? []).map((p) => shape(p, null)).filter(Boolean) as Receipt[];
 }
+
+export type PaymentRow = { id: string; at: string; label: string; amount: number; status: "pending" | "paid" | "failed" };
+
+/** Tous les paiements d'un artisan, du plus récent au plus ancien, avec leur état réel (payé, en attente, échoué). */
+export async function listPayments(artisanId: string): Promise<PaymentRow[]> {
+  const db = supabaseAdmin();
+  const [{ data: bs }, { data: ss }] = await Promise.all([
+    db.from("boosts").select("id").eq("artisan_id", artisanId),
+    db.from("subscriptions").select("id").eq("artisan_id", artisanId),
+  ]);
+  const bids = (bs ?? []).map((x) => x.id), sids = (ss ?? []).map((x) => x.id);
+  const parts = [bids.length ? `boost_id.in.(${bids.join(",")})` : "", sids.length ? `subscription_id.in.(${sids.join(",")})` : ""].filter(Boolean);
+  if (!parts.length) return [];
+  const { data } = await db.from("payments").select(COLS + ", status").or(parts.join(",")).order("created_at", { ascending: false }).limit(40);
+  return (data ?? []).map((p: any) => { const r = shape(p, null); return r ? { id: p.id, at: p.paid_at ?? p.created_at, label: r.label, amount: p.amount, status: p.status } : null; }).filter(Boolean) as PaymentRow[];
+}

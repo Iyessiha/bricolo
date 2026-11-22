@@ -3,14 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin, one } from "@/lib/admin";
 import { fcfa } from "@/lib/format";
+import { confirmerPaiement } from "@/app/admin/gestion";
 
 export const metadata: Metadata = { title: "Détail du paiement", robots: { index: false } };
 export const dynamic = "force-dynamic";
 const T: Record<string, string> = { recherche: "Boost recherche", accueil: "Boost accueil", urgence: "Boost urgence", cible: "Boost ciblé" };
 const fmt = (iso?: string | null) => (iso ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "full", timeStyle: "medium", timeZone: "UTC" }).format(new Date(iso)) + " (UTC)" : "—");
 
-export default async function PaiementDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function PaiementDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { id } = await params;
+  const sp = await searchParams;
   const { db } = await requireAdmin();
   const { data: p } = await db.from("payments")
     .select("id, amount, currency, status, provider, provider_ref, raw, created_at, paid_at, boost:boosts(type, duration_hours, status, starts_at, ends_at, artisan:artisans(id, name, phone, whatsapp, country_code)), sub:subscriptions(days, status, ends_at, artisan:artisans(id, name, phone, whatsapp, country_code))")
@@ -35,8 +37,18 @@ export default async function PaiementDetail({ params }: { params: Promise<{ id:
       <div className="atitle"><div><p className="eyebrow"><Link href="/admin/revenus">← Revenus</Link></p><h1>Détail du paiement</h1></div></div>
       <div className="card pad stack">
         <p><span className={`tag ${p.status === "paid" ? "ok" : p.status === "failed" ? "err" : "wait"}`}>{label}</span> <b className="num" style={{ marginLeft: 8 }}>{fcfa(p.amount)}</b></p>
+        {sp.ok && <p className="notice ok">{sp.ok}</p>}
+        {sp.erreur && <p className="notice err">{sp.erreur}</p>}
         {motif && <p className="notice err"><b>Motif de l’échec :</b> {motif}</p>}
         {explain && <p className="hint">{explain}</p>}
+        {p.status === "pending" && (
+          <form action={confirmerPaiement} className="notice stack" style={{ gap: 8 }}>
+            <b>Le client a payé mais rien ne s’est activé ?</b>
+            <p>Vérifiez d’abord dans votre espace GeniusPay que ce paiement ({fcfa(p.amount)}, référence ci-dessous) est bien encaissé. Ensuite, confirmez-le ici : le boost ou le forfait est activé tout de suite.</p>
+            <input type="hidden" name="id" value={p.id} />
+            <div><button className="btn" type="submit">Confirmer ce paiement et activer</button></div>
+          </form>
+        )}
         <div className="tw"><table className="tbl"><tbody>
           {row("Achat", what)}
           {row("Artisan", a ? <Link href={`/admin/artisan/${a.id}`}>{a.name}</Link> : "—")}

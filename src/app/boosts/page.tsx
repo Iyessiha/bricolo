@@ -13,6 +13,9 @@ import DashTabs from "@/components/DashTabs";
 import { countryName } from "@/lib/countries";
 import BoostResults from "@/components/BoostResults";
 import { boostResults } from "@/lib/boost-stats";
+import { listPayments } from "@/lib/receipts";
+import MyPayments from "@/components/MyPayments";
+import MyBoosts from "@/components/MyBoosts";
 
 export const metadata: Metadata = { title: "Booster mon profil" };
 
@@ -63,7 +66,13 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   const zoneName = zones[0]?.name;
   const contacts = st.appels + st.wa;
 
-  const results = await boostResults(admin, a.id);
+  const [results, payments, { data: activeRaw }] = await Promise.all([
+    boostResults(admin, a.id),
+    listPayments(a.id),
+    admin.from("boosts").select("id, type, ends_at, zone:zones(name)").eq("artisan_id", a.id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at"),
+  ]);
+  const active = (activeRaw ?? []).map((b: any) => ({ id: b.id, type: b.type, ends_at: b.ends_at, zone: (Array.isArray(b.zone) ? b.zone[0] : b.zone)?.name ?? null }));
+  const lastPay = payments[0];
 
   const PLANS = [
     { id: "recherche" as const, icon: "🔝", name: "Boost recherche", hook: "Soyez le premier que le client voit.", star: true,
@@ -77,7 +86,10 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   return (
     <DashTabs current="boosts">
       {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : sp.erreur === "badge" ? "Le boost est réservé aux artisans dont l’identité est vérifiée (badge « Vérifié »)." : sp.erreur === "ferme" ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
-      {sp.paye && <p className="notice ok">Paiement confirmé. Votre boost est actif : votre fiche passe devant les autres.</p>}
+      {sp.paye && (lastPay?.status === "paid"
+        ? <p className="notice ok">Paiement confirmé. Votre boost est actif : votre fiche passe devant les autres.</p>
+        : <p className="notice">Merci ! Nous attendons la confirmation de GeniusPay. Votre boost s’activera automatiquement dans quelques instants : rechargez cette page dans une minute. Le suivi est dans « Mes paiements » plus bas.</p>)}
+      <MyBoosts rows={active} />
 
       <div className="bhero">
         <p className="eyebrow">Boost · {countryName(a.country_code)}</p>
@@ -97,6 +109,8 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
 
       <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor), city: cityIds.has(z.id) }))} cityMult={CITY_BOOST_MULT} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
       <p className="hint bcenter"><Link href="/conditions-boosts">Conditions de vente des boosts</Link> · Emplacements limités pour rester efficaces.</p>
+
+      <MyPayments rows={payments} />
 
       <div className="card pad bprev">
         <div className="bprev-t"><h2 style={{ fontSize: 18 }}>Voici votre fiche avec un boost</h2><p className="meta">Elle passe en tête, avec la pastille « Mis en avant » et un contour orange qui attire l’œil.</p></div>

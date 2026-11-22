@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { notifyBadge, notifySanction } from "@/lib/email-flows";
 import { pushToArtisan } from "@/lib/push";
 import { audit, requireAdmin } from "@/lib/admin";
+import { activateFromPayment } from "@/lib/boost";
 
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
 const s = (f: FormData, k: string, max = 300) => String(f.get(k) ?? "").trim().slice(0, max);
@@ -196,4 +197,20 @@ export async function resolveReport(f: FormData) {
   }
   revalidatePath(to);
   back(to, "ok", kind ? "Signalement retenu et sanction appliquée. L’artisan a été prévenu par e-mail." : "Signalement retenu (sans sanction).");
+}
+
+/** Confirmation manuelle d'un paiement dont la notification GeniusPay n'est pas arrivée. À n'utiliser qu'après avoir vérifié l'encaissement chez GeniusPay. */
+export async function confirmerPaiement(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  const page = `/admin/revenus/${id}`;
+  if (!UUID.test(id)) redirect("/admin/revenus");
+  const { data: p } = await ctx.db.from("payments").select("id, amount, provider_ref, status").eq("id", id).maybeSingle();
+  if (!p) redirect("/admin/revenus");
+  if (p.status === "paid") back(page, "erreur", "Ce paiement est déjà confirmé.");
+  const res = await activateFromPayment(p.provider_ref, p.amount, { confirmation_manuelle: { par: ctx.email, le: new Date().toISOString() } });
+  if (!res.ok) back(page, "erreur", `Activation impossible : ${res.reason}.`);
+  await audit(ctx, "paiement.confirmer_manuellement", { type: "paiement", id: p.id, label: p.provider_ref }, { amount: p.amount });
+  revalidatePath("/admin/revenus");
+  back(page, "ok", "Paiement confirmé et boost activé.");
 }
