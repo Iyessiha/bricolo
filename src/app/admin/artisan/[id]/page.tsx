@@ -93,6 +93,7 @@ export default async function Review({ params, searchParams }: { params: Promise
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           <form action={setVerified}><input type="hidden" name="id" value={id} /><input type="hidden" name="on" value={a.verified ? "0" : "1"} /><button className="btn small" type="submit">{a.verified ? "Retirer le badge Vérifié" : "Accorder le badge Vérifié"}</button></form>
           {susp && <form action={reactivateArtisan}><input type="hidden" name="id" value={id} /><button className="btn small primary" type="submit">Réactiver le profil</button></form>}
+          <Link className="btn small primary" href={`/admin/artisan/${id}/modifier`}>Modifier la fiche</Link>
           <a className="btn small" href={`/artisan/${id}`} target="_blank" rel="noopener noreferrer">Voir la fiche publique</a>
         </div>
         {susp && a.reject_reason && <p className="notice err">Motif de suspension : {a.reject_reason}</p>}

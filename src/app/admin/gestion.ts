@@ -214,3 +214,38 @@ export async function confirmerPaiement(f: FormData) {
   revalidatePath("/admin/revenus");
   back(page, "ok", "Paiement confirmé et boost activé.");
 }
+
+/** Modification de la fiche d'un artisan par l'équipe : textes, métier, contacts, options. Chaque changement est inscrit au journal avec les champs touchés. */
+export async function modifierFiche(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  if (!UUID.test(id)) redirect("/admin/artisans");
+  const page = `/admin/artisan/${id}/modifier`;
+  const { data: a } = await ctx.db.from("artisans").select("*").eq("id", id).maybeSingle();
+  if (!a) redirect("/admin/artisans");
+  const text = (k: string, max: number) => s(f, k, max) || null;
+  const exp = s(f, "experience_years", 3);
+  const experience = /^\d{1,2}$/.test(exp) ? parseInt(exp, 10) : null;
+  const entreprise = f.get("account_type") === "entreprise";
+  const name = s(f, "name", 120);
+  if (name.length < 2) back(page, "erreur", "Le nom affiché doit avoir au moins 2 caractères.");
+  const trade = s(f, "trade_id", 40);
+  if (!UUID.test(trade)) back(page, "erreur", "Choisissez un métier.");
+  const phone = text("phone", 30);
+  if (!phone || phone.replace(/\D/g, "").length < 8) back(page, "erreur", "Indiquez un numéro de téléphone valide.");
+  const next = {
+    name, trade_id: trade, account_type: entreprise ? "entreprise" : "individuel",
+    company_name: entreprise ? (text("company_name", 120) ?? name) : null,
+    headline: text("headline", 140), description: text("description", 2000), price_label: text("price_label", 140),
+    experience_years: experience, phone, whatsapp: text("whatsapp", 30),
+    open_24_7: f.get("open_24_7") === "on", takes_urgent: f.get("takes_urgent") === "on",
+  };
+  const changed = Object.keys(next).filter((k) => JSON.stringify((a as any)[k] ?? null) !== JSON.stringify((next as any)[k] ?? null));
+  if (!changed.length) back(page, "ok", "Aucun changement.");
+  const { error } = await ctx.db.from("artisans").update(next).eq("id", id);
+  if (error) back(page, "erreur", error.message.includes("telephone_deja_utilise") ? "Ce numéro de téléphone ou WhatsApp est déjà utilisé par un autre profil." : "Enregistrement impossible. Réessayez.");
+  await audit(ctx, "artisan.modifier_fiche", { type: "artisan", id, label: a.name }, { champs: changed });
+  revalidatePath(`/artisan/${id}`);
+  revalidatePath(`/admin/artisan/${id}`);
+  back(page, "ok", `Fiche enregistrée (${changed.length} champ${changed.length > 1 ? "s" : ""} modifié${changed.length > 1 ? "s" : ""}).`);
+}
