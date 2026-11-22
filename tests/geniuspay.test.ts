@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createHmac } from "node:crypto";
-import { verifySignature, parseWebhook } from "@/lib/geniuspay";
+import { verifySignature, parseWebhook, isLive, isMock, paymentsOpen } from "@/lib/geniuspay";
 
 const SECRET = "whsec_test";
 const sign = (ts: string, body: string) => createHmac("sha256", SECRET).update(`${ts}.${body}`).digest("hex");
@@ -26,4 +26,14 @@ describe("webhook GeniusPay : lecture", () => {
     expect(parseWebhook({ event: "payment.failed", data: { status: "completed", metadata: { reference: "r1" } } })?.paid).toBe(false);
   });
   it("ignore une notification sans référence", () => expect(parseWebhook({ event: "payment.success", data: {} })).toBeNull());
+});
+
+describe("ouverture des paiements", () => {
+  const save = { m: process.env.GENIUSPAY_MODE, v: process.env.VERCEL_ENV };
+  afterEach(() => { process.env.GENIUSPAY_MODE = save.m; if (save.m === undefined) delete process.env.GENIUSPAY_MODE; process.env.VERCEL_ENV = save.v; if (save.v === undefined) delete process.env.VERCEL_ENV; });
+  it("accepte live avec majuscules et espaces", () => { process.env.GENIUSPAY_MODE = " Live "; expect(isLive()).toBe(true); expect(paymentsOpen()).toBe(true); });
+  it("accepte sandbox et test comme synonymes de live", () => { for (const m of ["sandbox", "TEST"]) { process.env.GENIUSPAY_MODE = m; expect(isLive()).toBe(true); } });
+  it("ferme sans variable", () => { delete process.env.GENIUSPAY_MODE; expect(paymentsOpen()).toBe(false); });
+  it("le paiement simulé reste interdit en production", () => { process.env.GENIUSPAY_MODE = "mock"; process.env.VERCEL_ENV = "production"; expect(isMock()).toBe(false); expect(paymentsOpen()).toBe(false); });
+  it("le paiement simulé fonctionne hors production", () => { process.env.GENIUSPAY_MODE = "mock"; process.env.VERCEL_ENV = "preview"; expect(isMock()).toBe(true); });
 });

@@ -7,15 +7,20 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * Mode « live » : API marchande GeniusPay (https://pay.genius.ci/doc), authentifiée par X-API-Key + X-API-Secret.
  * Tout le reste du code ne parle qu’à ces deux fonctions.
  */
-export const isLive = () => process.env.GENIUSPAY_MODE === "live";
-/** Le paiement simulé n’existe jamais en production : sans GENIUSPAY_MODE=live, les paiements sont simplement fermés (jamais gratuits). */
-export const isMock = () => process.env.GENIUSPAY_MODE === "mock" && process.env.VERCEL_ENV !== "production";
+/** Valeur lue, sans espaces ni majuscules : « Live », « live » ou « live  » (copié-collé) ouvrent tous le paiement. */
+export const modeValue = () => (process.env.GENIUSPAY_MODE ?? "").trim().toLowerCase();
+/** « live » appelle l'API GeniusPay ; ce sont les clés (pk_sandbox_… ou pk_live_…) qui décident si l'argent est réel. « sandbox » et « test » sont acceptés comme synonymes. */
+export const isLive = () => ["live", "sandbox", "test"].includes(modeValue());
+/** Le paiement simulé n’existe jamais en production : sans mode « live », les paiements sont simplement fermés (jamais gratuits). */
+export const isMock = () => modeValue() === "mock" && process.env.VERCEL_ENV !== "production";
+/** Pour comprendre une fermeture : ce que le serveur lit vraiment (le mode n'est pas un secret). */
+export const modeDiagnostic = () => ({ mode: modeValue() || "absent", env: process.env.VERCEL_ENV ?? "inconnu", cles: Boolean(process.env.GENIUSPAY_API_KEY && process.env.GENIUSPAY_API_SECRET) });
 export const paymentsOpen = () => isLive() || isMock();
 
 const API = () => (process.env.GENIUSPAY_API_URL || "https://pay.genius.ci/api/v1/merchant").replace(/\/$/, "");
 
 export async function createCheckout(o: { reference: string; amount: number; currency: string; description: string; returnUrl: string; webhookUrl: string; customerEmail: string }) {
-  if (!paymentsOpen()) throw new Error("paiements_fermes");
+  if (!paymentsOpen()) throw new Error(`paiements_fermes (mode lu : « ${modeValue() || "absent"} », environnement : ${process.env.VERCEL_ENV ?? "inconnu"})`);
   if (isMock()) return { checkoutUrl: `${new URL(o.returnUrl).origin}/api/dev/confirm?ref=${encodeURIComponent(o.reference)}` };
   // Retour en cas d'échec ou d'abandon : même page, sans « paye », avec un message.
   const err = new URL(o.returnUrl); err.searchParams.delete("paye"); err.searchParams.set("erreur", "Le paiement n’a pas abouti. Aucun montant n’a été débité.");

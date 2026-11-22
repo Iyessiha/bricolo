@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CITY_BOOST_MULT, capFor, usedSlots } from "@/lib/boost";
-import { createCheckout } from "@/lib/geniuspay";
+import { createCheckout, modeDiagnostic } from "@/lib/geniuspay";
 import { BOOST_TYPES, DURATIONS } from "@/lib/format";
 import { siteUrl } from "@/lib/env";
 
@@ -65,11 +65,11 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.redirect(checkoutUrl, 303);
   } catch (e) {
-    const closed = e instanceof Error && e.message === "paiements_fermes";
+    const closed = e instanceof Error && e.message.startsWith("paiements_fermes");
     // On garde la cause de l'échec (colonne « raw ») et dans les journaux : sans elle, impossible de savoir pourquoi un paiement ne démarre pas.
     const why = e instanceof Error ? e.message : String(e);
     console.error("[paiement] création refusée", { reference, why });
-    await db.from("payments").update({ status: "failed", raw: { echec_creation: why } }).eq("provider_ref", reference);
+    await db.from("payments").update({ status: "failed", raw: { echec_creation: why, ...modeDiagnostic() } }).eq("provider_ref", reference);
     await db.from("boosts").update({ status: "cancelled" }).eq("id", boost.id);
     return to(closed ? "/boosts?erreur=ferme" : "/boosts?erreur=1");
   }
