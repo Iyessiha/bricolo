@@ -17,7 +17,7 @@ export const isMock = () => modeValue() === "mock" && process.env.VERCEL_ENV !==
 export const modeDiagnostic = () => ({ mode: modeValue() || "absent", env: process.env.VERCEL_ENV ?? "inconnu", cles: Boolean(process.env.GENIUSPAY_API_KEY && process.env.GENIUSPAY_API_SECRET) });
 export const paymentsOpen = () => isLive() || isMock();
 
-const API = () => (process.env.GENIUSPAY_API_URL || "https://pay.genius.ci/api/v1/merchant").replace(/\/$/, "");
+const API = () => ((process.env.GENIUSPAY_API_URL ?? "").trim() || "https://pay.genius.ci/api/v1/merchant").replace(/\/$/, "");
 
 export async function createCheckout(o: { reference: string; amount: number; currency: string; description: string; returnUrl: string; webhookUrl: string; customerEmail: string }) {
   if (!paymentsOpen()) throw new Error(`paiements_fermes (mode lu : « ${modeValue() || "absent"} », environnement : ${process.env.VERCEL_ENV ?? "inconnu"})`);
@@ -26,7 +26,7 @@ export async function createCheckout(o: { reference: string; amount: number; cur
   const err = new URL(o.returnUrl); err.searchParams.delete("paye"); err.searchParams.set("erreur", "Le paiement n’a pas abouti. Aucun montant n’a été débité.");
   const res = await fetch(`${API()}/payments`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": process.env.GENIUSPAY_API_KEY ?? "", "x-api-secret": process.env.GENIUSPAY_API_SECRET ?? "" },
+    headers: { "content-type": "application/json", "x-api-key": (process.env.GENIUSPAY_API_KEY ?? "").trim(), "x-api-secret": (process.env.GENIUSPAY_API_SECRET ?? "").trim() },
     // Sans « payment_method », GeniusPay renvoie une page de paiement où le client choisit Wave, Orange Money, MTN, Moov ou carte.
     body: JSON.stringify({
       amount: o.amount, currency: o.currency, description: o.description.slice(0, 500),
@@ -35,7 +35,7 @@ export async function createCheckout(o: { reference: string; amount: number; cur
       metadata: { reference: o.reference }, // notre référence : elle revient dans le webhook
     }),
   });
-  if (!res.ok) throw new Error(`GeniusPay a refusé la création du paiement (${res.status})`);
+  if (!res.ok) throw new Error(`GeniusPay a refusé la création du paiement (${res.status}) : ${(await res.text().catch(() => "")).slice(0, 300)}`);
   const json = (await res.json()) as { data?: { checkout_url?: string; payment_url?: string } };
   const checkoutUrl = json.data?.checkout_url ?? json.data?.payment_url;
   if (!checkoutUrl) throw new Error("Réponse GeniusPay sans lien de paiement");
