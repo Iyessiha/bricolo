@@ -6,6 +6,8 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Les polices de la cover sont lues sur le disque : on les inclut dans les fonctions qui génèrent l'image.
+  outputFileTracingIncludes: { "/admin/covers": ["./src/lib/cover-fonts/**/*"], "/admin/covers/image/[id]": ["./src/lib/cover-fonts/**/*"] },
   poweredByHeader: false,
   // Les navigateurs et Google demandent /favicon.ico par défaut : on le sert depuis l'icône du site au lieu de répondre 404.
   async rewrites() { return [{ source: "/favicon.ico", destination: "/icon" }]; },

@@ -6,6 +6,7 @@ import { notifyBadge, notifySanction } from "@/lib/email-flows";
 import { pushToArtisan } from "@/lib/push";
 import { audit, requireAdmin } from "@/lib/admin";
 import { activateFromPayment } from "@/lib/boost";
+import { coverImage, coverInputOf } from "@/lib/cover-art";
 
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
 const s = (f: FormData, k: string, max = 300) => String(f.get(k) ?? "").trim().slice(0, max);
@@ -248,4 +249,28 @@ export async function modifierFiche(f: FormData) {
   revalidatePath(`/artisan/${id}`);
   revalidatePath(`/admin/artisan/${id}`);
   back(page, "ok", `Fiche enregistrée (${changed.length} champ${changed.length > 1 ? "s" : ""} modifié${changed.length > 1 ? "s" : ""}).`);
+}
+
+/** Pose la cover Bricolo générée sur la fiche d'un artisan (à faire avec son accord). L'ancienne cover n'est supprimée du stockage que si elle y est hébergée. */
+export async function appliquerCover(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  if (!UUID.test(id)) redirect("/admin/covers");
+  const c = await coverInputOf(ctx.db, id);
+  if (!c) redirect("/admin/covers");
+  let png: ArrayBuffer;
+  try { png = await (await coverImage(c)).arrayBuffer(); }
+  catch { png = await (await coverImage({ ...c, photoUrl: null, shotUrl: null })).arrayBuffer(); }
+  const path = `${c.userId}/cover-bricolo-${Date.now()}.png`;
+  const up = await ctx.db.storage.from("realisations").upload(path, png, { contentType: "image/png", upsert: false });
+  if (up.error) back("/admin/covers", "erreur", "Envoi de la cover impossible. Réessayez.");
+  const { data: pub } = ctx.db.storage.from("realisations").getPublicUrl(path);
+  const old = c.coverUrl?.split("/object/public/realisations/")[1];
+  const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", id);
+  if (error) back("/admin/covers", "erreur", "Enregistrement impossible. Réessayez.");
+  if (old) await ctx.db.storage.from("realisations").remove([old]);
+  await audit(ctx, "artisan.cover_bricolo", { type: "artisan", id, label: c.name });
+  revalidatePath(`/artisan/${id}`);
+  revalidatePath("/admin/covers");
+  back("/admin/covers", "ok", `Cover appliquée sur la fiche de ${c.name}.`);
 }

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const GROUPS: { title: string; items: readonly (readonly [string, string, string, string])[] }[] = [
   { title: "", items: [["/admin", "📊", "Aperçu", ""]] },
   { title: "À traiter", items: [["/admin/dossiers", "🪪", "Dossiers", "dossiers"], ["/admin/support", "💬", "Messages", "support"], ["/admin/inscriptions", "🚫", "Inscriptions échouées", "inscriptions"], ["/admin/signalements", "⚠️", "Signalements", "signalements"], ["/admin/avis", "⭐", "Avis", "avis"]] },
-  { title: "Activité", items: [["/admin/artisans", "🧰", "Artisans", ""], ["/admin/demandes", "📩", "Demandes", "demandes"], ["/admin/revenus", "💰", "Revenus", ""]] },
+  { title: "Activité", items: [["/admin/artisans", "🧰", "Artisans", ""], ["/admin/demandes", "📩", "Demandes", "demandes"], ["/admin/revenus", "💰", "Revenus", ""], ["/admin/covers", "🖼️", "Covers", ""]] },
   { title: "Visibilité", items: [["/admin/campagnes", "✉️", "Campagnes", ""], ["/admin/seo", "🔎", "Titres Google", ""], ["/admin/pixels", "📈", "Pixels et mesure", ""], ["/admin/attente", "🌍", "Liste d’attente", ""]] },
   { title: "Réglages", items: [["/admin/prix", "🏷", "Pays et prix", ""], ["/admin/equipe", "👥", "Équipe", ""], ["/admin/journal", "🗂", "Journal", ""]] },
 ];
