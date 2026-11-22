@@ -34,7 +34,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(checkoutUrl, 303);
   } catch (e) {
     const closed = e instanceof Error && e.message === "paiements_fermes";
-    await db.from("payments").update({ status: "failed" }).eq("provider_ref", reference);
+    // On garde la cause de l'échec (colonne « raw ») et dans les journaux : sans elle, impossible de savoir pourquoi un paiement ne démarre pas.
+    const why = e instanceof Error ? e.message : String(e);
+    console.error("[paiement] création refusée", { reference, why });
+    await db.from("payments").update({ status: "failed", raw: { echec_creation: why } }).eq("provider_ref", reference);
     await db.from("subscriptions").update({ status: "cancelled" }).eq("id", sub.id);
     return back("&erreur=" + encodeURIComponent(closed ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu démarrer. Réessayez dans un instant."));
   }
