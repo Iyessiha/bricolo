@@ -25,7 +25,7 @@ export async function createCheckout(o: { reference: string; amount: number; cur
   // Retour en cas d'échec ou d'abandon : même page, sans « paye », avec un message.
   const err = new URL(o.returnUrl); err.searchParams.delete("paye"); err.searchParams.set("erreur", "Le paiement n’a pas abouti. Aucun montant n’a été débité.");
   const res = await fetch(`${API()}/payments`, {
-    method: "POST",
+    method: "POST", signal: AbortSignal.timeout(20000),
     headers: { "content-type": "application/json", "x-api-key": (process.env.GENIUSPAY_API_KEY ?? "").trim(), "x-api-secret": (process.env.GENIUSPAY_API_SECRET ?? "").trim() },
     // Sans « payment_method », GeniusPay renvoie une page de paiement où le client choisit Wave, Orange Money, MTN, Moov ou carte.
     body: JSON.stringify({

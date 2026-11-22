@@ -24,39 +24,43 @@ export async function POST(req: NextRequest) {
   if (!a || a.status !== "approved") return to("/tableau-de-bord");
   if (!a.verified) return to("/boosts?erreur=badge"); // réservé aux artisans dont l'identité est vérifiée
 
-  // 2. La zone doit être l’une des zones de l’artisan (sauf accueil).
-  let zone: { id: string; price_factor: number } | null = null;
-  if (type !== "accueil") {
-    const { data: az } = await db.from("artisan_zones").select("zone:zones(id, price_factor)").eq("artisan_id", a.id).eq("zone_id", zoneId).maybeSingle();
-    zone = (az as any)?.zone ?? null;
-    if (!zone) return to("/boosts?erreur=1");
-  }
-
-  let isCity = false;
-  if (zone) {
-    const { count } = await db.from("zones").select("id", { count: "exact", head: true }).eq("parent_id", zone.id);
-    isCity = (count ?? 0) > 0;
-  }
-
-  // 3. Prix calculé côté serveur à partir de la grille du pays : jamais envoyé par le navigateur.
-  const { data: g } = await db.from("price_grid").select("amount").eq("country_code", a.country_code)
+  // 2 à 4. Zone, prix et places : ces vérifications ne dépendent pas les unes des autres, on les lance ensemble (gain de plusieurs allers-retours).
+  const isZoned = type !== "accueil";
+  const zoneP = isZoned
+    ? Promise.all([
+        db.from("artisan_zones").select("zone:zones(id, price_factor)").eq("artisan_id", a.id).eq("zone_id", zoneId).maybeSingle(),
+        db.from("zones").select("id", { count: "exact", head: true }).eq("parent_id", zoneId),
+      ])
+    : Promise.resolve(null);
+  const gridP = db.from("price_grid").select("amount").eq("country_code", a.country_code)
     .eq("boost_type", type === "cible" ? "recherche" : type).eq("duration_hours", duration).single();
+  const sameP = db.from("boosts").select("id, zone_id").eq("artisan_id", a.id).eq("type", type).eq("status", "active").gt("ends_at", new Date().toISOString());
+  const slotsP = usedSlots(db, { type, tradeId: a.trade_id, zoneId: isZoned ? zoneId : null, country: a.country_code });
+  const [zr, { data: g }, { data: sameAll }, used] = await Promise.all([zoneP, gridP, sameP, slotsP]);
+
+  let zone: { id: string; price_factor: number } | null = null;
+  let isCity = false;
+  if (zr) {
+    zone = (zr[0].data as any)?.zone ?? null;
+    if (!zone) return to("/boosts?erreur=1");
+    isCity = (zr[1].count ?? 0) > 0;
+  }
   if (!g) return to("/boosts?erreur=1");
+  // Prix calculé côté serveur à partir de la grille du pays : jamais envoyé par le navigateur.
   const amount = Math.round((g.amount * (type === "cible" ? Number(zone!.price_factor) : 1) * (isCity ? CITY_BOOST_MULT : 1)) / 100) * 100;
 
-  // 4. Places : un renouvellement du même boost reste toujours possible.
-  let sameQ = db.from("boosts").select("id").eq("artisan_id", a.id).eq("type", type).eq("status", "active").gt("ends_at", new Date().toISOString());
-  sameQ = zone ? sameQ.eq("zone_id", zone.id) : sameQ.is("zone_id", null);
-  const { data: same } = await sameQ;
-  const renewing = (same ?? []).length > 0;
-  if (!renewing && (await usedSlots(db, { type, tradeId: a.trade_id, zoneId: zone?.id ?? null, country: a.country_code })) >= capFor(type)) return to("/boosts?erreur=complet");
+  // Places : un renouvellement du même boost reste toujours possible.
+  const renewing = (sameAll ?? []).some((x) => (zone ? x.zone_id === zone.id : x.zone_id === null));
+  if (!renewing && used >= capFor(type)) return to("/boosts?erreur=complet");
 
-  // 5. Boost et paiement « en attente », puis lien de paiement GeniusPay.
-  const { data: boost, error } = await db.from("boosts").insert({
-    artisan_id: a.id, type, zone_id: zone?.id ?? null, duration_hours: duration, amount, status: "pending",
-  }).select("id").single();
-  if (error || !boost) return to("/boosts?erreur=1");
+  // 5. Boost et paiement « en attente » (créés ensemble), puis lien de paiement GeniusPay.
+  const boostId = randomUUID();
   const reference = `bricolo_${randomUUID()}`;
+  const { error } = await db.from("boosts").insert({
+    id: boostId, artisan_id: a.id, type, zone_id: zone?.id ?? null, duration_hours: duration, amount, status: "pending",
+  });
+  if (error) return to("/boosts?erreur=1");
+  const boost = { id: boostId };
   await db.from("payments").insert({ boost_id: boost.id, provider_ref: reference, amount });
   try {
     const { checkoutUrl } = await createCheckout({

@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import PayButton from "@/components/PayButton";
 
 type Plan = { id: "recherche" | "accueil" | "urgence"; icon: string; name: string; hook: string; bullets: string[]; star?: boolean };
 type Zone = { id: string; name: string; factor: number; city?: boolean };
@@ -78,7 +79,7 @@ export default function BoostPicker({ plans, prices, zones, left, caps, cityMult
           <span>{cur.name} · {DUR.find((x) => x[0] === dur)![2]}{plan !== "accueil" && z ? ` · ${z.name}` : ""}</span>
           <b className="num">{nf.format(total)} FCFA</b>
         </div>
-        <button className="btn boost big" type="submit" disabled={full}>{slots(plan) <= 0 ? "Complet" : total <= 0 ? "Indisponible" : "Booster maintenant"}</button>
+        <PayButton big disabled={full}>{slots(plan) <= 0 ? "Complet" : total <= 0 ? "Indisponible" : "Booster maintenant"}</PayButton>
       </div>
       <p className="hint bcenter">Paiement sécurisé par Mobile Money avec GeniusPay. Activation dès la confirmation du paiement. Montant définitif confirmé avant de payer.</p>
     </form>

@@ -1,3 +1,4 @@
+import PayButton from "@/components/PayButton";
 import { COMPANY } from "@/lib/company";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -468,7 +469,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   <p className="meta">{pl.key === "week" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "quarter" ? `Soit ${fcfa(perMonth)} par mois` : pl.key === "year" ? `Soit ${fcfa(perMonth)} par mois` : "Sans engagement"}</p>
                   {pl.key === "quarter" && monthPrice * 3 - amount > 0 && <span className="tag ok">Vous économisez {fcfa(monthPrice * 3 - amount)}</span>}
                   {pl.key === "year" && monthPrice * 12 - amount > 0 && <span className="tag ok">Vous économisez {fcfa(monthPrice * 12 - amount)}</span>}
-                  <input type="hidden" name="plan" value={pl.key} /><button className="btn boost" type="submit">{pro ? "Prolonger" : "Passer Pro"}</button>
+                  <input type="hidden" name="plan" value={pl.key} /><PayButton>{pro ? "Prolonger" : "Passer Pro"}</PayButton>
                 </form>); })}
             </div>
             <p className="hint">Paiement sécurisé par Mobile Money ou carte. Sans engagement : le forfait s’arrête à la fin de la période payée. Vos prestations et photos en plus restent enregistrées mais ne sont plus affichées. Vos 3 premières zones restent actives ; les autres, et « toute la ville », se réactivent si vous reprenez le Pro.</p>
