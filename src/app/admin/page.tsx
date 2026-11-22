@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { COUNTRIES } from "@/lib/countries";
 import { fcfa } from "@/lib/format";
+import PendingPaymentsAlert from "@/components/PendingPaymentsAlert";
 import { requireAdmin, perDay, ago, one } from "@/lib/admin";
 import BarChart from "@/components/BarChart";
 import Flag from "@/components/Flag";
@@ -77,6 +78,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   return (
     <>
       <div className="atitle"><div><p className="eyebrow">Back-office</p><h1>Aperçu</h1></div><span className="meta">Mis à jour {ago(nowIso)}</span></div>
+      <PendingPaymentsAlert db={db} />
       {sp.ok && <p className="notice ok" role="status">{sp.ok}</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 

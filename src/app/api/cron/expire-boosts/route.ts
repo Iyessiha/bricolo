@@ -5,6 +5,15 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) return new NextResponse("Non autorisé", { status: 401 });
-  const { data } = await supabaseAdmin().from("boosts").update({ status: "expired" }).eq("status", "active").lt("ends_at", new Date().toISOString()).select("id");
-  return NextResponse.json({ expired: data?.length ?? 0 });
+  const db = supabaseAdmin();
+  const { data } = await db.from("boosts").update({ status: "expired" }).eq("status", "active").lt("ends_at", new Date().toISOString()).select("id");
+  // Paiements jamais terminés depuis plus de 24 h : marqués abandonnés, avec le boost ou le forfait qui attendait. Un paiement réellement encaissé tard reste activable (webhook ou confirmation manuelle).
+  const old = new Date(Date.now() - 864e5).toISOString();
+  const { data: stale } = await db.from("payments").select("id, boost_id, subscription_id, raw").eq("status", "pending").lt("created_at", old).limit(500);
+  for (const p of stale ?? []) {
+    await db.from("payments").update({ status: "failed", raw: { ...(p.raw as object ?? {}), abandonne: "aucune confirmation après 24 h" } }).eq("id", p.id).eq("status", "pending");
+    if (p.boost_id) await db.from("boosts").update({ status: "cancelled" }).eq("id", p.boost_id).eq("status", "pending");
+    if (p.subscription_id) await db.from("subscriptions").update({ status: "cancelled" }).eq("id", p.subscription_id).eq("status", "pending");
+  }
+  return NextResponse.json({ expired: data?.length ?? 0, abandoned: stale?.length ?? 0 });
 }

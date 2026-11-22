@@ -1,7 +1,7 @@
 import { NextResponse, after, type NextRequest } from "next/server";
 import { notifyBoostPaid } from "@/lib/email-flows";
 import { parseWebhook, verifySignature } from "@/lib/geniuspay";
-import { activateFromPayment } from "@/lib/boost";
+import { activateFromPayment, failPayment } from "@/lib/boost";
 
 /** GeniusPay confirme un paiement ici. Seule cette route active un boost. */
 export async function POST(req: NextRequest) {
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
   try { body = JSON.parse(raw); } catch { return NextResponse.json({ error: "corps illisible" }, { status: 400 }); }
   const evt = parseWebhook(body);
   if (!evt) { console.error("[webhook] notification illisible", raw.slice(0, 300)); return NextResponse.json({ error: "notification inconnue" }, { status: 400 }); }
+  if (evt.failed) { await failPayment(evt.reference, body); return NextResponse.json({ received: true }); }
   if (!evt.paid) return NextResponse.json({ received: true });
   const res = await activateFromPayment(evt.reference, evt.amount, body);
   if (!res.ok) console.error("[webhook] activation refusée", { reference: evt.reference, reason: res.reason, montant: evt.amount });

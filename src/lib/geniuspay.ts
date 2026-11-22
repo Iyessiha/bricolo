@@ -55,10 +55,13 @@ export function verifySignature(rawBody: string, signature: string | null, times
 }
 
 /** Lit la notification : seul « payment.success » (statut « completed ») active un achat. Notre référence est dans data.metadata.reference. */
-export function parseWebhook(body: any): { reference: string; paid: boolean; amount: number } | null {
+export function parseWebhook(body: any): { reference: string; paid: boolean; failed: boolean; amount: number } | null {
   const d = body?.data;
   const reference = d?.metadata?.reference;
   if (!reference) return null;
   const paid = body?.event === "payment.success" && String(d?.status ?? "").toLowerCase() === "completed";
-  return { reference: String(reference), paid, amount: Number(d?.amount ?? 0) };
+  // Un refus, une annulation ou une expiration côté GeniusPay : le paiement ne doit pas rester « en attente » pour toujours.
+  const status = String(d?.status ?? "").toLowerCase();
+  const failed = !paid && (/^payment\.(failed|cancel+ed|expired|declined)$/.test(String(body?.event ?? "")) || ["failed", "cancelled", "canceled", "expired", "declined"].includes(status));
+  return { reference: String(reference), paid, failed, amount: Number(d?.amount ?? 0) };
 }

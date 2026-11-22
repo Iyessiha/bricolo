@@ -19,7 +19,7 @@ describe("webhook GeniusPay : signature", () => {
 
 describe("webhook GeniusPay : lecture", () => {
   it("active un achat seulement sur payment.success + completed", () => {
-    expect(parseWebhook({ event: "payment.success", data: { status: "completed", amount: 2000, metadata: { reference: "r1" } } })).toEqual({ reference: "r1", paid: true, amount: 2000 });
+    expect(parseWebhook({ event: "payment.success", data: { status: "completed", amount: 2000, metadata: { reference: "r1" } } })).toEqual({ reference: "r1", paid: true, failed: false, amount: 2000 });
   });
   it("ne marque pas payé un paiement en attente ou échoué", () => {
     expect(parseWebhook({ event: "payment.success", data: { status: "pending", metadata: { reference: "r1" } } })?.paid).toBe(false);
@@ -36,4 +36,19 @@ describe("ouverture des paiements", () => {
   it("ferme sans variable", () => { delete process.env.GENIUSPAY_MODE; expect(paymentsOpen()).toBe(false); });
   it("le paiement simulé reste interdit en production", () => { process.env.GENIUSPAY_MODE = "mock"; process.env.VERCEL_ENV = "production"; expect(isMock()).toBe(false); expect(paymentsOpen()).toBe(false); });
   it("le paiement simulé fonctionne hors production", () => { process.env.GENIUSPAY_MODE = "mock"; process.env.VERCEL_ENV = "preview"; expect(isMock()).toBe(true); });
+});
+
+describe("paiements refusés ou annulés", () => {
+  const base = { data: { metadata: { reference: "bricolo_x" }, amount: 500 } };
+  it("reconnaît un échec", () => {
+    expect(parseWebhook({ event: "payment.failed", data: { ...base.data, status: "failed" } })).toMatchObject({ paid: false, failed: true });
+    expect(parseWebhook({ event: "payment.cancelled", data: base.data })).toMatchObject({ failed: true });
+    expect(parseWebhook({ event: "payment.updated", data: { ...base.data, status: "expired" } })).toMatchObject({ failed: true });
+  });
+  it("un succès n'est jamais un échec", () => {
+    expect(parseWebhook({ event: "payment.success", data: { ...base.data, status: "completed" } })).toMatchObject({ paid: true, failed: false });
+  });
+  it("un paiement en cours n'est ni payé ni échoué", () => {
+    expect(parseWebhook({ event: "payment.created", data: { ...base.data, status: "pending" } })).toMatchObject({ paid: false, failed: false });
+  });
 });

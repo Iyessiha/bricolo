@@ -76,3 +76,14 @@ async function activateSubscription(db: Admin, pay: { id: string; subscription_i
   await db.from("subscriptions").update({ status: "active", starts_at: start.toISOString(), ends_at: end.toISOString() }).eq("id", sub.id);
   return { ok: true as const, already: false };
 }
+
+/** Paiement refusé, annulé ou expiré chez GeniusPay : on le note « échoué » et on libère le boost ou le forfait en attente. Ne touche jamais un paiement déjà confirmé. */
+export async function failPayment(providerRef: string, raw?: unknown) {
+  const db = supabaseAdmin();
+  const { data: pay } = await db.from("payments").select("id, boost_id, subscription_id, status").eq("provider_ref", providerRef).maybeSingle();
+  if (!pay || pay.status !== "pending") return { ok: true as const, ignored: true };
+  await db.from("payments").update({ status: "failed", ...(raw ? { raw } : {}) }).eq("id", pay.id).eq("status", "pending");
+  if (pay.boost_id) await db.from("boosts").update({ status: "cancelled" }).eq("id", pay.boost_id).eq("status", "pending");
+  if (pay.subscription_id) await db.from("subscriptions").update({ status: "cancelled" }).eq("id", pay.subscription_id).eq("status", "pending");
+  return { ok: true as const, ignored: false };
+}

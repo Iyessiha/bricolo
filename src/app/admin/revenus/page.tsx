@@ -3,6 +3,7 @@ import { requireAdmin, perDay, day, one } from "@/lib/admin";
 import { COUNTRIES } from "@/lib/countries";
 import { fcfa } from "@/lib/format";
 import BarChart from "@/components/BarChart";
+import PendingPaymentsAlert from "@/components/PendingPaymentsAlert";
 
 export const metadata: Metadata = { title: "Revenus", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function Revenus() {
   return (
     <>
       <div className="atitle"><div><p className="eyebrow">Boosts</p><h1>Revenus</h1></div><a className="btn small" href="/admin/export?type=paiements">⬇ Exporter en CSV</a></div>
+      <PendingPaymentsAlert db={db} />
       <div className="akpi">
         <div className="kpi"><span>7 derniers jours</span><b style={{ fontSize: 22 }}>{fcfa(r7)}</b></div>
         <div className="kpi"><span>30 derniers jours</span><b style={{ fontSize: 22 }}>{fcfa(r30)}</b></div>
