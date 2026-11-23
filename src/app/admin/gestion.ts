@@ -259,7 +259,7 @@ export async function appliquerCover(f: FormData) {
   const c = await coverInputOf(ctx.db, id);
   if (!c) redirect("/admin/covers");
   const bg = unsplashBg(s(f, "bg", 600));
-  if (bg) c.shotUrl = bg;
+  if (bg) { c.shotUrl = bg; c.photoUrl = null; }
   let png: ArrayBuffer;
   try { png = await (await coverImage(c)).arrayBuffer(); }
   catch { png = await (await coverImage({ ...c, photoUrl: null, shotUrl: null })).arrayBuffer(); }

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const c = await coverInputOf(db, id);
   if (!c) return new NextResponse("Introuvable", { status: 404 });
   const bg = unsplashBg(req.nextUrl.searchParams.get("bg"));
-  if (bg) c.shotUrl = bg;
+  if (bg) { c.shotUrl = bg; c.photoUrl = null; }
   let img;
   try { img = await coverImage(c); }
   catch { img = await coverImage({ ...c, photoUrl: null, shotUrl: null }); } // une photo illisible ne bloque pas la cover
