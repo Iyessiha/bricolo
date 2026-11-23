@@ -17,6 +17,23 @@ const P: Record<string, string> = {
   informatique: "M5 5h14v10H5zM2 19h20M9 19l1-4h4l1 4",
   cameras: "M3 8h13v8H3zM16 11l5-3v8l-5-3M7 5l3 3",
 };
+/** Phrases d'accroche à la première personne, sans promesse de prix, de délai ni de garantie. Une variante par artisan (choisie d'après son nom). */
+const SLOGANS: Record<string, string[]> = {
+  frigoriste: ["Clim ou frigo en panne ? J’interviens chez vous.", "Je répare et j’entretiens votre climatiseur et votre frigo."],
+  mecanicien: ["Je répare et j’entretiens votre voiture.", "Un bruit, une panne ? Je regarde votre véhicule."],
+  soudeur: ["Portails, grilles, escaliers : je soude sur mesure.", "Je fabrique et je répare vos structures en métal."],
+  peintre: ["Je vais peindre votre maison, votre salon, votre immeuble.", "Des murs neufs pour votre maison ou votre bureau.", "Je repeins vos murs, avec soin et propreté."],
+  menuisier: ["Portes, placards, cuisines : je fabrique sur mesure.", "Je réalise vos ouvrages en bois à votre taille."],
+  ebeniste: ["Je fabrique et je restaure vos meubles en bois."],
+  nettoyage: ["Je nettoie votre maison, votre bureau, votre immeuble."],
+  macon: ["Je construis, je répare, je rénove vos murs.", "Dalle, mur, clôture : je maçonne votre projet."],
+  informatique: ["Je répare votre téléphone, Android ou iPhone : écran, batterie…", "Votre ordinateur ou votre téléphone est en panne ? Je m’en occupe."],
+  cameras: ["J’installe vos caméras de surveillance."],
+};
+export const sloganOf = (slug: string, name: string) => {
+  const l = SLOGANS[slug] ?? ["Je suis près de chez vous : contactez-moi."];
+  return l[[...name].reduce((n, ch) => n + ch.charCodeAt(0), 0) % l.length];
+};
 const COUNTRY: Record<string, string> = { ci: "Côte d’Ivoire", sn: "Sénégal", bf: "Burkina Faso", ml: "Mali", ne: "Niger", bj: "Bénin", tg: "Togo" };
 export const countryLabel = (c: string) => COUNTRY[c] ?? "";
 
@@ -31,7 +48,8 @@ const ticks = Array.from({ length: 201 }, (_, i) => `M${i * 8 + 1} 0V${i % 5 ===
 export async function coverImage(c: CoverInput): Promise<ImageResponse> {
   const [bg, ui] = await loadFonts();
   const name = c.name.normalize("NFKC");
-  const size = name.length <= 14 ? 76 : name.length <= 22 ? 62 : name.length <= 34 ? 50 : 42;
+  const slogan = sloganOf(c.slug, name);
+  const size = slogan.length <= 40 ? 58 : slogan.length <= 56 ? 50 : 44;;
   const icon = P[c.slug] ?? "M4 3h6v11h10v7H4z";
   const bgPhoto = c.shotUrl ?? null;
   const avatar = c.photoUrl ?? null;
@@ -46,9 +64,9 @@ export async function coverImage(c: CoverInput): Promise<ImageResponse> {
           <svg width={38} height={38} viewBox="0 0 24 24"><path d="M4 3h6v11h10v7H4z" fill="#27489A" /></svg>
           <span style={{ marginLeft: 10 }}>Bricolo</span>
         </div>
-        <div style={{ display: "flex", position: "absolute", left: 380, top: 0, width: 520, height: 554, flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ display: "flex", fontSize: 26, letterSpacing: 4, textTransform: "uppercase", color: "#ffb27a" }}>{c.trade}{countryLabel(c.country) ? " · " + countryLabel(c.country) : ""}</div>
-          <div style={{ display: "flex", marginTop: 14, fontFamily: "Display", fontSize: size, lineHeight: 1.05, maxWidth: 520 }}>{name}</div>
+        <div style={{ display: "flex", position: "absolute", left: 360, top: 0, width: 560, height: 554, flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ display: "flex", fontSize: 26, letterSpacing: 4, textTransform: "uppercase", color: "#ffb27a" }}>{c.trade}{c.trade.length <= 16 && countryLabel(c.country) ? " · " + countryLabel(c.country) : ""}</div>
+          <div style={{ display: "flex", marginTop: 14, fontFamily: "Display", fontSize: size, lineHeight: 1.05, maxWidth: 540 }}>{slogan}</div>
           <div style={{ display: "flex", marginTop: 22 }}>
             {c.urgent && <span style={{ ...pill, background: "#FF6A13", marginRight: 12 }}>Urgences</span>}
             {c.verified && <span style={{ ...pill, background: "#17783F" }}><svg width={22} height={22} viewBox="0 0 24 24" style={{ marginRight: 8 }}><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" /></svg>Identité vérifiée</span>}
