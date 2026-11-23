@@ -78,6 +78,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     if (shown.length >= wanted) break;
   }
   for (const a of pool) { if (shown.length >= wanted) break; if (!shown.includes(a)) shown.push(a); }
+  const { data: shotRows } = shown.length ? await db.from("portfolio_photos").select("artisan_id, url").in("artisan_id", shown.map((a: any) => a.id)).order("created_at").limit(60) : { data: [] };
+  const shotsOf = new Map<string, string[]>();
+  for (const r of (shotRows ?? []) as any[]) { const l = shotsOf.get(r.artisan_id) ?? []; if (l.length < 3) { l.push(r.url); shotsOf.set(r.artisan_id, l); } }
+  for (const a of shown) a.shots = shotsOf.get(a.id) ?? [];
   const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
   return (
     <>
