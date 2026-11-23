@@ -6,6 +6,8 @@ import { notifyBadge, notifySanction } from "@/lib/email-flows";
 import { pushToArtisan } from "@/lib/push";
 import { audit, requireAdmin } from "@/lib/admin";
 import { activateFromPayment } from "@/lib/boost";
+import sharp from "sharp";
+import { resetUploadedDefaults } from "@/lib/default-covers-server";
 import { coverImage, coverInputOf, unsplashBg } from "@/lib/cover-art";
 
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
@@ -302,4 +304,74 @@ export async function appliquerCoversEnMasse() {
   }
   revalidatePath("/admin/covers");
   back("/admin/covers", ko ? "erreur" : "ok", `${ok} cover${ok > 1 ? "s" : ""} appliquée${ok > 1 ? "s" : ""}${ko ? `, ${ko} en échec (réessayez)` : ""}.`);
+}
+
+const PUB = "/object/public/realisations/";
+
+/** Reprend une photo de réalisation de l'artisan comme cover de sa fiche (copie dans le stockage, la photo d'origine reste en place). */
+export async function utiliserPhotoCommeCover(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40), photo = s(f, "photo", 40);
+  if (!UUID.test(id) || !UUID.test(photo)) redirect("/admin/covers");
+  const { data: a } = await ctx.db.from("artisans").select("id, name, user_id, cover_url").eq("id", id).maybeSingle();
+  const { data: p } = await ctx.db.from("portfolio_photos").select("path").eq("id", photo).eq("artisan_id", id).maybeSingle();
+  if (!a || !p?.path) back("/admin/covers", "erreur", "Photo introuvable.");
+  const ext = (String(p!.path).split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "jpg";
+  const to = `${a!.user_id}/cover-photo-${Date.now()}.${ext}`;
+  const cp = await ctx.db.storage.from("realisations").copy(p!.path, to);
+  if (cp.error) back("/admin/covers", "erreur", "Copie de la photo impossible. Réessayez.");
+  const { data: pub } = ctx.db.storage.from("realisations").getPublicUrl(to);
+  const old = a!.cover_url?.split(PUB)[1];
+  const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", id);
+  if (error) back("/admin/covers", "erreur", "Enregistrement impossible. Réessayez.");
+  if (old) await ctx.db.storage.from("realisations").remove([old]);
+  await audit(ctx, "artisan.cover_photo", { type: "artisan", id, label: a!.name });
+  revalidatePath(`/artisan/${id}`); revalidatePath("/"); revalidatePath("/admin/covers");
+  back("/admin/covers", "ok", `Cover de ${a!.name} remplacée par sa photo.`);
+}
+
+/** Retire la cover de la fiche : la carte reprend la photo par défaut du métier. */
+export async function retirerCover(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  if (!UUID.test(id)) redirect("/admin/covers");
+  const { data: a } = await ctx.db.from("artisans").select("id, name, cover_url").eq("id", id).maybeSingle();
+  if (!a) redirect("/admin/covers");
+  await ctx.db.from("artisans").update({ cover_url: null }).eq("id", id);
+  const old = a!.cover_url?.split(PUB)[1];
+  if (old) await ctx.db.storage.from("realisations").remove([old]);
+  await audit(ctx, "artisan.cover_retirer", { type: "artisan", id, label: a!.name });
+  revalidatePath(`/artisan/${id}`); revalidatePath("/"); revalidatePath("/admin/covers");
+  back("/admin/covers", "ok", `Cover de ${a!.name} retirée.`);
+}
+
+/** Photo par défaut d'un métier : recadrée en paysage, allégée (WebP) et publiée pour toutes les fiches de ce métier qui n'ont pas de photo paysage. */
+export async function televerserDefaut(f: FormData) {
+  const ctx = await requireAdmin();
+  const slug = s(f, "slug", 40);
+  const { data: t } = await ctx.db.from("trades").select("slug").eq("slug", slug).maybeSingle();
+  if (!t) back("/admin/covers/defauts", "erreur", "Métier inconnu.");
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) back("/admin/covers/defauts", "erreur", "Choisissez une image.");
+  if ((file as File).size > 5 * 1024 * 1024) back("/admin/covers/defauts", "erreur", "Image trop lourde (5 Mo maximum).");
+  let webp: Buffer;
+  try { webp = await sharp(Buffer.from(await (file as File).arrayBuffer())).rotate().resize(900, 390, { fit: "cover", position: "attention" }).webp({ quality: 75 }).toBuffer(); }
+  catch { back("/admin/covers/defauts", "erreur", "Image illisible. Essayez un fichier JPG, PNG ou WebP."); return; }
+  const up = await ctx.db.storage.from("realisations").upload(`defaults/${slug}.webp`, webp, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
+  if (up.error) back("/admin/covers/defauts", "erreur", "Envoi impossible. Réessayez.");
+  resetUploadedDefaults();
+  await audit(ctx, "cover.defaut_televerser", { type: "metier", id: slug, label: slug });
+  revalidatePath("/"); revalidatePath("/admin/covers/defauts");
+  back("/admin/covers/defauts", "ok", "Photo par défaut enregistrée.");
+}
+
+export async function retirerDefaut(f: FormData) {
+  const ctx = await requireAdmin();
+  const slug = s(f, "slug", 40);
+  if (!/^[a-z0-9-]{2,40}$/.test(slug)) redirect("/admin/covers/defauts");
+  await ctx.db.storage.from("realisations").remove([`defaults/${slug}.webp`]);
+  resetUploadedDefaults();
+  await audit(ctx, "cover.defaut_retirer", { type: "metier", id: slug, label: slug });
+  revalidatePath("/"); revalidatePath("/admin/covers/defauts");
+  back("/admin/covers/defauts", "ok", "Photo par défaut retirée : la photo du site est de nouveau utilisée.");
 }

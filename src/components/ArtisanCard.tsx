@@ -8,7 +8,7 @@ export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
   photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
-  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string; trade_slug?: string; shots?: string[];
+  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string; trade_slug?: string; shots?: string[]; default_cover?: string | null;
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
@@ -28,7 +28,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
   if (lite) {
     const own = a.cover_url && !isGeneratedCover(a.cover_url) ? a.cover_url : null;
     const shots = own ? [] : a.shots ?? [];
-    const dflt = own ? null : defaultCoverUrl(a.trade_slug, a.id);
+    const dflt = own ? null : (a.default_cover ?? defaultCoverUrl(a.trade_slug, a.id));
     return (
       <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
         <div className="lc-cover">

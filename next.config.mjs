@@ -6,6 +6,8 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Téléversement d'images par l'administration (photos par défaut des métiers).
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   // Les polices de la cover sont lues sur le disque : on les inclut dans les fonctions qui génèrent l'image.
   outputFileTracingIncludes: { "/admin/covers": ["./src/lib/cover-fonts/**/*"], "/admin/covers/image/[id]": ["./src/lib/cover-fonts/**/*"] },
   poweredByHeader: false,
