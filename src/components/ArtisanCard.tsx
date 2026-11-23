@@ -29,7 +29,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
     const place = a.zones?.[0] ?? "";
     const own = a.cover_url && !isGeneratedCover(a.cover_url) ? a.cover_url : null;
     const shots = own ? [] : a.shots ?? [];
-    const dflt = own ? null : defaultCoverUrl(a.trade_slug);
+    const dflt = own ? null : defaultCoverUrl(a.trade_slug, a.id);
     return (
       <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
         <div className="lc-cover">
