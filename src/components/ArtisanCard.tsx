@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { initials, priceText } from "@/lib/format";
 import { openStatus } from "@/lib/hours";
+import { defaultCoverUrl, isGeneratedCover } from "@/lib/default-covers";
+import TradeIcon from "@/components/TradeIcon";
 
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
   photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
-  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string;
+  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string; trade_slug?: string;
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
@@ -25,11 +27,14 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
   if (lite) {
     const place = a.zones?.[0] ?? "";
-    const img = a.cover_url ?? a.photo_url;
+    const own = a.cover_url && !isGeneratedCover(a.cover_url) ? a.cover_url : null;
+    const dflt = own ? null : defaultCoverUrl(a.trade_slug);
+    const img = own ?? dflt;
     return (
       <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
         <div className="lc-cover">
-          {img ? <img src={img} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
+          {img ? <img src={img} alt="" loading="lazy" /> : <span className="lc-ico" aria-hidden="true"><TradeIcon slug={a.trade_slug ?? "tous"} /></span>}
+          {dflt && <span className="lc-ill">Photo illustrative</span>}
           {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         </div>
         <div className="lc-head">

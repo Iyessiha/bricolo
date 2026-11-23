@@ -52,7 +52,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   ]);
   const ids = [...new Set((boosts ?? []).map((b) => b.artisan_id))];
   const { data: featured } = ids.length
-    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, cover_url, headline, experience_years, diploma_verified, hours, open_24_7, takes_urgent, trade:trades(name)").in("id", ids).eq("country_code", country).eq("status", "approved").eq("verified", true).limit(24)
+    ? await db.from("artisans").select("id, name, description, price_label, verified, avg_rating, review_count, photo_url, cover_url, headline, experience_years, diploma_verified, hours, open_24_7, takes_urgent, trade:trades(name, slug)").in("id", ids).eq("country_code", country).eq("status", "approved").eq("verified", true).limit(24)
     : { data: [] };
   // Rotation équitable des artisans à la une : l'ordre change toutes les heures.
   const rot = String(Math.floor(Date.now() / 3600000));
@@ -64,8 +64,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   // Sélection de la une : fiches complètes d'abord, mises en avant en tête, 2 artisans max par métier, aucune case vide.
   const complete = (a: any) => (a.cover_url ? 2 : a.photo_url ? 1 : 0) + (a.verified ? 1 : 0) + (a.takes_urgent || a.hours || a.open_24_7 ? 1 : 0);
   const pool: any[] = [
-    ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
-    ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).map((a, i) => ({ ...a, trade: tradeName(a.trade_id), _i: i })).sort((x: any, y: any) => complete(y) - complete(x) || x._i - y._i),
+    ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name, trade_slug: a.trade?.slug })),
+    ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).map((a, i) => ({ ...a, trade: tradeName(a.trade_id), trade_slug: trades?.find((x) => x.id === a.trade_id)?.slug, _i: i })).sort((x: any, y: any) => complete(y) - complete(x) || x._i - y._i),
   ];
   const wanted = pool.length >= 12 ? 8 : 6;
   const perTrade = new Map<string, number>();
