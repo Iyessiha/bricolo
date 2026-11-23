@@ -773,3 +773,25 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
 .vsound:focus-visible{outline:3px solid #8AA9FF;outline-offset:2px}
 .vsignup{padding-bottom:0}@media(min-width:900px){.vsignup{display:none}}
 @media(min-width:900px){.authpic.withvid{display:flex;flex-direction:column;justify-content:center;gap:22px;padding:24px;background:var(--ink)}.withvid .authcap{position:static;padding:0;background:none}.withvid .vpromo{box-shadow:none}.withvid .authcap b{font-size:22px}}.vsignup .vpromo{max-width:720px;margin-inline:auto}
+
+/* Accueil : « Artisans à la une » — 3 colonnes ordinateur, 2 tablette, défilement horizontal sur téléphone */
+.cards.home{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:2px 16px 8px;scrollbar-width:none}
+.cards.home::-webkit-scrollbar{display:none}
+.cards.home>.acard{flex:0 0 68%;max-width:290px;scroll-snap-align:start}
+.cards.home .acard-meta,.cards.home .acard-trade{white-space:normal}
+.acard.lite .acard-cta{padding-top:2px}
+.acard.lite .acard-cta .wa{min-height:44px;font-size:15px;font-weight:700}
+.acard.lite .acard-cta .call{width:48px;min-height:44px}
+.acard-invite,.acard-more{justify-content:center;gap:6px;padding:18px;text-decoration:none;color:var(--ink);background:var(--brand-soft);border-style:dashed;text-align:left}
+.acard-invite b,.acard-more b{font:800 18px var(--font-display);line-height:1.2}
+.acard-invite span,.acard-more span{color:var(--ink-muted);font-size:14px}
+.acard-invite em,.acard-more em{font-style:normal;font-weight:700;color:var(--brand);margin-top:6px}
+@media (min-width:600px){
+  .cards.home{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;overflow:visible;margin:0;padding:0}
+  .cards.home>.acard{max-width:none}
+  .cards.home>.acard-more{display:none}
+}
+@media (min-width:1024px){
+  .cards.home{grid-template-columns:repeat(3,1fr)}
+  .cards.home.n8{grid-template-columns:repeat(4,1fr)}
+}

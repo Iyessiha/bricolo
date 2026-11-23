@@ -61,10 +61,23 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
   const POPULAR = ["plombier", "electricien", "frigoriste", "macon", "peintre", "mecanicien", "menuisier", "carreleur", "serrurier", "electromenager"];
   const topTrades = [...(trades ?? [])].sort((a, b) => (POPULAR.indexOf(a.slug) + 1 || 99) - (POPULAR.indexOf(b.slug) + 1 || 99)).slice(0, 9);
-  const shown: any[] = [
+  // Sélection de la une : fiches complètes d'abord, mises en avant en tête, 2 artisans max par métier, aucune case vide.
+  const complete = (a: any) => (a.cover_url ? 2 : a.photo_url ? 1 : 0) + (a.verified ? 1 : 0) + (a.takes_urgent || a.hours || a.open_24_7 ? 1 : 0);
+  const pool: any[] = [
     ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name })),
-    ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).slice(0, 6).map((a) => ({ ...a, trade: tradeName(a.trade_id) })),
-  ].slice(0, 6);
+    ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).map((a, i) => ({ ...a, trade: tradeName(a.trade_id), _i: i })).sort((x: any, y: any) => complete(y) - complete(x) || x._i - y._i),
+  ];
+  const wanted = pool.length >= 12 ? 8 : 6;
+  const perTrade = new Map<string, number>();
+  const shown: any[] = [];
+  for (const a of pool) {
+    const k = String(a.trade ?? "");
+    if ((perTrade.get(k) ?? 0) >= 2) continue;
+    perTrade.set(k, (perTrade.get(k) ?? 0) + 1);
+    shown.push(a);
+    if (shown.length >= wanted) break;
+  }
+  for (const a of pool) { if (shown.length >= wanted) break; if (!shown.includes(a)) shown.push(a); }
   const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
   return (
     <>
@@ -117,7 +130,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
       {shown.length ? <section className="inner sec">
         <div className="sec-head"><h2>Des artisans près de chez vous</h2><Link href="/resultats">Voir tous →</Link></div>
-        <div className="cards">{shown.map((a: any) => <ArtisanCard country={country} key={a.id} a={a} />)}</div>
+        <div className={`cards home${shown.length >= 8 ? " n8" : ""}`}>
+          {shown.map((a: any) => <ArtisanCard lite country={country} key={a.id} a={a} />)}
+          {shown.length < 6 && <Link href="/inscription" className="acard acard-invite"><b>D’autres artisans arrivent</b><span>Vous êtes artisan ? Créez votre profil gratuit et soyez trouvé près de chez vous.</span><em>Créer mon profil →</em></Link>}
+          <Link href="/resultats" className="acard acard-more"><b>Voir tous les artisans</b><span>Comparez les profils près de chez vous</span><em>→</em></Link>
+        </div>
       </section> : null}
 
       <section className="inner sec">

@@ -20,11 +20,11 @@ function Why() {
   );
 }
 
-export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: string }) {
+export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; country?: string; lite?: boolean }) {
   const st = openStatus(a.hours, a.open_24_7, country ?? a.country_code ?? "ci");
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
   return (
-    <article className={`acard${a.sponsored ? " sp" : ""}`}>
+    <article className={`acard${a.sponsored ? " sp" : ""}${lite ? " lite" : ""}`}>
       <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
         {a.cover_url ? <img src={a.cover_url} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
         {a.cover_url && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
@@ -37,20 +37,20 @@ export default function ArtisanCard({ a, country }: { a: ArtisanRow; country?: s
       <div className="acard-body">
         <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link></h3>
         <p className="acard-trade">{a.trade}</p>
-        {a.headline && <p className="acard-hl">{a.headline}</p>}
+        {a.headline && !lite && <p className="acard-hl">{a.headline}</p>}
         {zones && <p className="acard-meta" title={a.zones?.join(", ")}>📍 {zones}</p>}
         <p className="acard-meta">
-          {a.review_count ? <><b className="num">★ {String(a.avg_rating).replace(".", ",")}</b> ({a.review_count})</> : <span className="tag mute">Nouveau</span>}
+          {a.review_count ? <><b className="num">★ {String(a.avg_rating).replace(".", ",")}</b> ({a.review_count})</> : lite ? null : <span className="tag mute">Nouveau</span>}
           {a.experience_years ? <span> · {a.experience_years} an{a.experience_years > 1 ? "s" : ""}</span> : null}
         </p>
         {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
         {a.takes_urgent && <p className="acard-meta">🚨 Prend les urgences</p>}
-        {priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
+        {!lite && priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
       </div>
       <div className="acard-cta">
         <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>
         <a className="btn call" href={`/api/contact?id=${a.id}&type=call`} aria-label={`Appeler ${a.name}`}>📞</a>
-        <a className="btn msg" href={`/artisan/${a.id}?message=1#message`} aria-label={`Envoyer un message à ${a.name}`} title="Message">✉️</a>
+        {!lite && <a className="btn msg" href={`/artisan/${a.id}?message=1#message`} aria-label={`Envoyer un message à ${a.name}`} title="Message">✉️</a>}
       </div>
     </article>
   );
