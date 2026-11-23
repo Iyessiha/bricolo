@@ -39,7 +39,6 @@ export async function coverImage(c: CoverInput): Promise<ImageResponse> {
     (
       <div style={{ display: "flex", position: "relative", width: 1600, height: 600, background: "linear-gradient(135deg,#3459b8 0%,#27489A 50%,#1b3577 100%)", color: "#fff", fontFamily: "UI" }}>
         {bgPhoto && <img src={bgPhoto} width={1600} height={600} style={{ position: "absolute", left: 0, top: 0, width: 1600, height: 600, objectFit: "cover" }} />}
-        {bgPhoto && <div style={{ display: "flex", position: "absolute", left: 0, top: 0, width: 1600, height: 600, background: "linear-gradient(90deg,rgba(27,53,119,.78) 0%,rgba(39,72,154,.58) 50%,rgba(27,53,119,.78) 100%)" }} />}
         {!bgPhoto && (
           <svg width={520} height={520} viewBox="0 0 24 24" style={{ position: "absolute", left: -90, top: 50, opacity: 0.07, transform: "rotate(-12deg)" }}>
             <path d={icon} fill="none" stroke="#fff" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" />
@@ -50,11 +49,12 @@ export async function coverImage(c: CoverInput): Promise<ImageResponse> {
             <path d={icon} fill="none" stroke="#fff" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
-        <div style={{ display: "flex", position: "absolute", left: 56, top: 44, alignItems: "center", fontFamily: "Display", fontSize: 30 }}>
-          <svg width={34} height={34} viewBox="0 0 24 24"><path d="M4 3h6v11h10v7H4z" fill="#fff" /></svg>
+        <div style={{ display: "flex", position: "absolute", left: 40, top: 36, alignItems: "center", background: "#fff", borderRadius: 14, padding: "10px 20px 10px 14px", fontFamily: "Display", fontSize: 32, color: "#13203A", letterSpacing: -0.6, boxShadow: "0 6px 20px rgba(10,24,64,.35)" }}>
+          <svg width={38} height={38} viewBox="0 0 24 24"><path d="M4 3h6v11h10v7H4z" fill="#27489A" /></svg>
           <span style={{ marginLeft: 10 }}>Bricolo</span>
         </div>
         <div style={{ display: "flex", position: "absolute", left: 350, top: 0, width: 900, height: 554, flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", ...(bgPhoto ? { background: "#27489A", borderRadius: 24, padding: "26px 44px 28px", border: "3px solid #fff", boxShadow: "0 12px 40px rgba(10,24,64,.45)" } : {}) }}>
           {avatar ? (
             <div style={{ display: "flex", width: 150, height: 150, borderRadius: 75, border: "5px solid #fff", overflow: "hidden", background: "#E3EAFA" }}>
               <img src={avatar} width={140} height={140} style={{ width: 140, height: 140, objectFit: "cover" }} />
@@ -65,13 +65,14 @@ export async function coverImage(c: CoverInput): Promise<ImageResponse> {
             </div>
           )}
           <div style={{ display: "flex", marginTop: 18, fontSize: 24, letterSpacing: 3, textTransform: "uppercase", color: "#cfdcff" }}>{c.trade}</div>
-          <div style={{ display: "flex", marginTop: 14, maxWidth: 860, fontFamily: "Display", fontSize: size, lineHeight: 1.05, justifyContent: "center", textAlign: "center", textShadow: bgPhoto ? "0 2px 12px rgba(10,24,64,.7)" : undefined }}>{name}</div>
+          <div style={{ display: "flex", marginTop: 14, maxWidth: 760, fontFamily: "Display", fontSize: size, lineHeight: 1.05, justifyContent: "center", textAlign: "center", textShadow: undefined }}>{name}</div>
           <div style={{ display: "flex", marginTop: 18, alignItems: "center", fontSize: 24, color: "#dbe5ff" }}>
             <span>{countryLabel(c.country)}</span>
             {c.verified && <span style={{ display: "flex", alignItems: "center", marginLeft: 14, background: "#17783F", color: "#fff", borderRadius: 999, padding: "7px 18px", fontSize: 22 }}><svg width={20} height={20} viewBox="0 0 24 24" style={{ marginRight: 8 }}><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" /></svg>Identité vérifiée</span>}
           </div>
+          </div>
         </div>
-        <div style={{ display: "flex", position: "absolute", left: 0, right: 0, bottom: 0, height: 46, background: "rgba(10,24,64,.45)" }}>
+        <div style={{ display: "flex", position: "absolute", left: 0, right: 0, bottom: 0, height: 46, background: bgPhoto ? "#27489A" : "rgba(10,24,64,.45)" }}>
           <svg width={1600} height={46} viewBox="0 0 1600 46"><path d={ticks} stroke="rgba(255,255,255,.55)" strokeWidth={2} /></svg>
         </div>
       </div>
