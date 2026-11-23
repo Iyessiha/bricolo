@@ -89,3 +89,20 @@ export async function coverInputOf(db: { from: (t: string) => any }, id: string)
   const ok = (u?: string | null) => (u && /^https:\/\/.+\.(jpe?g|png)(\?.*)?$/i.test(u) ? u : null); // le moteur d'image ne lit pas le webp
   return { name: a.name, trade: t?.name ?? "Artisan", slug: t?.slug ?? "", country: a.country_code, verified: !!a.verified, photoUrl: ok(a.photo_url), shotUrl: ok(shots?.[0]?.url), userId: a.user_id, coverUrl: a.cover_url };
 }
+
+/** Adresse d'image Unsplash acceptée comme photo de fond : https, domaine images.unsplash.com uniquement, taille et format normalisés (le moteur d'image lit jpg et png). */
+export function unsplashBg(raw?: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.trim());
+    if (u.protocol !== "https:" || u.hostname !== "images.unsplash.com") return null;
+    u.searchParams.set("w", "1600"); u.searchParams.set("q", "80"); u.searchParams.set("fm", "jpg"); u.searchParams.set("fit", "crop");
+    return u.toString();
+  } catch { return null; }
+}
+
+/** Mots-clés de recherche Unsplash par métier, pour trouver vite une photo qui correspond. */
+export const SEARCH_BY_SLUG: Record<string, string> = {
+  frigoriste: "air-conditioning-technician", mecanicien: "mechanic-garage", soudeur: "welder", peintre: "painter-wall", menuisier: "carpenter",
+  ebeniste: "woodworking-furniture", nettoyage: "car-wash", macon: "bricklayer", informatique: "computer-repair", cameras: "security-camera-installation",
+};

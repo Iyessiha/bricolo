@@ -6,7 +6,7 @@ import { notifyBadge, notifySanction } from "@/lib/email-flows";
 import { pushToArtisan } from "@/lib/push";
 import { audit, requireAdmin } from "@/lib/admin";
 import { activateFromPayment } from "@/lib/boost";
-import { coverImage, coverInputOf } from "@/lib/cover-art";
+import { coverImage, coverInputOf, unsplashBg } from "@/lib/cover-art";
 
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
 const s = (f: FormData, k: string, max = 300) => String(f.get(k) ?? "").trim().slice(0, max);
@@ -258,6 +258,8 @@ export async function appliquerCover(f: FormData) {
   if (!UUID.test(id)) redirect("/admin/covers");
   const c = await coverInputOf(ctx.db, id);
   if (!c) redirect("/admin/covers");
+  const bg = unsplashBg(s(f, "bg", 600));
+  if (bg) c.shotUrl = bg;
   let png: ArrayBuffer;
   try { png = await (await coverImage(c)).arrayBuffer(); }
   catch { png = await (await coverImage({ ...c, photoUrl: null, shotUrl: null })).arrayBuffer(); }

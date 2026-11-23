@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { coverImage, coverInputOf } from "@/lib/cover-art";
+import { coverImage, coverInputOf, unsplashBg } from "@/lib/cover-art";
 
 /** Aperçu ou téléchargement (?dl=1) de la cover Bricolo d'un artisan. Réservé à l'équipe. */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -9,6 +9,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { db } = await requireAdmin();
   const c = await coverInputOf(db, id);
   if (!c) return new NextResponse("Introuvable", { status: 404 });
+  const bg = unsplashBg(req.nextUrl.searchParams.get("bg"));
+  if (bg) c.shotUrl = bg;
   let img;
   try { img = await coverImage(c); }
   catch { img = await coverImage({ ...c, photoUrl: null, shotUrl: null }); } // une photo illisible ne bloque pas la cover

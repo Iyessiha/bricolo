@@ -26,6 +26,7 @@ export default async function Covers({ searchParams }: { searchParams: Promise<R
             <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
               <a className="btn small" href={`/admin/covers/image/${a.id}?dl=1`}>Télécharger</a>
               <form action={appliquerCover}><input type="hidden" name="id" value={a.id} /><button className="btn small primary" type="submit">{a.cover_url ? "Remplacer la cover" : "Appliquer sur la fiche"}</button></form>
+              <Link className="btn small" href={`/admin/covers/${a.id}`}>Personnaliser</Link>
               <Link className="btn small ghost" href={`/admin/artisan/${a.id}`}>Dossier</Link>
             </div>
           </div>
