@@ -23,6 +23,36 @@ function Why() {
 export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; country?: string; lite?: boolean }) {
   const st = openStatus(a.hours, a.open_24_7, country ?? a.country_code ?? "ci");
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
+  if (lite) {
+    const place = a.zones?.[0] ?? "";
+    const img = a.cover_url ?? a.photo_url;
+    return (
+      <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
+        <div className="lc-cover">
+          {img ? <img src={img} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
+          {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
+        </div>
+        <div className="lc-head">
+          <span className="lc-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>
+          <div className="lc-id">
+            <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link>{a.verified && <svg className="lc-check" viewBox="0 0 24 24" aria-label="Identité vérifiée" role="img"><circle cx="12" cy="12" r="11" fill="currentColor" /><path d="M7 12.5l3.4 3.4L17 9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>}</h3>
+            <p className="lc-sub">{a.trade}{place ? <> · {place}</> : null}</p>
+          </div>
+        </div>
+        <ul className="lc-chips">
+          {a.diploma_verified && <li>🎓 Diplômé</li>}
+          {a.experience_years ? <li>{a.experience_years} an{a.experience_years > 1 ? "s" : ""} d’expérience</li> : null}
+          {a.takes_urgent && <li className="u">🚨 Urgences</li>}
+          {a.review_count ? <li>★ {String(a.avg_rating).replace(".", ",")} ({a.review_count})</li> : null}
+        </ul>
+        {st.state !== "none" ? <p className={`acard-open lc-open ${st.state}`}><i aria-hidden="true" />{st.text}</p> : <span className="lc-open" />}
+        <div className="acard-cta">
+          <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>
+          <a className="btn call" href={`/api/contact?id=${a.id}&type=call`} aria-label={`Appeler ${a.name}`}>📞</a>
+        </div>
+      </article>
+    );
+  }
   return (
     <article className={`acard${a.sponsored ? " sp" : ""}${lite ? " lite" : ""}`}>
       <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
