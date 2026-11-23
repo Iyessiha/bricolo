@@ -2,7 +2,6 @@ import Link from "next/link";
 import { initials, priceText } from "@/lib/format";
 import { openStatus } from "@/lib/hours";
 import { defaultCoverUrl, isGeneratedCover } from "@/lib/default-covers";
-import TradeIcon from "@/components/TradeIcon";
 
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
@@ -33,7 +32,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
     return (
       <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
         <div className="lc-cover">
-          {img ? <img src={img} alt="" loading="lazy" /> : <span className="lc-ico" aria-hidden="true"><TradeIcon slug={a.trade_slug ?? "tous"} /></span>}
+          {img ? <img src={img} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
           {dflt && <span className="lc-ill">Photo illustrative</span>}
           {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         </div>
