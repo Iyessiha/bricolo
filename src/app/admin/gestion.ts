@@ -276,3 +276,30 @@ export async function appliquerCover(f: FormData) {
   revalidatePath("/admin/covers");
   back("/admin/covers", "ok", `Cover appliquée sur la fiche de ${c.name}.`);
 }
+
+/** Pose la cover Bricolo sur toutes les fiches validées qui n'en ont pas encore (celles qui ont déjà une cover ne sont pas touchées). */
+export async function appliquerCoversEnMasse() {
+  const ctx = await requireAdmin();
+  const { data } = await ctx.db.from("artisans").select("id").eq("status", "approved").is("cover_url", null).order("created_at");
+  let ok = 0, ko = 0;
+  for (const { id } of data ?? []) {
+    try {
+      const c = await coverInputOf(ctx.db, id);
+      if (!c) { ko++; continue; }
+      let png: ArrayBuffer;
+      try { png = await (await coverImage(c)).arrayBuffer(); }
+      catch { png = await (await coverImage({ ...c, photoUrl: null, shotUrl: null })).arrayBuffer(); }
+      const path = `${c.userId}/cover-bricolo-${Date.now()}.png`;
+      const up = await ctx.db.storage.from("realisations").upload(path, png, { contentType: "image/png", upsert: false });
+      if (up.error) { ko++; continue; }
+      const { data: pub } = ctx.db.storage.from("realisations").getPublicUrl(path);
+      const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", id);
+      if (error) { ko++; continue; }
+      await audit(ctx, "artisan.cover_bricolo", { type: "artisan", id, label: c.name });
+      revalidatePath(`/artisan/${id}`);
+      ok++;
+    } catch { ko++; }
+  }
+  revalidatePath("/admin/covers");
+  back("/admin/covers", ko ? "erreur" : "ok", `${ok} cover${ok > 1 ? "s" : ""} appliquée${ok > 1 ? "s" : ""}${ko ? `, ${ko} en échec (réessayez)` : ""}.`);
+}

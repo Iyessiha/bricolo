@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
-import { appliquerCover } from "@/app/admin/gestion";
+import { appliquerCover, appliquerCoversEnMasse } from "@/app/admin/gestion";
 
 export const metadata: Metadata = { title: "Covers Bricolo", robots: { index: false } };
 export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 
 export default async function Covers({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
@@ -17,6 +18,10 @@ export default async function Covers({ searchParams }: { searchParams: Promise<R
       {sp.ok && <p className="notice ok" role="status">{sp.ok}</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
       <p className="hint">Chaque cover est générée à partir de la fiche : métier, pays, badge Vérifié (seulement si l’identité est contrôlée), photo de réalisation en fond quand l’artisan en a mis, sinon sa photo de profil. Téléchargez-la pour la proposer à l’artisan, ou appliquez-la sur sa fiche une fois qu’il est d’accord. Les formats webp ne sont pas lus : la cover se fait alors sans cette photo.</p>
+      <form action={appliquerCoversEnMasse} style={{ margin: "12px 0" }}>
+        <button className="btn primary" type="submit">Appliquer à toutes les fiches validées sans cover ({rows.filter((a: any) => a.status === "approved" && !a.cover_url).length})</button>
+        <span className="meta" style={{ marginLeft: 10 }}>Les fiches qui ont déjà une cover ne changent pas. Vous pouvez ensuite adapter chaque profil avec « Personnaliser ».</span>
+      </form>
       <div className="agrid">
         {rows.map((a: any) => (
           <div key={a.id} className="card pad stack">
