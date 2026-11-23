@@ -39,6 +39,6 @@ export function HeadlineField({ value, uid = "headline_rest", label = "Votre pro
     <div className="fld"><label htmlFor={uid}>{label}</label>
       <div className="hl"><span aria-hidden="true">Je vais</span>
         <input id={uid} name="headline_rest" value={v} maxLength={70} required minLength={8} placeholder="réparer votre climatisation" onChange={(e) => setV(e.target.value)} /></div>
-      <span className="hint">Ce que vous faites pour le client, simplement. Exemples : « installer votre climatisation », « construire votre portail métallique », « dépanner votre prise en urgence ». {v.length}/70</span></div>
+      <span className="hint">Ce que vous faites pour le client, simplement, avec un verbe à l’infinitif (réparer, installer, peindre…). Exemples : « installer votre climatisation », « construire votre portail métallique », « dépanner votre prise en urgence ». {v.length}/70</span></div>
   );
 }

@@ -15,6 +15,9 @@ export function composeHeadline(raw: string): { ok: true; value: string } | { ok
   const rest = raw.trim().replace(/^je\s+vais\s+/i, "").replace(/\s+/g, " ");
   if (rest.length < 8) return { ok: false, error: "Complétez votre promesse : « Je vais … » (8 caractères minimum)." };
   if (rest.length > 70) return { ok: false, error: "Votre promesse est trop longue (70 caractères maximum)." };
+  // Après « Je vais », un verbe à l'infinitif : « réparer », « installer », « peindre »… (évite « Je vais réparé », « Je vais je suis », « Je vais vous satisfait »).
+  const first = rest.split(" ")[0].replace(/[,;:.!]+$/, "");
+  if (!/^[a-zàâäçéèêëîïôöûùüÿœ’'-]{2,}(er|ir|re|oir)$/i.test(first)) return { ok: false, error: "Après « Je vais », commencez par un verbe à l’infinitif : réparer, installer, peindre, construire… Exemple : « Je vais réparer votre climatiseur »." };
   return { ok: true, value: `Je vais ${rest.charAt(0).toLowerCase()}${rest.slice(1)}` };
 }
 
