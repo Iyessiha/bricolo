@@ -109,7 +109,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const unreadHelp = await unreadForArtisan(artisan.id);
-  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const LEGACY: Record<string, [string, string?, string?]> = { guide: ["apercu"], prestations: ["profil", "prestations"], boosts: ["forfait"], notifs: ["aide", undefined, "notifs"], compte: ["aide", undefined, "compte"], horaires: ["profil", "zones"] };
+  const [s0, p0, a0] = LEGACY[sp.s ?? ""] ?? [sp.s, undefined, undefined];
+  const sec = (["apercu", "demandes", "profil", "forfait", "aide"] as const).find((k) => k === s0) ?? "apercu";
   const paid = sec === "forfait" ? await listPayments(artisan.id) : [];
   // Indicateurs du forfait : activité des 30 derniers jours, et pour un Pro, comparaison avec les 30 jours avant son début.
   const DAY = 864e5, nowMs = Date.now();
@@ -120,8 +122,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
-  const PSUBS = [["infos", "Infos"], ["photos", "Photos"], ["zones", "Zones et horaires"], ["diplomes", "Diplômes"]] as const;
-  const ptab = PSUBS.find(([k]) => k === (sp.s === "horaires" ? "zones" : sp.p))?.[0] ?? "infos";
+  const PSUBS = [["infos", "Identité et présentation"], ["prestations", "Prestations et prix"], ["photos", "Cover et photos"], ["zones", "Zones et horaires"], ["diplomes", "Diplômes"]] as const;
+  const ASUBS = [["aide", "Contacter Bricolo"], ["notifs", "Notifications"], ["compte", "Mon compte"]] as const;
+  const atab = ASUBS.find(([k]) => k === (a0 ?? sp.a))?.[0] ?? "aide";
+  const ptab = PSUBS.find(([k]) => k === (p0 ?? sp.p))?.[0] ?? "infos";
   const tradeName = trades?.find((t) => t.id === artisan.trade_id)?.name ?? "";
   const hasHours = !!(artisan as any).open_24_7 || Object.keys(cleanHours((artisan as any).hours)).length > 0;
   const checks = [
@@ -129,17 +133,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { ok: ident.status === "approved", l: "Identité vérifiée", s: "apercu" },
     { ok: !!(artisan as any).headline, l: "Écrire votre promesse « Je vais… »", s: "profil" },
     { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
-    { ok: nSvc > 0, l: "Ajouter au moins une prestation avec son prix", s: "prestations" },
+    { ok: nSvc > 0, l: "Ajouter au moins une prestation avec son prix", s: "profil&p=prestations" },
     { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
     { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil&p=zones" },
     { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", s: "profil&p=photos" },
     { ok: hasHours, l: "Renseigner vos horaires", s: "profil&p=zones" },
-    { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", s: "profil&p=diplomes" },
   ];
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
+  const hasDiploma = (diplomas ?? []).some((d) => d.status !== "rejected");
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"], ["compte", "⚙️", "Mon compte"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes et avis"], ["profil", "👤", "Ma fiche"], ["forfait", "🚀", "Visibilité et forfait"], ["aide", "💬", "Aide et compte"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -150,7 +154,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <span className="meta fl">{tradeName} · <Flag code={country} size={16} /></span>
             <span className={`tag ${statusTag[0]}`}>{statusTag[1]}</span>
           </div>
-          <form action={signOut}><button className="dout" type="submit" aria-label="Se déconnecter" title="Se déconnecter">⎋</button></form>
         </div>
         {approved && <Link className="btn small dview" href={`/artisan/${artisan.id}`}>Voir ma fiche publique</Link>}
         <input type="checkbox" id="dmore" className="dmore" aria-hidden="true" tabIndex={-1} />
@@ -166,10 +169,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </label>
           <label htmlFor="dmore" className="dback" aria-hidden="true" />
           <div className="dsheet">
-            {NAV.slice(4).map(([k, ic, l]) => (
-              <Link key={k} className={k === "forfait" ? "gsep" : undefined} href={k === "boosts" ? "/boosts" : `/tableau-de-bord?s=${k}`} scroll={k === "boosts"} aria-current={sec === k ? "page" : undefined}>
-                <span aria-hidden="true">{ic}</span><span>{l}</span>
-                {k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}{k === "forfait" ? <em className={pro ? "pro" : "free"}>{pro ? "Pro" : "Gratuit"}</em> : null}
+            {([["aide", "💬", "Contacter Bricolo"], ["notifs", "🔔", "Notifications"], ["compte", "⚙️", "Mon compte"]] as const).map(([k, ic, l]) => (
+              <Link key={k} href={`/tableau-de-bord?s=aide&a=${k}`} scroll={false} aria-current={sec === "aide" && atab === k ? "page" : undefined}>
+                <span aria-hidden="true">{ic}</span><span>{l}</span>{k === "aide" && unreadHelp ? <em>{unreadHelp}</em> : null}
               </Link>
             ))}
             <form action={signOut} className="dsout"><button type="submit"><span aria-hidden="true">⎋</span><span>Se déconnecter</span></button></form>
@@ -195,7 +197,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "apercu"}>
           <h1 className="dtitle">Bonjour 👋</h1>
-        {approved && <div className="notice ok row" style={{ justifyContent: "space-between" }}><span><b>Votre profil est en ligne.</b> Les clients peuvent vous trouver.</span><Link className="btn small" href={`/artisan/${artisan.id}`}>Voir ma fiche</Link></div>}
         {suspended && <div className="notice err stack" style={{ gap: 6 }}><b>Votre profil est suspendu.</b><p>{artisan.reject_reason ?? "Il n’est plus visible des clients."} Pour en savoir plus ou le réactiver, contactez-nous.</p><div><a className="btn" href={`mailto:${COMPANY.email}`}>Nous contacter</a></div></div>}
         {!approved && !rejected && !suspended && (
           <div className="notice"><b>Dossier en cours de vérification.</b> Envoyé le {day(ident.submitted_at)}. Nous répondons en général sous 24 à 48 heures, par e-mail. Votre profil sera visible des clients dès sa validation.</div>
@@ -213,6 +214,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             {todo.length ? (
               <ul className="dtodo">{todo.map((c) => <li key={c.l}><Link href={`/tableau-de-bord?s=${c.s}`} scroll={false}>{c.l} <span aria-hidden="true">→</span></Link></li>)}</ul>
             ) : <p className="meta">Bravo, votre fiche est au top. Les profils complets reçoivent plus de demandes.</p>}
+            {!hasDiploma && <p className="meta">En bonus : <Link href="/tableau-de-bord?s=profil&p=diplomes" scroll={false}>ajoutez un diplôme</Link> pour obtenir le badge « Diplôme vérifié ».</p>}
           </div>
         <div className="tags">
           <span className="tag ok">E-mail confirmé</span>
@@ -234,20 +236,34 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               </div>
             </div>
           )}
-          {approved && (
-            <div className="card pad stack">
-              <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Votre offre {pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</h2><Link href="/tableau-de-bord?s=forfait" scroll={false}>{pro ? "Gérer" : "Voir les offres"}</Link></div>
-              <p className="meta">{pro ? `Forfait Pro actif, il reste ${leftLabel} (jusqu’au ${day(proSub!.ends_at)}).` : "Vous êtes sur l’offre gratuite. Voici vos limites."}</p>
-              {limitsEl}
+          {approved && (<>
               {nearLimit && nearLimit.length > 0 && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Vous approchez de vos limites</b> ({nearLimit.map((u) => u.l.toLowerCase()).join(", ")}). Le Forfait Pro les repousse.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait" scroll={false}>Passer Pro</Link></div>}
               {pro && daysLeft <= 7 && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Votre Forfait Pro se termine bientôt.</b> Prolongez-le pour garder le badge et vos extras.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait" scroll={false}>Prolonger</Link></div>}
-            </div>
-          )}
+          </>)}
           <div className="card pad stack">
             <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Dernières demandes</h2>{(reqs?.length ?? 0) > 0 && <Link href="/tableau-de-bord?s=demandes" scroll={false}>Tout voir</Link>}</div>
             {reqs?.length ? reqs.slice(0, 3).map((r) => (
               <div key={r.id} className="req"><div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" && <span className="tag wait">Nouvelle</span>}<span className="meta">{day(r.created_at)}</span></div><p><b>{r.client_name || "Client"}</b> — {r.description.slice(0, 90)}{r.description.length > 90 ? "…" : ""}</p></div>
             )) : <p className="empty">Aucune demande pour le moment. Elles arriveront ici et par e-mail.</p>}
+          </div>
+        </div>
+
+        <div className="stack" hidden={sec !== "demandes"}>
+          <h1 className="dtitle">Demandes et avis</h1>
+          <div className="stack">
+        {reqs?.length ? reqs.map((r) => (
+          <div key={r.id} className="req card pad">
+            <div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" ? <span className="tag wait">Nouvelle</span> : <span className="tag mute">Traitée</span>}<span className="meta">{day(r.created_at)}</span></div>
+            <p><b>{r.client_name || "Client"}</b>{r.client_phone ? <> · <a href={`tel:+${r.client_phone}`}>+{r.client_phone}</a></> : null}{r.client_email ? <> · <a href={`mailto:${r.client_email}`}>{r.client_email}</a></> : null}</p>
+            <p>{r.description}</p>
+            <div className="row reqact">
+              {r.client_phone && <a className="btn small wa" href={`https://wa.me/${r.client_phone}?text=${encodeURIComponent(`🔧 *Bricolo* — Bonjour${r.client_name ? " " + r.client_name : ""}, ici ${artisan.name}. Je réponds à votre demande envoyée sur Bricolo : « ${r.description.slice(0, 80)} »`)}`} target="_blank" rel="noopener noreferrer">💬 Répondre sur WhatsApp</a>}
+              {r.client_phone && <a className="btn small" href={`tel:+${r.client_phone}`}>📞 Appeler</a>}
+              {r.client_email && <a className="btn small" href={`mailto:${r.client_email}?subject=${encodeURIComponent("Votre demande sur Bricolo")}`}>✉️ Répondre par e-mail</a>}
+            </div>
+            {r.status === "new" && <form action={markAnswered}><input type="hidden" name="id" value={r.id} /><button className="btn small" type="submit">Marquer comme traitée</button></form>}
+          </div>
+        )) : <p className="empty">Aucune demande pour le moment. Elles apparaîtront ici et vous seront aussi envoyées par e-mail.</p>}
           </div>
           {approved && <div className="card pad stack" id="avis">
             <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Avis clients</h2>{artisan.review_count ? <span className="tag ok">★ {String(artisan.avg_rating).replace(".", ",")}/5 · {artisan.review_count} avis</span> : <span className="tag mute">Pas encore d’avis</span>}</div>
@@ -264,69 +280,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   <div><button className="btn small" type="submit">{r.artisan_reply ? "Modifier ma réponse" : "Publier ma réponse"}</button></div></form>
               </div>))}
           </div>}
-          {approved && <div className="card pad dboost"><div><b>Passez devant les autres artisans</b><p className="meta">Un boost place votre profil en tête des résultats ou sur l’accueil.</p></div><Link className="btn boost" href="/tableau-de-bord?s=boosts" scroll={false}>Voir les boosts</Link></div>}
-        </div>
-
-        <div className="stack" hidden={sec !== "demandes"}>
-          <h1 className="dtitle">Demandes des clients</h1>
-          <div className="stack">
-        {reqs?.length ? reqs.map((r) => (
-          <div key={r.id} className="req card pad">
-            <div className="tags">{r.urgent && <span className="tag boost">Urgent</span>}{r.status === "new" ? <span className="tag wait">Nouvelle</span> : <span className="tag mute">Traitée</span>}<span className="meta">{day(r.created_at)}</span></div>
-            <p><b>{r.client_name || "Client"}</b>{r.client_phone ? <> · <a href={`tel:+${r.client_phone}`}>+{r.client_phone}</a></> : null}{r.client_email ? <> · <a href={`mailto:${r.client_email}`}>{r.client_email}</a></> : null}</p>
-            <p>{r.description}</p>
-            <div className="row reqact">
-              {r.client_phone && <a className="btn small wa" href={`https://wa.me/${r.client_phone}?text=${encodeURIComponent(`🔧 *Bricolo* — Bonjour${r.client_name ? " " + r.client_name : ""}, ici ${artisan.name}. Je réponds à votre demande envoyée sur Bricolo : « ${r.description.slice(0, 80)} »`)}`} target="_blank" rel="noopener noreferrer">💬 Répondre sur WhatsApp</a>}
-              {r.client_phone && <a className="btn small" href={`tel:+${r.client_phone}`}>📞 Appeler</a>}
-              {r.client_email && <a className="btn small" href={`mailto:${r.client_email}?subject=${encodeURIComponent("Votre demande sur Bricolo")}`}>✉️ Répondre par e-mail</a>}
-            </div>
-            {r.status === "new" && <form action={markAnswered}><input type="hidden" name="id" value={r.id} /><button className="btn small" type="submit">Marquer comme traitée</button></form>}
-          </div>
-        )) : <p className="empty">Aucune demande pour le moment. Elles apparaîtront ici et vous seront aussi envoyées par e-mail.</p>}
-          </div>
-        </div>
-
-        <div className="stack" hidden={sec !== "prestations"}>
-          <h1 className="dtitle">Mes prestations</h1>
-          <div id="prestations" className="card pad stack psec"><h2>Ce que je propose <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
-            <p className="hint">Listez chaque service avec son prix de départ : le client sait tout de suite ce que vous faites et combien ça coûte. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
-            {!services?.length && <p className="empty">Vous n’avez pas encore de prestation. Ajoutez la première ci-dessous.</p>}
-            {services?.map((s) => (
-              <details key={s.id} className="svc">
-                <summary><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}{((s as any).included?.length ?? 0) > 0 ? <><br /><span className="meta">{(s as any).included.length} élément{(s as any).included.length > 1 ? "s" : ""} inclus{((s as any).extras?.length ?? 0) > 0 ? ` · ${(s as any).extras.length} en supplément` : ""}</span></> : null}</span><span className="btn small">Modifier</span></summary>
-                <form action={updateService} className="stack svc-f"><input type="hidden" name="id" value={s.id} />
-                  <HeadlineField uid={`svc_h_${s.id}`} label="Prestation" value={s.headline} /><PriceField uid={`svc_p_${s.id}`} label="Prix de cette prestation" value={s.price_label} /><ServiceDetails uid={`svc_d_${s.id}`} included={(s as any).included} extras={(s as any).extras} />
-                  <div className="row"><button className="btn small primary" type="submit">Enregistrer</button></div></form>
-                <form action={removeService} className="svc-del"><input type="hidden" name="id" value={s.id} /><button className="btn small ghost" type="submit">Supprimer cette prestation</button></form>
-              </details>))}
-            {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait">Découvrir le Forfait Pro</Link></div>}
-            {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
-              <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de cette prestation" /><ServiceDetails uid="svc_d" />
-              <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
-          </div>
-        </div>
-
-        <div className="stack" hidden={sec !== "guide"}>
-          <h1 className="dtitle">Comment réussir ma fiche ?</h1>
-          <p className="sub">Les fiches complètes reçoivent bien plus d’appels. Suivez ces étapes dans l’ordre : chacune vous mène directement à l’endroit où la remplir.</p>
-          <div className="card pad stack">
-            <ol className="gsteps">
-              {([
-                [!!(artisan as any).cover_url || (shots ?? []).length > 0, "Une couverture en paysage", "Une belle image horizontale (1600 × 600 px) avec votre activité et votre nom. Gardez tout le texte dans la moitié centrale : sur les cartes de résultats, les bords sont coupés.", "/tableau-de-bord?s=profil&p=photos", "Ajouter ma couverture"],
-                [(shots ?? []).length >= 3, "3 à 8 réalisations", "Avant/après, chantiers terminés. Les fiches avec photos reçoivent bien plus d’appels.", "/tableau-de-bord?s=profil&p=photos", "Ajouter des photos"],
-                [!!(artisan as any).headline, "Une promesse « Je vais… »", "Une phrase simple sur ce que vous faites pour le client. Exemple : « Je vais installer votre climatisation ».", "/tableau-de-bord?s=profil", "Écrire ma promesse"],
-                [!!artisan.description && artisan.description.length >= 30, "Une description concrète", "Ce que vous faites, votre expérience, vos garanties. Écrivez comme vous parleriez à un client.", "/tableau-de-bord?s=profil", "Écrire ma présentation"],
-                [nSvc > 0, "Des prestations avec leur prix", "Une ligne par service, avec un prix de départ : « À partir de … FCFA » et l’unité. Le prix final se discute avec le client.", "/tableau-de-bord?s=prestations", "Ajouter une prestation"],
-                [(services ?? []).some((x: any) => (x.included?.length ?? 0) > 0), "Ce qui est inclus, et ce qui est en supplément", "Pour chaque prestation, dites ce que le prix comprend. Exemple, entretien de climatisation : déplacement et nettoyage des filtres inclus ; recharge de gaz en supplément (500 g = … FCFA). Le client n’a aucune mauvaise surprise et appelle avec confiance.", "/tableau-de-bord?s=prestations", "Détailler mes prestations"],
-                [myZones.size >= 2 && hasHours, "Des zones et des horaires", "Plus vous couvrez de zones, plus vous apparaissez dans les recherches. Indiquez vos horaires pour être trouvé quand le client en a besoin.", "/tableau-de-bord?s=profil&p=zones", "Choisir mes zones"],
-                [null, "Répondez vite", "Dans l’heure, c’est ce qui fait décrocher les chantiers. Un client qui n’a pas de réponse appelle le suivant.", "/tableau-de-bord?s=demandes", "Voir mes demandes"],
-              ] as [boolean | null, string, string, string, string][]).map(([ok, t, d, href, cta], k) => (
-                <li key={t} className={ok ? "done" : undefined}>
-                  <span className="gnum" aria-hidden="true">{ok ? "✓" : k + 1}</span>
-                  <div className="gbody"><b>{t}</b>{ok === true && <span className="tag ok">Fait</span>}<p>{d}</p><Link className="btn small" href={href} scroll={false}>{cta}</Link></div>
-                </li>))}
-            </ol>
-          </div>
         </div>
 
         <div className="stack" hidden={sec !== "profil"}>
@@ -359,16 +312,37 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <HeadlineField value={(artisan as any).headline} label="Ma promesse principale (affichée sur votre carte)" />
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
-          <div className="card pad stack psec"><h2>Prix et contact</h2>
+          <div className="card pad stack psec"><h2>Mon tarif de départ et mes contacts</h2>
+          <p className="sub">Le tarif de départ s’affiche sur votre carte. Le prix de chaque service se règle dans « Prestations et prix ».</p>
           {["machiniste", "chauffeur"].includes(trades?.find((t) => t.id === artisan.trade_id)?.slug ?? "")
             ? <><PriceField value={artisan.price_label} label="Salaire souhaité" /><p className="hint">Laissez vide : votre fiche affichera « Prix à négocier ». Sinon vos clients verront « Salaire souhaité : … ».</p></>
-            : <PriceField value={artisan.price_label} label="Prix affiché sur votre carte" />}
+            : <PriceField value={artisan.price_label} label="Tarif de départ (affiché sur votre carte)" />}
           <div className="fld"><label htmlFor="phone">Téléphone</label><input type="tel" id="phone" name="phone" required defaultValue={artisan.phone ?? ""} /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp (si différent)</label><input type="tel" id="whatsapp" name="whatsapp" defaultValue={artisan.whatsapp ?? ""} /></div>
           </div>
           <div className="savebar"><span className="meta">Pensez à enregistrer vos modifications.</span><button className="btn primary" type="submit">Enregistrer mes modifications</button></div>
         </form>
           </div>
+
+        <div className="stack" hidden={ptab !== "prestations"}>
+          <div id="prestations" className="card pad stack psec"><h2>Ce que je propose <span className="hint">({services?.length ?? 0}/{maxServices})</span>{pro && <span className="tag boost" style={{ marginLeft: 8 }}>Pro</span>}</h2>
+            <p className="hint">Listez chaque service avec son prix de départ : le client sait tout de suite ce que vous faites et combien ça coûte. Elles s’affichent sur votre fiche.{pro && proSub ? ` Forfait Pro actif jusqu’au ${day(proSub.ends_at)}.` : ""}</p>
+            {!services?.length && <p className="empty">Vous n’avez pas encore de prestation. Ajoutez la première ci-dessous.</p>}
+            {services?.map((s) => (
+              <details key={s.id} className="svc">
+                <summary><span><b>{s.headline}</b>{priceText(s.price_label) ? <><br /><span className="meta">{priceText(s.price_label)}</span></> : null}{((s as any).included?.length ?? 0) > 0 ? <><br /><span className="meta">{(s as any).included.length} élément{(s as any).included.length > 1 ? "s" : ""} inclus{((s as any).extras?.length ?? 0) > 0 ? ` · ${(s as any).extras.length} en supplément` : ""}</span></> : null}</span><span className="btn small">Modifier</span></summary>
+                <form action={updateService} className="stack svc-f"><input type="hidden" name="id" value={s.id} />
+                  <HeadlineField uid={`svc_h_${s.id}`} label="Prestation" value={s.headline} /><PriceField uid={`svc_p_${s.id}`} label="Prix de ce service" value={s.price_label} /><ServiceDetails uid={`svc_d_${s.id}`} included={(s as any).included} extras={(s as any).extras} />
+                  <div className="row"><button className="btn small primary" type="submit">Enregistrer</button></div></form>
+                <form action={removeService} className="svc-del"><input type="hidden" name="id" value={s.id} /><button className="btn small ghost" type="submit">Supprimer cette prestation</button></form>
+              </details>))}
+            {(services?.length ?? 0) >= maxServices && !pro && <div className="notice boostnote row" style={{ justifyContent: "space-between" }}><span><b>Forfait gratuit : 1 prestation.</b> Passez Pro pour en afficher jusqu’à 10 et 20 photos.</span><Link className="btn small boost" href="/tableau-de-bord?s=forfait">Découvrir le Forfait Pro</Link></div>}
+            {(services?.length ?? 0) < maxServices && <form action={addService} className="stack" style={{ borderTop: services?.length ? "1px solid var(--line)" : 0, paddingTop: services?.length ? 14 : 0 }}>
+              <HeadlineField uid="svc_h" label="Nouvelle prestation" /><PriceField uid="svc_p" label="Prix de ce service" /><ServiceDetails uid="svc_d" />
+              <div><button className="btn small primary" type="submit">Ajouter cette prestation</button></div></form>}
+          </div>
+        </div>
+
 
           <div className="stack" hidden={ptab !== "photos"}>
             <div id="photos" className="card pad stack psec"><h2>Couverture et réalisations</h2>
@@ -386,7 +360,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <div className="savebar"><span className="meta">Pensez à enregistrer vos zones.</span><button className="btn primary" type="submit">Enregistrer mes zones</button></div>
             </form>
       <div id="horaires" className="card pad stack">
-        <h2 style={{ fontSize: 20 }}>Mes horaires</h2>
+        <h2 style={{ fontSize: 18 }}>Mes horaires</h2>
         <p className="muted">Les clients voient « Ouvert maintenant » sur votre fiche quand vous êtes disponible, et peuvent filtrer les artisans ouverts.</p>
         <HoursEditor initial={cleanHours((artisan as any).hours)} open247={!!(artisan as any).open_24_7} urgent={!!(artisan as any).takes_urgent} action={saveHours} />
       </div>
@@ -397,7 +371,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
           <div className="stack" hidden={ptab !== "diplomes"}>
       <div id="diplomes" className="card pad stack">
-        <h2 style={{ fontSize: 20 }}>Diplômes et certificats</h2>
+        <h2 style={{ fontSize: 18 }}>Diplômes et certificats</h2>
         <p className="muted">Après vérification, votre fiche affiche « Diplôme vérifié », ce qui rassure les clients.</p>
         {diplomas?.map((d) => (
           <div key={d.id} className="row" style={{ justifyContent: "space-between" }}>
@@ -412,7 +386,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </div>
 
       <div id="forfait" className="stack" hidden={sec !== "forfait"}>
-        <h1 className="dtitle">Mon forfait</h1>
+        <h1 className="dtitle">Visibilité et forfait</h1>
         {sp.paye && (paid[0]?.status === "paid" ? <p className="notice ok" role="status">Paiement reçu. Votre Forfait Pro est actif.</p> : <p className="notice" role="status">Merci ! Nous attendons la confirmation de GeniusPay. Votre forfait s’activera automatiquement dans quelques instants : rechargez cette page dans une minute.</p>)}
         <div className="card pad stack">
           <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Mon offre actuelle</h2>{pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</div>
@@ -471,10 +445,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Historique</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>
-      </div>
-
-      <div id="visibilite" className="stack" hidden={sec !== "boosts"}>
-        <h1 className="dtitle">Boosts</h1>
+      
+      <div id="visibilite" className="stack">
+        <h2 style={{ fontSize: 18 }}>Boosts : passer en tête des résultats</h2>
         <div className="card pad dboost big">
           <div><b>{act?.length ? "Votre boost est en cours" : "Faites-vous voir en premier"}</b>
             <p className="meta">{act?.length ? "Prolongez-le avant la fin pour garder votre place." : "Placez votre fiche en tête des résultats et recevez plus d’appels."}</p></div>
@@ -482,20 +455,24 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </div>
         {act?.length ? <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Boosts actifs</h2>{act.map((b) => (<div key={b.id} className="row" style={{ justifyContent: "space-between" }}><b>{BOOST_TYPES[b.type].name}</b><span className="tag ok">reste {timeLeft(b.ends_at)}</span></div>))}</div> : null}
       </div>
-      <div id="notifs" className="stack" hidden={sec !== "notifs"}>
-        <h1 className="dtitle">Notifications</h1>
-        <p className="meta">Recevez une alerte sur votre téléphone dès qu’un client vous écrit, même quand l’application est fermée.</p>
-        {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell where="menu" publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
       </div>
       <div id="aide" className="stack" hidden={sec !== "aide"}>
-        <h1 className="dtitle">Contacter Bricolo</h1>
-        <p className="meta">Un problème, une question, un doute sur votre dossier ou un paiement ? Écrivez-nous ici : l’équipe vous répond directement, et vous prévient par notification et par e-mail.</p>
-        {sec === "aide" && <SupportChat as="artisan" empty="Aucun message pour le moment. Écrivez-nous, nous répondons en général sous 24 heures." />}
-      </div>
-      <div id="compte" className="stack" hidden={sec !== "compte"}>
-        <h1 className="dtitle">Mon compte</h1>
-        <p className="meta">Connecté avec {user.email}. Pour changer d’adresse e-mail, écrivez-nous depuis « Contacter Bricolo ».</p>
-        {sec === "compte" && <DeleteAccount hasPaid={Boolean(pro || act?.length)} />}
+        <h1 className="dtitle">Aide et compte</h1>
+        <nav className="subnav" aria-label="Aide et compte">
+          {ASUBS.map(([k, l]) => <Link key={k} href={`/tableau-de-bord?s=aide&a=${k}`} scroll={false} aria-current={atab === k ? "page" : undefined}>{l}{k === "aide" && unreadHelp ? <em> {unreadHelp}</em> : null}</Link>)}
+        </nav>
+        <div id="aide-chat" className="stack" hidden={atab !== "aide"}>
+          <p className="meta">Un problème, une question, un doute sur votre dossier ou un paiement ? Écrivez-nous ici : l’équipe vous répond directement, et vous prévient par notification et par e-mail.</p>
+          {sec === "aide" && atab === "aide" && <SupportChat as="artisan" empty="Aucun message pour le moment. Écrivez-nous, nous répondons en général sous 24 heures." />}
+        </div>
+        <div id="notifs" className="stack" hidden={atab !== "notifs"}>
+          <p className="meta">Recevez une alerte sur votre téléphone dès qu’un client vous écrit, même quand l’application est fermée.</p>
+          {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell where="menu" publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
+        </div>
+        <div id="compte" className="stack" hidden={atab !== "compte"}>
+          <p className="meta">Connecté avec {user.email}. Pour changer d’adresse e-mail, écrivez-nous depuis « Contacter Bricolo ».</p>
+          {sec === "aide" && atab === "compte" && <DeleteAccount hasPaid={Boolean(pro || act?.length)} />}
+        </div>
       </div>
       </main>
     </section>
