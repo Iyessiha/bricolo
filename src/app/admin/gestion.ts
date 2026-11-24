@@ -308,7 +308,21 @@ export async function appliquerCoversEnMasse() {
 
 const PUB = "/object/public/realisations/";
 
-/** Reprend une photo de réalisation de l'artisan comme cover de sa fiche (copie dans le stockage, la photo d'origine reste en place). */
+/** Contrôle commun : seules les images en paysage (au moins 1,25 fois plus larges que hautes, 800 px de large) sont acceptées. Renvoie un message d'erreur, ou null si l'image convient. */
+async function paysageOuErreur(buf: Buffer): Promise<string | null> {
+  try {
+    const m = await sharp(buf).rotate().metadata();
+    const swap = (m.orientation ?? 1) >= 5;
+    const w = swap ? m.height ?? 0 : m.width ?? 0, h = swap ? m.width ?? 0 : m.height ?? 0;
+    if (!w || !h) return "Image illisible. Essayez un fichier JPG, PNG ou WebP.";
+    if (w < h * 1.25) return `Image en portrait ou presque carrée (${w} × ${h} px). Seules les images en paysage sont acceptées (par exemple 1600 × 600 px).`;
+    if (w < 800) return `Image trop petite (${w} px de large). Il faut au moins 800 px de large.`;
+    return null;
+  } catch { return "Image illisible. Essayez un fichier JPG, PNG ou WebP."; }
+}
+const IMG_OK = ["image/jpeg", "image/png", "image/webp"];
+
+/** Reprend une photo de réalisation de l'artisan comme cover de sa fiche (recadrée en paysage ; la photo d'origine reste en place). Refusée si la photo est en portrait. */
 export async function utiliserPhotoCommeCover(f: FormData) {
   const ctx = await requireAdmin();
   const id = s(f, "id", 40), photo = s(f, "photo", 40);
@@ -316,18 +330,46 @@ export async function utiliserPhotoCommeCover(f: FormData) {
   const { data: a } = await ctx.db.from("artisans").select("id, name, user_id, cover_url").eq("id", id).maybeSingle();
   const { data: p } = await ctx.db.from("portfolio_photos").select("path").eq("id", photo).eq("artisan_id", id).maybeSingle();
   if (!a || !p?.path) back("/admin/covers", "erreur", "Photo introuvable.");
-  const ext = (String(p!.path).split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5) || "jpg";
-  const to = `${a!.user_id}/cover-photo-${Date.now()}.${ext}`;
-  const cp = await ctx.db.storage.from("realisations").copy(p!.path, to);
-  if (cp.error) back("/admin/covers", "erreur", "Copie de la photo impossible. Réessayez.");
+  const dl = await ctx.db.storage.from("realisations").download(p!.path);
+  if (dl.error || !dl.data) back("/admin/covers", "erreur", "Lecture de la photo impossible. Réessayez.");
+  const src = Buffer.from(await dl.data!.arrayBuffer());
+  const bad = await paysageOuErreur(src);
+  if (bad) back("/admin/covers", "erreur", bad);
+  await poserCover(ctx, a as any, src, "cover-photo", "artisan.cover_photo", `Cover de ${a!.name} remplacée par sa photo.`);
+}
+
+/** Téléverse directement une cover pour un artisan (paysage uniquement). */
+export async function televerserCoverArtisan(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  if (!UUID.test(id)) redirect("/admin/covers");
+  const { data: a } = await ctx.db.from("artisans").select("id, name, user_id, cover_url").eq("id", id).maybeSingle();
+  if (!a) back("/admin/covers", "erreur", "Artisan introuvable.");
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) back("/admin/covers", "erreur", "Choisissez une image.");
+  if (!IMG_OK.includes((file as File).type)) back("/admin/covers", "erreur", "Format non accepté : JPG, PNG ou WebP.");
+  if ((file as File).size > 5 * 1024 * 1024) back("/admin/covers", "erreur", "Image trop lourde (5 Mo maximum).");
+  const src = Buffer.from(await (file as File).arrayBuffer());
+  const bad = await paysageOuErreur(src);
+  if (bad) back("/admin/covers", "erreur", bad);
+  await poserCover(ctx, a as any, src, "cover-admin", "artisan.cover_televerser", `Cover de ${a!.name} enregistrée.`);
+}
+
+async function poserCover(ctx: Awaited<ReturnType<typeof requireAdmin>>, a: { id: string; name: string; user_id: string; cover_url: string | null }, src: Buffer, prefix: string, action: string, msg: string) {
+  let webp: Buffer;
+  try { webp = await sharp(src).rotate().resize(1600, 600, { fit: "cover", position: "attention" }).webp({ quality: 78 }).toBuffer(); }
+  catch { back("/admin/covers", "erreur", "Image illisible. Essayez un fichier JPG, PNG ou WebP."); return; }
+  const to = `${a.user_id}/${prefix}-${Date.now()}.webp`;
+  const up = await ctx.db.storage.from("realisations").upload(to, webp, { contentType: "image/webp", cacheControl: "3600" });
+  if (up.error) back("/admin/covers", "erreur", "Envoi impossible. Réessayez.");
   const { data: pub } = ctx.db.storage.from("realisations").getPublicUrl(to);
-  const old = a!.cover_url?.split(PUB)[1];
-  const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", id);
+  const old = a.cover_url?.split(PUB)[1];
+  const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", a.id);
   if (error) back("/admin/covers", "erreur", "Enregistrement impossible. Réessayez.");
   if (old) await ctx.db.storage.from("realisations").remove([old]);
-  await audit(ctx, "artisan.cover_photo", { type: "artisan", id, label: a!.name });
-  revalidatePath(`/artisan/${id}`); revalidatePath("/"); revalidatePath("/admin/covers");
-  back("/admin/covers", "ok", `Cover de ${a!.name} remplacée par sa photo.`);
+  await audit(ctx, action, { type: "artisan", id: a.id, label: a.name });
+  revalidatePath(`/artisan/${a.id}`); revalidatePath("/"); revalidatePath("/admin/covers");
+  back("/admin/covers", "ok", msg);
 }
 
 /** Retire la cover de la fiche : la carte reprend la photo par défaut du métier. */
@@ -354,8 +396,12 @@ export async function televerserDefaut(f: FormData) {
   const file = f.get("file");
   if (!(file instanceof File) || !file.size) back("/admin/covers/defauts", "erreur", "Choisissez une image.");
   if ((file as File).size > 5 * 1024 * 1024) back("/admin/covers/defauts", "erreur", "Image trop lourde (5 Mo maximum).");
+  if (!IMG_OK.includes((file as File).type)) back("/admin/covers/defauts", "erreur", "Format non accepté : JPG, PNG ou WebP.");
+  const src = Buffer.from(await (file as File).arrayBuffer());
+  const bad = await paysageOuErreur(src);
+  if (bad) back("/admin/covers/defauts", "erreur", bad);
   let webp: Buffer;
-  try { webp = await sharp(Buffer.from(await (file as File).arrayBuffer())).rotate().resize(900, 390, { fit: "cover", position: "attention" }).webp({ quality: 75 }).toBuffer(); }
+  try { webp = await sharp(src).rotate().resize(900, 390, { fit: "cover", position: "attention" }).webp({ quality: 75 }).toBuffer(); }
   catch { back("/admin/covers/defauts", "erreur", "Image illisible. Essayez un fichier JPG, PNG ou WebP."); return; }
   const up = await ctx.db.storage.from("realisations").upload(`defaults/${slug}.webp`, webp, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
   if (up.error) back("/admin/covers/defauts", "erreur", "Envoi impossible. Réessayez.");
@@ -374,4 +420,33 @@ export async function retirerDefaut(f: FormData) {
   await audit(ctx, "cover.defaut_retirer", { type: "metier", id: slug, label: slug });
   revalidatePath("/"); revalidatePath("/admin/covers/defauts");
   back("/admin/covers/defauts", "ok", "Photo par défaut retirée : la photo du site est de nouveau utilisée.");
+}
+
+
+/** Choisit, pour un métier, l'affichage par défaut : dessin SVG aux couleurs de Bricolo, ou photo (téléversée ou du site). */
+export async function definirModeDefaut(f: FormData) {
+  const ctx = await requireAdmin();
+  const slug = s(f, "slug", 40), mode = s(f, "mode", 5) === "svg" ? "svg" : "photo";
+  const { data: t } = await ctx.db.from("trades").select("slug").eq("slug", slug).maybeSingle();
+  if (!t) back("/admin/covers/defauts", "erreur", "Métier inconnu.");
+  const { error } = await ctx.db.from("trade_default_covers").upsert({ slug, mode, updated_at: new Date().toISOString() });
+  if (error) back("/admin/covers/defauts", "erreur", "Enregistrement impossible. Réessayez.");
+  resetUploadedDefaults();
+  await audit(ctx, "cover.defaut_mode", { type: "metier", id: slug, label: `${slug} → ${mode}` });
+  revalidatePath("/"); revalidatePath("/admin/covers/defauts");
+  back("/admin/covers/defauts", "ok", mode === "svg" ? "Dessin SVG activé pour ce métier." : "Photo activée pour ce métier.");
+}
+
+/** Même choix pour tous les métiers d'un coup. */
+export async function definirModeTous(f: FormData) {
+  const ctx = await requireAdmin();
+  const mode = s(f, "mode", 5) === "svg" ? "svg" : "photo";
+  const { data: ts } = await ctx.db.from("trades").select("slug");
+  const rows = (ts ?? []).map((t: any) => ({ slug: t.slug, mode, updated_at: new Date().toISOString() }));
+  const { error } = rows.length ? await ctx.db.from("trade_default_covers").upsert(rows) : { error: null };
+  if (error) back("/admin/covers/defauts", "erreur", "Enregistrement impossible. Réessayez.");
+  resetUploadedDefaults();
+  await audit(ctx, "cover.defaut_mode_tous", { type: "metier", id: "tous", label: mode });
+  revalidatePath("/"); revalidatePath("/admin/covers/defauts");
+  back("/admin/covers/defauts", "ok", mode === "svg" ? "Dessin SVG activé pour tous les métiers." : "Photos activées pour tous les métiers.");
 }

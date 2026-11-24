@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 /** Cover de carte : photo paysage de l'artisan (cover téléversée, sinon l'une de ses réalisations si elle est en paysage), sinon photo par défaut. */
-export default function LiteCover({ own, shots, fallback }: { own: string | null; shots: string[]; fallback: string }) {
+export default function LiteCover({ own, shots, fallback, svg }: { own: string | null; shots: string[]; fallback: string; svg?: boolean }) {
   const [src, setSrc] = useState(own ?? fallback);
   useEffect(() => {
     if (own || !shots.length) return;
@@ -21,5 +21,5 @@ export default function LiteCover({ own, shots, fallback }: { own: string | null
     })();
     return () => { off = true; };
   }, [own, shots]);
-  return <><img src={src} alt="" loading="lazy" />{!own && src === fallback && <span className="lc-ill">Photo illustrative</span>}</>;
+  return <><img src={src} alt="" loading="lazy" />{!own && !svg && src === fallback && <span className="lc-ill">Photo illustrative</span>}</>;
 }

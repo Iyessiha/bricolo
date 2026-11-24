@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
-import { retirerCover, utiliserPhotoCommeCover } from "@/app/admin/gestion";
+import { retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover } from "@/app/admin/gestion";
 import { isGeneratedCover } from "@/lib/default-covers";
 
 export const metadata: Metadata = { title: "Covers des fiches", robots: { index: false } };
@@ -22,10 +22,10 @@ export default async function Covers({ searchParams }: { searchParams: Promise<R
   }));
   return (
     <>
-      <div className="atitle"><div><p className="eyebrow">Marque</p><h1>Covers des fiches</h1></div><Link className="btn" href="/admin/covers/defauts">Photos par défaut des métiers</Link></div>
+      <div className="atitle"><div><p className="eyebrow">Marque</p><h1>Covers des fiches</h1></div><Link className="btn" href="/admin/covers/defauts">Covers par défaut (SVG / photos)</Link></div>
       {sp.ok && <p className="notice ok" role="status">{sp.ok}</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
-      <p className="hint">Sur la page d’accueil, la carte d’un artisan montre : sa cover (photo paysage téléversée), sinon l’une de ses réalisations en paysage, sinon la photo par défaut de son métier. Ici, choisissez parmi ses photos celle qui deviendra sa cover. Les vignettes sont recadrées exactement comme sur la carte. Faites-le avec l’accord de l’artisan.</p>
+      <p className="hint">Sur la page d’accueil, la carte d’un artisan montre : sa cover (photo paysage téléversée), sinon l’une de ses réalisations en paysage, sinon la cover par défaut de son métier (dessin SVG ou photo). Ici, vous pouvez téléverser une cover pour un artisan ou choisir parmi ses photos celle qui deviendra sa cover. Seules les images en paysage sont acceptées. Les vignettes sont recadrées exactement comme sur la carte. Faites-le avec l’accord de l’artisan.</p>
       <div className="agrid">
         {rows.map((a: any) => (
           <div key={a.id} className="card pad stack">
@@ -47,6 +47,11 @@ export default async function Covers({ searchParams }: { searchParams: Promise<R
                 </div>
               </div>
             ) : <p className="meta">Cet artisan n’a pas encore téléversé de photo de réalisation.</p>}
+            <form action={televerserCoverArtisan} className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="hidden" name="id" value={a.id} />
+              <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required style={{ maxWidth: "100%" }} />
+              <button className="btn small primary" type="submit">Téléverser une cover (paysage)</button>
+            </form>
             <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
               {(a.own || a.old) && <form action={retirerCover}><input type="hidden" name="id" value={a.id} /><button className="btn small" type="submit">Retirer la cover</button></form>}
               <Link className="btn small ghost" href={`/admin/artisan/${a.id}`}>Dossier</Link>

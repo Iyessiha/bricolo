@@ -1,4 +1,4 @@
-import { uploadedDefaults } from "@/lib/default-covers-server";
+import { defaultSettings } from "@/lib/default-covers-server";
 import Link from "next/link";
 import VideoPromo from "@/components/VideoPromo";
 import TradeIcon from "@/components/TradeIcon";
@@ -83,8 +83,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const shotsOf = new Map<string, string[]>();
   for (const r of (shotRows ?? []) as any[]) { const l = shotsOf.get(r.artisan_id) ?? []; if (l.length < 3) { l.push(r.url); shotsOf.set(r.artisan_id, l); } }
   for (const a of shown) a.shots = shotsOf.get(a.id) ?? [];
-  const upDefaults = await uploadedDefaults();
-  for (const a of shown) a.default_cover = (a.trade_slug && upDefaults[a.trade_slug]) || null;
+  const ds = await defaultSettings();
+  for (const a of shown) { const sl = a.trade_slug; a.default_kind = ds.modes[sl] === "svg" ? "svg" : "photo"; a.default_cover = !sl ? null : ds.modes[sl] === "svg" ? `/cover-defaut/${sl}` : ds.up[sl] ?? null; }
   const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
   return (
     <>

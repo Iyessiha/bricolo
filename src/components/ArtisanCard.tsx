@@ -8,7 +8,7 @@ export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
   photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
-  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string; trade_slug?: string; shots?: string[]; default_cover?: string | null;
+  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string; trade_slug?: string; shots?: string[]; default_cover?: string | null; default_kind?: "svg" | "photo";
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
@@ -32,7 +32,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
     return (
       <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
         <div className="lc-cover">
-          <LiteCover own={own} shots={shots} fallback={dflt ?? ""} />
+          <LiteCover own={own} shots={shots} fallback={dflt ?? ""} svg={a.default_kind === "svg"} />
           {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         </div>
         <div className="lc-head">
