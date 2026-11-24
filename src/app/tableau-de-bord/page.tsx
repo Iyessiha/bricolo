@@ -144,14 +144,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const checks = [
     { ok: true, l: "Adresse e-mail confirmée", s: "apercu" },
     { ok: ident.status === "approved", l: "Identité vérifiée", s: "apercu" },
-    { ok: !!(artisan as any).headline, l: "Écrire votre promesse « Je vais… »", s: "profil" },
-    { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", s: "profil" },
-    { ok: nSvc > 0, l: "Ajouter au moins une prestation avec son prix", s: "prestations" },
-    { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", s: "profil" },
-    { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", s: "profil&p=zones" },
-    { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", s: "profil&p=photos" },
-    { ok: hasHours, l: "Renseigner vos horaires", s: "profil&p=zones" },
-    { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", s: "profil&p=diplomes" },
+    { ok: !!(artisan as any).headline, l: "Écrire votre promesse « Je vais… »", why: "C’est la première ligne que le client lit sur votre carte.", s: "profil" },
+    { ok: !!artisan.description && artisan.description.length >= 30, l: "Écrire une présentation de vos services", why: "Elle rassure le client sur ce que vous faites et comment.", s: "profil" },
+    { ok: nSvc > 0, l: "Ajouter au moins une prestation avec son prix", why: "Le client sait à quoi s’attendre avant de vous appeler.", s: "prestations" },
+    { ok: !!artisan.price_label, l: "Indiquer un tarif indicatif", why: "Les clients écartent souvent les fiches sans prix.", s: "profil" },
+    { ok: myZones.size >= 2, l: "Couvrir au moins 2 zones", why: "Vous apparaissez dans plus de recherches par quartier.", s: "profil&p=zones" },
+    { ok: !!(artisan as any).cover_url || (shots ?? []).length > 0, l: "Ajouter une couverture ou des photos de vos réalisations", why: "Une photo de votre travail est la meilleure preuve de votre savoir-faire.", s: "profil&p=photos" },
+    { ok: hasHours, l: "Renseigner vos horaires", why: "Votre fiche peut apparaître dans « Ouverts maintenant ».", s: "profil&p=zones" },
+    { ok: (diplomas ?? []).some((d) => d.status !== "rejected"), l: "Ajouter un diplôme (facultatif)", why: "Il vous donne le badge Diplômé.", s: "profil&p=diplomes" },
   ];
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
@@ -196,6 +196,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
       <main className="dmain stack">
         {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && <PushBell publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />}
+        {pct < 100 && sec !== "apercu" && !deleting && !suspended && !rejected && (
+          <div className="dremind stack" role="note">
+            <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 12 }}><b>Votre fiche est complète à {pct} %</b><span className="num dpct" style={{ fontSize: 18 }}>{pct}%</span></div>
+            <div className="bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+            <p>Avant d’appeler, un client compare plusieurs artisans : une fiche avec photos, tarif, zones et horaires est bien plus facile à choisir qu’une fiche vide.</p>
+            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}><Link className="btn small primary" href={`/tableau-de-bord?s=${todo[0].s}`} scroll={false}>{todo[0].l}</Link><Link className="btn small ghost" href="/tableau-de-bord" scroll={false}>Voir tout ce qui reste ({todo.length})</Link></div>
+          </div>
+        )}
         {approved ? (
           <MomentPopup id={`online:${artisan.id}`} emoji="🎉" title="Votre profil est en ligne !" text="Les clients peuvent maintenant vous trouver. Pour recevoir vos premières demandes plus vite, partagez votre fiche à vos clients et contacts sur WhatsApp."
             actions={[{ label: "💬 Partager ma fiche sur WhatsApp", primary: true, share: { path: `/artisan/${artisan.id}`, text: `Retrouvez-moi sur Bricolo (${tradeName}) :` } }, { label: "Voir ma fiche", href: `/artisan/${artisan.id}` }]} />
@@ -230,7 +238,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}><h2 style={{ fontSize: 18 }}>Votre profil est complet à {pct} %</h2><b className="num dpct">{pct}%</b></div>
             <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Complétude du profil"><i style={{ width: `${pct}%` }} /></div>
             {todo.length ? (
-              <ul className="dtodo">{todo.map((c) => <li key={c.l}><Link href={`/tableau-de-bord?s=${c.s}`} scroll={false}>{c.l} <span aria-hidden="true">→</span></Link></li>)}</ul>
+              <ul className="dtodo">{todo.map((c) => <li key={c.l}><Link href={`/tableau-de-bord?s=${c.s}`} scroll={false}>{c.l} <span aria-hidden="true">→</span></Link>{(c as any).why && <small className="meta" style={{ display: "block" }}>{(c as any).why}</small>}</li>)}</ul>
             ) : <p className="meta">Bravo, votre fiche est au top. Les profils complets reçoivent plus de demandes.</p>}
           </div>
         <div className="tags">
