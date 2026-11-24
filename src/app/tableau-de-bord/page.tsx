@@ -425,6 +425,26 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             ) : <p className="meta">Ajoutez d’abord une zone d’intervention à votre fiche.</p>}
           </div>
         )}
+        {approved && (
+          <div className="card pad stack">
+            <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Mon kit WhatsApp</h2><span className="tag boost">Inclus dans le Pro</span></div>
+            <p className="meta">Une affiche, un visuel pour votre statut WhatsApp et une carte de visite, à votre nom, avec un QR code qui ouvre votre fiche. Postez-les, imprimez-les, montrez-les à vos clients.</p>
+            {pro ? (
+              <>
+                <div className="agrid">
+                  {([["statut", "Statut WhatsApp", "9 / 16"], ["affiche", "Affiche", "4 / 5"], ["carte", "Carte de visite", "7 / 4"]] as const).map(([k, l, ar]) => (
+                    <div key={k} className="stack" style={{ gap: 8 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/api/kit/${k}`} alt={`${l} de ${artisan.name}`} loading="lazy" style={{ width: "100%", maxHeight: 280, aspectRatio: ar, objectFit: "contain", borderRadius: 10, background: "var(--surface-100)" }} />
+                      <a className="btn small" href={`/api/kit/${k}?dl=1`}>Télécharger : {l}</a>
+                    </div>
+                  ))}
+                </div>
+                <a className="btn small wa" style={{ justifySelf: "start" }} href={`https://wa.me/?text=${encodeURIComponent(`Retrouvez-moi sur Bricolo (${tradeName}) : ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.monbricolo.com"}/artisan/${artisan.id}?s=wa`)}`}>Partager ma fiche sur WhatsApp</a>
+              </>
+            ) : <p className="hint">Disponible avec le Forfait Pro (essai gratuit possible si votre identité est vérifiée).</p>}
+          </div>
+        )}
         {pro && perks?.recap && (
           <div className="card pad stack">
             <h2 style={{ fontSize: 18 }}>Bilan de mon Forfait Pro</h2>
