@@ -22,7 +22,7 @@ function Why() {
   );
 }
 
-export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; country?: string; lite?: boolean }) {
+export default function ArtisanCard({ a, country, lite, src }: { a: ArtisanRow; country?: string; lite?: boolean; src?: "accueil" | "recherche" }) {
   const st = openStatus(a.hours, a.open_24_7, country ?? a.country_code ?? "ci");
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
   if (lite) {
@@ -38,7 +38,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
         <div className="lc-head">
           <span className="lc-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>
           <div className="lc-id">
-            <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link></h3>
+            <h3><Link href={`/artisan/${a.id}?s=${src ?? "recherche"}`}>{a.name}</Link></h3>
             <p className="lc-sub">{a.trade}</p>
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
         </div>
       </div>
       <div className="acard-body">
-        <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link></h3>
+        <h3><Link href={`/artisan/${a.id}?s=${src ?? "recherche"}`}>{a.name}</Link></h3>
         <p className="acard-trade">{a.trade}</p>
         {a.headline && !lite && <p className="acard-hl">{a.headline}</p>}
         {zones && <p className="acard-meta" title={a.zones?.join(", ")}>📍 {zones}</p>}

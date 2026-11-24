@@ -45,7 +45,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const { data: services } = await db.from("artisan_services").select("id, headline, price_label, included, extras").eq("artisan_id", id).order("created_at");
   const { data: shots } = await db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", id).order("created_at");
   const { data: reviews } = await db.from("reviews").select("id, author_name, rating, comment, verified_by, artisan_reply").eq("artisan_id", id).eq("status", "published").order("created_at", { ascending: false }).limit(10);
-  try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view" }); } catch { /* statistiques non bloquantes */ }
+  try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view", source: ["accueil", "recherche", "qr", "wa"].includes(sp.s ?? "") ? sp.s : "direct" }); } catch { /* statistiques non bloquantes */ }
 
   const zones = ((a as any).zones ?? []).map((z: any) => z.zone).filter(Boolean) as { id: string; name: string }[];
   const trade = (a as any).trade as { id: string; name: string; slug?: string };

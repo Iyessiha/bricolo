@@ -140,7 +140,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       {shown.length ? <section className="inner sec">
         <div className="sec-head"><h2>Des artisans près de chez vous</h2><Link href="/resultats">Voir tous →</Link></div>
         <div className="cards home">
-          {shown.map((a: any) => <ArtisanCard lite country={country} key={a.id} a={a} />)}
+          {shown.map((a: any) => <ArtisanCard lite src="accueil" country={country} key={a.id} a={a} />)}
           {shown.length < 6 && <Link href="/inscription" className="acard acard-invite"><b>D’autres artisans arrivent</b><span>Vous êtes artisan ? Créez votre profil gratuit et soyez trouvé près de chez vous.</span><em>Créer mon profil →</em></Link>}
         </div>
         <p className="home-more"><Link className="btn" href="/resultats">Voir tous les artisans →</Link></p>

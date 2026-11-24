@@ -76,3 +76,41 @@ export async function proRecap(db: Admin, artisanId: string, since: string) {
   const [v, c, w, r] = await Promise.all([count("view"), count("call"), count("whatsapp"), count("request")]);
   return { vues: v.count ?? 0, appels: c.count ?? 0, wa: w.count ?? 0, demandes: r.count ?? 0 };
 }
+
+const UTC_OFFSET: Record<string, number> = { bj: 1, ne: 1 }; // les autres pays de la zone sont à l'heure de Greenwich
+export type DetailedStats = {
+  days: { d: string; v: number }[]; views: number; contacts: number; rate: number;
+  sources: { key: string; label: string; n: number }[]; bestDay: string | null; bestHours: string | null; since: string;
+};
+const SRC_LABEL: Record<string, string> = { recherche: "Recherche", accueil: "Page d’accueil", qr: "QR code (affiche, carte)", wa: "Partage WhatsApp", direct: "Lien direct ou autre" };
+const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+/** Statistiques détaillées (Forfait Pro) : vues par jour et par provenance, taux de contact, jour et heures où les clients appellent le plus. */
+export async function detailedStats(db: Admin, artisanId: string, country: string, days = 30): Promise<DetailedStats> {
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  const since = new Date(today.getTime() - (days - 1) * 864e5);
+  const { data } = await db.from("events").select("type, source, created_at").eq("artisan_id", artisanId).gte("created_at", since.toISOString()).limit(8000);
+  const off = (UTC_OFFSET[country] ?? 0) * 36e5;
+  const perDay: { d: string; v: number }[] = Array.from({ length: days }, (_, i) => ({ d: new Date(since.getTime() + i * 864e5).toISOString().slice(0, 10), v: 0 }));
+  const idx = new Map(perDay.map((x, i) => [x.d, i]));
+  const src = new Map<string, number>(); const wd = Array(7).fill(0), hr = Array(24).fill(0);
+  let views = 0, contacts = 0;
+  for (const e of data ?? []) {
+    if (e.type === "view") {
+      views++; const i = idx.get(String(e.created_at).slice(0, 10)); if (i !== undefined) perDay[i].v++;
+      const k = e.source && SRC_LABEL[e.source] ? e.source : "direct"; src.set(k, (src.get(k) ?? 0) + 1);
+    } else if (e.type === "call" || e.type === "whatsapp") {
+      contacts++; const t = new Date(new Date(e.created_at).getTime() + off); wd[t.getUTCDay()]++; hr[t.getUTCHours()]++;
+    }
+  }
+  const sources = [...src.entries()].map(([key, n]) => ({ key, label: SRC_LABEL[key], n })).sort((a, b) => b.n - a.n);
+  const maxDay = Math.max(...wd);
+  // Meilleure plage de 3 heures consécutives
+  let bestStart = 0, bestSum = -1;
+  for (let h = 0; h < 22; h++) { const sum = hr[h] + hr[h + 1] + hr[h + 2]; if (sum > bestSum) { bestSum = sum; bestStart = h; } }
+  return {
+    days: perDay, views, contacts, rate: views ? Math.round((contacts / views) * 100) : 0, sources, since: since.toISOString(),
+    bestDay: contacts >= 5 && maxDay > 0 ? WEEKDAYS[wd.indexOf(maxDay)] : null,
+    bestHours: contacts >= 5 && bestSum > 0 ? `${bestStart} h – ${bestStart + 3} h` : null,
+  };
+}

@@ -24,7 +24,8 @@ import ServiceDetails from "@/components/ServiceDetails";
 import AskReview from "@/components/AskReview";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { addService, markAnswered, removeService, replyToReview, saveZones, updateService, saveHours, saveProfile, claimFreeBoostAction, startTrialAction } from "./actions";
-import { freeBoostUsed, nextMonthStart, proRecap, trialStatus, TRIAL_DAYS } from "@/lib/pro-perks";
+import { detailedStats, freeBoostUsed, nextMonthStart, proRecap, trialStatus, TRIAL_DAYS } from "@/lib/pro-perks";
+import BarChart from "@/components/BarChart";
 import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
@@ -123,14 +124,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   // Avantages du Forfait Pro : essai gratuit, boost du mois offert, bilan chiffré.
   const perks = sec !== "forfait" ? null : await (async () => {
     const adb = supabaseAdmin();
-    const [trial, freeUsed, zs, recap] = await Promise.all([
+    const [trial, freeUsed, zs, recap, detail] = await Promise.all([
       !pro && approved ? trialStatus(adb, artisan.id) : Promise.resolve(null),
       pro ? freeBoostUsed(adb, artisan.id) : Promise.resolve(null),
       pro ? adb.from("artisan_zones").select("zone:zones(id, name)").eq("artisan_id", artisan.id) : Promise.resolve({ data: [] as any[] }),
       pro && Number.isFinite(proStart) ? proRecap(adb, artisan.id, new Date(proStart).toISOString()) : Promise.resolve(null),
+      pro && approved ? detailedStats(adb, artisan.id, country) : Promise.resolve(null),
     ]);
     const zlist = ((zs.data ?? []) as any[]).map((r) => (Array.isArray(r.zone) ? r.zone[0] : r.zone)).filter(Boolean) as { id: string; name: string }[];
-    return { trial, freeUsed, zlist, recap };
+    return { trial, freeUsed, zlist, recap, detail };
   })();
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
@@ -443,6 +445,27 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 <a className="btn small wa" style={{ justifySelf: "start" }} href={`https://wa.me/?text=${encodeURIComponent(`Retrouvez-moi sur Bricolo (${tradeName}) : ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.monbricolo.com"}/artisan/${artisan.id}?s=wa`)}`}>Partager ma fiche sur WhatsApp</a>
               </>
             ) : <p className="hint">Disponible avec le Forfait Pro (essai gratuit possible si votre identité est vérifiée).</p>}
+          </div>
+        )}
+        {approved && (
+          <div className="card pad stack">
+            <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Statistiques détaillées</h2><span className="tag boost">Inclus dans le Pro</span></div>
+            {pro && perks?.detail ? (() => { const d = perks.detail; const max = Math.max(1, ...d.sources.map((x) => x.n)); return (
+              <>
+                <p className="meta">30 derniers jours : {d.views} vue{d.views > 1 ? "s" : ""}, {d.contacts} contact{d.contacts > 1 ? "s" : ""} (appels et WhatsApp){d.views ? `, soit ${d.rate} % des visiteurs` : ""}.</p>
+                <BarChart label="Vues de ma fiche par jour" data={d.days} color="var(--brand)" />
+                <div className="stack" style={{ gap: 8 }}>
+                  <b>D’où viennent mes visiteurs</b>
+                  {d.sources.length ? d.sources.map((x) => (
+                    <div key={x.key} className="stack" style={{ gap: 4 }}>
+                      <div className="row" style={{ justifyContent: "space-between" }}><span>{x.label}</span><b className="num">{x.n}</b></div>
+                      <div className="bar" aria-hidden="true"><i style={{ width: `${Math.round((x.n / max) * 100)}%` }} /></div>
+                    </div>
+                  )) : <p className="empty">Pas encore de visite sur cette période.</p>}
+                </div>
+                {d.bestDay && d.bestHours ? <p className="notice boostnote">Vos clients vous contactent surtout le <b>{d.bestDay}</b>, entre <b>{d.bestHours}</b> (heure locale). Soyez joignable à ces moments.</p> : <p className="meta">Le jour et les heures où vous êtes le plus contacté apparaîtront dès que vous aurez quelques contacts.</p>}
+                <p className="hint">La provenance est enregistrée à partir d’aujourd’hui : les visites plus anciennes sont comptées dans « Lien direct ou autre ».</p>
+              </>); })() : <p className="hint">Découvrez d’où viennent vos visiteurs (recherche, accueil, QR code, WhatsApp), vos vues jour par jour et les heures où l’on vous contacte le plus. Disponible avec le Forfait Pro.</p>}
           </div>
         )}
         {pro && perks?.recap && (
