@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { initials, priceText } from "@/lib/format";
 import { openStatus } from "@/lib/hours";
-import LiteCover from "@/components/LiteCover";
-import { defaultCoverUrl, isGeneratedCover } from "@/lib/default-covers";
 
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
   avg_rating: number | null; review_count: number; sponsored?: boolean; zones?: string[]; trade?: string;
   photo_url?: string | null; experience_years?: number | null; diploma_verified?: boolean;
-  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string; trade_slug?: string; shots?: string[]; default_cover?: string | null;
+  hours?: unknown; headline?: string | null; is_pro?: boolean; cover_url?: string | null; open_24_7?: boolean | null; takes_urgent?: boolean | null; country_code?: string;
 };
 
 /** Fiche compacte : photo en haut, l'essentiel en dessous, contact en un geste. Toute la fiche ouvre le profil. */
@@ -26,47 +24,6 @@ function Why() {
 export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; country?: string; lite?: boolean }) {
   const st = openStatus(a.hours, a.open_24_7, country ?? a.country_code ?? "ci");
   const zones = a.zones?.length ? a.zones.slice(0, 2).join(", ") + (a.zones.length > 2 ? ` +${a.zones.length - 2}` : "") : "";
-  if (lite) {
-    const own = a.cover_url && !isGeneratedCover(a.cover_url) ? a.cover_url : null;
-    const shots = own ? [] : a.shots ?? [];
-    const dflt = own ? null : (a.default_cover ?? defaultCoverUrl(a.trade_slug, a.id));
-    return (
-      <article className={`acard lite${a.sponsored ? " sp" : ""}`}>
-        <div className="lc-cover">
-          <LiteCover own={own} shots={shots} fallback={dflt ?? ""} />
-          {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
-          {/* Repère visuel : la carte entière ouvre la fiche (lien du nom, étendu à toute la carte). */}
-          <span className="lc-go" aria-hidden="true">›</span>
-        </div>
-        <div className="lc-head">
-          <span className="lc-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>
-          <div className="lc-id">
-            <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link></h3>
-            {/* Le métier mène à la liste de ce métier dans le pays. */}
-            <p className="lc-sub">{a.trade_slug ? <Link className="lc-trade" href={`/artisans/${country ?? a.country_code ?? "ci"}/${a.trade_slug}`}>{a.trade}</Link> : a.trade}</p>
-          </div>
-        </div>
-        <div className="lc-body">
-          {a.headline && <p className="acard-hl">{a.headline}</p>}
-          {zones && <p className="acard-meta" title={a.zones?.join(", ")}>📍 {zones}</p>}
-          <ul className="lc-chips">
-            {a.verified && <li className="v">✓ Vérifié</li>}
-            {a.diploma_verified && <li>🎓 Diplômé</li>}
-            {a.experience_years ? <li>{a.experience_years} an{a.experience_years > 1 ? "s" : ""} d’expérience</li> : null}
-            {a.takes_urgent && <li className="u">🚨 Urgences</li>}
-            {a.review_count ? <li>★ {String(a.avg_rating).replace(".", ",")} ({a.review_count})</li> : null}
-          </ul>
-          {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
-          {priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
-        </div>
-        <div className="acard-cta">
-          <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>
-          <a className="btn call" href={`/api/contact?id=${a.id}&type=call`} aria-label={`Appeler ${a.name}`}>📞</a>
-          <a className="btn msg" href={`/artisan/${a.id}?message=1#message`} aria-label={`Envoyer un message à ${a.name}`} title="Message">✉️</a>
-        </div>
-      </article>
-    );
-  }
   return (
     <article className={`acard${a.sponsored ? " sp" : ""}${lite ? " lite" : ""}`}>
       <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
