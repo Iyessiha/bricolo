@@ -21,7 +21,7 @@ export default function Footer() {
           <Link href="/inscription">Devenir artisan</Link>
           <Link href="/connexion">Connexion</Link>
           <Link href="/bientot">Bientôt : Cameroun, Tchad, Gabon</Link>
-          <InstallApp />
+          <InstallApp always />
         </nav>
         <nav aria-label="Artisans par pays" className="footcol">
           <b>Artisans par pays</b>
