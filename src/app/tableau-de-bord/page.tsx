@@ -405,7 +405,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <p className={lift === null ? "meta" : lift >= 0 ? "up" : "down"}>{lift === null ? "Pas encore assez de données pour mesurer l’effet de votre Forfait Pro." : `Depuis le début de votre Forfait Pro : ${lift >= 0 ? "+" : ""}${lift} % d’appels et de WhatsApp, comparé aux 30 jours d’avant (${actProBefore.contacts} → ${actProAfter.contacts}). Indicatif : la saison joue aussi.`}</p>); })() : <p className="meta">{pro ? "La comparaison avant / après apparaîtra après quelques jours de Forfait Pro." : "Avec le Forfait Pro, vous verrez ici l’effet sur vos appels et vos messages."}</p>}
           </div>
         )}
-        <MyPayments rows={paid} />
+        <MyPayments rows={paid} kind="forfait" />
         <div className="offers">
           <section className={`offer${pro ? "" : " cur"}`} aria-label="Offre gratuite">
             <header><h2>Gratuit</h2>{!pro && <span className="tag mute">Votre offre</span>}</header>
@@ -442,7 +442,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <p className="hint">Paiement sécurisé par Mobile Money ou carte. Sans engagement : le forfait s’arrête à la fin de la période payée. Vos prestations et photos en plus restent enregistrées mais ne sont plus affichées. Vos 3 premières zones restent actives ; les autres, et « toute la ville », se réactivent si vous reprenez le Pro.</p>
           </div>
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
-        <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Historique</h2>
+        <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Mes périodes de Forfait Pro</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>
       
@@ -454,6 +454,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {approved ? <Link className="btn boost" href="/boosts">{act?.length ? "Prolonger ou ajouter un boost" : "Découvrir les boosts"}</Link> : <p className="hint">Disponible une fois votre profil validé.</p>}
         </div>
         {act?.length ? <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Boosts actifs</h2>{act.map((b) => (<div key={b.id} className="row" style={{ justifyContent: "space-between" }}><b>{BOOST_TYPES[b.type].name}</b><span className="tag ok">reste {timeLeft(b.ends_at)}</span></div>))}</div> : null}
+        <MyPayments rows={paid} kind="boost" />
       </div>
       </div>
       <div id="aide" className="stack" hidden={sec !== "aide"}>

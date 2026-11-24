@@ -12,7 +12,7 @@ function shape(p: any, email: string | null): (Receipt & { userId: string }) | n
   const b = one<any>(p.boost), s = one<any>(p.sub);
   const artisan = one<any>(b?.artisan ?? s?.artisan);
   if (!artisan) return null;
-  const label = b ? `Boost ${BOOST_TYPES[b.type]?.name ?? b.type} · ${DURATIONS[b.duration_hours] ?? `${b.duration_hours} h`}` : planLabel(s?.days ?? 0);
+  const label = b ? `${BOOST_TYPES[b.type]?.name ?? `Boost ${b.type}`} · ${DURATIONS[b.duration_hours] ?? `${b.duration_hours} h`}` : planLabel(s?.days ?? 0);
   return { id: p.id, no: `BR-${String(p.id).slice(0, 8).toUpperCase()}`, paidAt: p.paid_at ?? p.created_at, label, amount: p.amount, currency: p.currency, ref: p.provider_ref, artisanName: artisan.name, email, userId: artisan.user_id };
 }
 
@@ -41,7 +41,7 @@ export async function listPaid(artisanId: string): Promise<Receipt[]> {
   return (data ?? []).map((p) => shape(p, null)).filter(Boolean) as Receipt[];
 }
 
-export type PaymentRow = { id: string; at: string; label: string; amount: number; status: "pending" | "paid" | "failed" };
+export type PaymentRow = { id: string; at: string; label: string; amount: number; status: "pending" | "paid" | "failed"; kind: "forfait" | "boost" };
 
 /** Tous les paiements d'un artisan, du plus récent au plus ancien, avec leur état réel (payé, en attente, échoué). */
 export async function listPayments(artisanId: string): Promise<PaymentRow[]> {
@@ -54,5 +54,5 @@ export async function listPayments(artisanId: string): Promise<PaymentRow[]> {
   const parts = [bids.length ? `boost_id.in.(${bids.join(",")})` : "", sids.length ? `subscription_id.in.(${sids.join(",")})` : ""].filter(Boolean);
   if (!parts.length) return [];
   const { data } = await db.from("payments").select(COLS + ", status").or(parts.join(",")).order("created_at", { ascending: false }).limit(40);
-  return (data ?? []).map((p: any) => { const r = shape(p, null); return r ? { id: p.id, at: p.paid_at ?? p.created_at, label: r.label, amount: p.amount, status: p.status } : null; }).filter(Boolean) as PaymentRow[];
+  return (data ?? []).map((p: any) => { const r = shape(p, null); return r ? { id: p.id, at: p.paid_at ?? p.created_at, label: r.label, amount: p.amount, status: p.status, kind: one<any>(p.boost) ? "boost" : "forfait" } : null; }).filter(Boolean) as PaymentRow[];
 }

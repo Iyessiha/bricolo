@@ -110,7 +110,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
       <BoostPicker plans={PLANS} prices={prices} zones={zones.map((z) => ({ id: z.id, name: z.name, factor: Number(z.price_factor), city: cityIds.has(z.id) }))} cityMult={CITY_BOOST_MULT} left={left} caps={{ recherche: capFor("recherche"), accueil: capFor("accueil"), urgence: capFor("urgence") }} />
       <p className="hint bcenter"><Link href="/conditions-boosts">Conditions de vente des boosts</Link> · Emplacements limités pour rester efficaces.</p>
 
-      <MyPayments rows={payments} />
+      <MyPayments rows={payments} kind="boost" />
 
       <div className="card pad bprev">
         <div className="bprev-t"><h2 style={{ fontSize: 18 }}>Voici votre fiche avec un boost</h2><p className="meta">Elle passe en tête, avec la pastille « Mis en avant » et un contour orange qui attire l’œil.</p></div>
