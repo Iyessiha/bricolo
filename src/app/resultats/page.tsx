@@ -7,6 +7,7 @@ import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 import ZoneOptions from "@/components/ZoneOptions";
 import ArtisanCard from "@/components/ArtisanCard";
+import { uploadedDefaults } from "@/lib/default-covers-server";
 import SetupNotice from "@/components/SetupNotice";
 import Link from "next/link";
 
@@ -31,7 +32,12 @@ export default async function Results({ searchParams }: { searchParams: Promise<
     p_verified: sp.verifie === "1", p_open: sp.ouvert === "1", p_urgent: sp.urgence === "1", p_seed: String(Math.floor(Date.now() / 60000)),
   });
   const tradeName = (id: string) => trades?.find((t) => t.id === id)?.name;
-  const list = (rows ?? []) as any[];
+  // Photo du métier (téléversée par l'administration) pour les artisans sans couverture : même logique que l'accueil.
+  const upDefaults = await uploadedDefaults();
+  const list = ((rows ?? []) as any[]).map((a) => {
+    const slug = trades?.find((t) => t.id === a.trade_id)?.slug;
+    return { ...a, trade_slug: slug, default_cover: (slug && upDefaults[slug]) || null };
+  });
 
   return (
     <section className="inner sec">
