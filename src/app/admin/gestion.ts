@@ -375,3 +375,29 @@ export async function retirerDefaut(f: FormData) {
   revalidatePath("/"); revalidatePath("/admin/covers/defauts");
   back("/admin/covers/defauts", "ok", "Photo par défaut retirée : la photo du site est de nouveau utilisée.");
 }
+
+/** Cover téléversée par l'administration : recadrée en 1600 × 600 (paysage), allégée (WebP), remplace la cover de la fiche. */
+export async function televerserCover(f: FormData) {
+  const ctx = await requireAdmin();
+  const id = s(f, "id", 40);
+  if (!UUID.test(id)) redirect("/admin/covers");
+  const { data: a } = await ctx.db.from("artisans").select("id, name, user_id, cover_url").eq("id", id).maybeSingle();
+  if (!a) back("/admin/covers", "erreur", "Fiche introuvable.");
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) back("/admin/covers", "erreur", "Choisissez une image.");
+  if ((file as File).size > 5 * 1024 * 1024) back("/admin/covers", "erreur", "Image trop lourde (5 Mo maximum).");
+  let webp: Buffer;
+  try { webp = await sharp(Buffer.from(await (file as File).arrayBuffer())).rotate().resize(1600, 600, { fit: "cover", position: "attention" }).webp({ quality: 80 }).toBuffer(); }
+  catch { back("/admin/covers", "erreur", "Image illisible. Essayez un fichier JPG, PNG ou WebP."); return; }
+  const path = `${a!.user_id}/cover-admin-${Date.now()}.webp`;
+  const up = await ctx.db.storage.from("realisations").upload(path, webp, { contentType: "image/webp", upsert: false, cacheControl: "3600" });
+  if (up.error) back("/admin/covers", "erreur", "Envoi impossible. Réessayez.");
+  const { data: pub } = ctx.db.storage.from("realisations").getPublicUrl(path);
+  const old = a!.cover_url?.split(PUB)[1];
+  const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", id);
+  if (error) back("/admin/covers", "erreur", "Enregistrement impossible. Réessayez.");
+  if (old) await ctx.db.storage.from("realisations").remove([old]);
+  await audit(ctx, "artisan.cover_televerser", { type: "artisan", id, label: a!.name });
+  revalidatePath(`/artisan/${id}`); revalidatePath("/"); revalidatePath("/resultats"); revalidatePath("/admin/covers");
+  back("/admin/covers", "ok", `Cover de ${a!.name} enregistrée.`);
+}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
-import { retirerCover, utiliserPhotoCommeCover } from "@/app/admin/gestion";
+import { retirerCover, televerserCover, utiliserPhotoCommeCover } from "@/app/admin/gestion";
 import { isGeneratedCover } from "@/lib/default-covers";
 import { uploadedDefaults } from "@/lib/default-covers-server";
 import TradeArt from "@/components/TradeArt";
@@ -62,6 +62,14 @@ export default async function Covers({ searchParams }: { searchParams: Promise<R
                 </div>
               </div>
             ) : <p className="meta">Cet artisan n’a pas encore téléversé de photo de réalisation.</p>}
+            <form action={televerserCover} className="stack" style={{ gap: 6 }}>
+              <input type="hidden" name="id" value={a.id} />
+              <label className="meta" htmlFor={`cov-${a.id}`}>Remplacer la cover (JPG, PNG ou WebP, recadrée en 1600 × 600)</label>
+              <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+                <input id={`cov-${a.id}`} type="file" name="file" accept="image/*" required style={{ maxWidth: "100%" }} />
+                <button className="btn small primary" type="submit">Téléverser</button>
+              </div>
+            </form>
             <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
               {(a.own || a.old) && <form action={retirerCover}><input type="hidden" name="id" value={a.id} /><button className="btn small" type="submit">Retirer la cover</button></form>}
               <Link className="btn small ghost" href={`/admin/artisan/${a.id}`}>Dossier</Link>
