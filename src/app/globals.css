@@ -861,3 +861,7 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
 }
 @media (min-width:600px){.cards.home>.acard:nth-child(n+7){display:flex}.cards.home>.acard:nth-child(n+9){display:none}.cards.home{gap:16px}}
 @media (min-width:1024px){.cards.home{grid-template-columns:repeat(3,minmax(0,1fr))}.cards.home>.acard:nth-child(n+9){display:flex}.cards.home>.acard:nth-child(n+10){display:none}}
+
+.inbanner{position:fixed;z-index:60;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:520px;margin-inline:auto;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface,#fff);color:var(--ink);border:1px solid var(--line,#d8dfec);border-radius:12px;padding:12px 14px;box-shadow:0 8px 28px rgba(19,32,58,.18)}
+.inbanner .inb-text{display:grid;gap:2px;min-width:0;flex:1 1 220px;font-size:14px}.inbanner .inb-text span{color:var(--ink-muted);font-size:13px}
+.inbanner .inb-actions{display:flex;gap:8px}

@@ -12,6 +12,7 @@ import SetupNotice from "@/components/SetupNotice";
 import MomentPopup from "@/components/MomentPopup";
 import CloseMore from "@/components/CloseMore";
 import PushBell from "@/components/PushBell";
+import InstallApp from "@/components/InstallApp";
 import PhotoUpdate from "@/components/PhotoUpdate";
 import Gallery from "@/components/Gallery";
 import ZonePicker from "@/components/ZonePicker";
@@ -210,6 +211,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
         <div className="stack" hidden={sec !== "apercu"}>
           <h1 className="dtitle">Bonjour 👋</h1>
+          <InstallApp intro="Gardez Bricolo sur l’écran d’accueil de votre téléphone pour retrouver vos demandes en un geste." />
         {approved && <div className="notice ok row" style={{ justifyContent: "space-between" }}><span><b>Votre profil est en ligne.</b> Les clients peuvent vous trouver.</span><Link className="btn small" href={`/artisan/${artisan.id}`}>Voir ma fiche</Link></div>}
         {suspended && <div className="notice err stack" style={{ gap: 6 }}><b>Votre profil est suspendu.</b><p>{artisan.reject_reason ?? "Il n’est plus visible des clients."} Pour en savoir plus ou le réactiver, contactez-nous.</p><div><a className="btn" href={`mailto:${COMPANY.email}`}>Nous contacter</a></div></div>}
         {!approved && !rejected && !suspended && (
