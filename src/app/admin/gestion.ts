@@ -322,69 +322,75 @@ async function paysageOuErreur(buf: Buffer): Promise<string | null> {
 }
 const IMG_OK = ["image/jpeg", "image/png", "image/webp"];
 
+/** Page de retour après une action sur une cover : la liste des covers par défaut, ou la fiche de l'artisan si le formulaire vient de là. */
+const retour = (f: FormData) => { const r = s(f, "retour", 80); return /^\/admin\/(covers|artisan\/[0-9a-f-]{36})$/i.test(r) ? r : "/admin/covers"; };
+
 /** Reprend une photo de réalisation de l'artisan comme cover de sa fiche (recadrée en paysage ; la photo d'origine reste en place). Refusée si la photo est en portrait. */
 export async function utiliserPhotoCommeCover(f: FormData) {
   const ctx = await requireAdmin();
+  const R = retour(f);
   const id = s(f, "id", 40), photo = s(f, "photo", 40);
-  if (!UUID.test(id) || !UUID.test(photo)) redirect("/admin/covers");
+  if (!UUID.test(id) || !UUID.test(photo)) redirect(R);
   const { data: a } = await ctx.db.from("artisans").select("id, name, user_id, cover_url").eq("id", id).maybeSingle();
   const { data: p } = await ctx.db.from("portfolio_photos").select("path").eq("id", photo).eq("artisan_id", id).maybeSingle();
-  if (!a || !p?.path) back("/admin/covers", "erreur", "Photo introuvable.");
+  if (!a || !p?.path) back(R, "erreur", "Photo introuvable.");
   const dl = await ctx.db.storage.from("realisations").download(p!.path);
-  if (dl.error || !dl.data) back("/admin/covers", "erreur", "Lecture de la photo impossible. Réessayez.");
+  if (dl.error || !dl.data) back(R, "erreur", "Lecture de la photo impossible. Réessayez.");
   const src = Buffer.from(await dl.data!.arrayBuffer());
   const bad = await paysageOuErreur(src);
-  if (bad) back("/admin/covers", "erreur", bad);
-  await poserCover(ctx, a as any, src, "cover-photo", "artisan.cover_photo", `Cover de ${a!.name} remplacée par sa photo.`);
+  if (bad) back(R, "erreur", bad);
+  await poserCover(R, ctx, a as any, src, "cover-photo", "artisan.cover_photo", `Cover de ${a!.name} remplacée par sa photo.`);
 }
 
 /** Téléverse directement une cover pour un artisan (paysage uniquement). */
 export async function televerserCoverArtisan(f: FormData) {
   const ctx = await requireAdmin();
+  const R = retour(f);
   const id = s(f, "id", 40);
-  if (!UUID.test(id)) redirect("/admin/covers");
+  if (!UUID.test(id)) redirect(R);
   const { data: a } = await ctx.db.from("artisans").select("id, name, user_id, cover_url").eq("id", id).maybeSingle();
-  if (!a) back("/admin/covers", "erreur", "Artisan introuvable.");
+  if (!a) back(R, "erreur", "Artisan introuvable.");
   const file = f.get("file");
-  if (!(file instanceof File) || !file.size) back("/admin/covers", "erreur", "Choisissez une image.");
-  if (!IMG_OK.includes((file as File).type)) back("/admin/covers", "erreur", "Format non accepté : JPG, PNG ou WebP.");
-  if ((file as File).size > 5 * 1024 * 1024) back("/admin/covers", "erreur", "Image trop lourde (5 Mo maximum).");
+  if (!(file instanceof File) || !file.size) back(R, "erreur", "Choisissez une image.");
+  if (!IMG_OK.includes((file as File).type)) back(R, "erreur", "Format non accepté : JPG, PNG ou WebP.");
+  if ((file as File).size > 5 * 1024 * 1024) back(R, "erreur", "Image trop lourde (5 Mo maximum).");
   const src = Buffer.from(await (file as File).arrayBuffer());
   const bad = await paysageOuErreur(src);
-  if (bad) back("/admin/covers", "erreur", bad);
-  await poserCover(ctx, a as any, src, "cover-admin", "artisan.cover_televerser", `Cover de ${a!.name} enregistrée.`);
+  if (bad) back(R, "erreur", bad);
+  await poserCover(R, ctx, a as any, src, "cover-admin", "artisan.cover_televerser", `Cover de ${a!.name} enregistrée.`);
 }
 
-async function poserCover(ctx: Awaited<ReturnType<typeof requireAdmin>>, a: { id: string; name: string; user_id: string; cover_url: string | null }, src: Buffer, prefix: string, action: string, msg: string) {
+async function poserCover(R: string, ctx: Awaited<ReturnType<typeof requireAdmin>>, a: { id: string; name: string; user_id: string; cover_url: string | null }, src: Buffer, prefix: string, action: string, msg: string) {
   let webp: Buffer;
   try { webp = await sharp(src).rotate().resize(1600, 600, { fit: "cover", position: "attention" }).webp({ quality: 78 }).toBuffer(); }
-  catch { back("/admin/covers", "erreur", "Image illisible. Essayez un fichier JPG, PNG ou WebP."); return; }
+  catch { back(R, "erreur", "Image illisible. Essayez un fichier JPG, PNG ou WebP."); return; }
   const to = `${a.user_id}/${prefix}-${Date.now()}.webp`;
   const up = await ctx.db.storage.from("realisations").upload(to, webp, { contentType: "image/webp", cacheControl: "3600" });
-  if (up.error) back("/admin/covers", "erreur", "Envoi impossible. Réessayez.");
+  if (up.error) back(R, "erreur", "Envoi impossible. Réessayez.");
   const { data: pub } = ctx.db.storage.from("realisations").getPublicUrl(to);
   const old = a.cover_url?.split(PUB)[1];
   const { error } = await ctx.db.from("artisans").update({ cover_url: pub.publicUrl }).eq("id", a.id);
-  if (error) back("/admin/covers", "erreur", "Enregistrement impossible. Réessayez.");
+  if (error) back(R, "erreur", "Enregistrement impossible. Réessayez.");
   if (old) await ctx.db.storage.from("realisations").remove([old]);
   await audit(ctx, action, { type: "artisan", id: a.id, label: a.name });
-  revalidatePath(`/artisan/${a.id}`); revalidatePath("/"); revalidatePath("/admin/covers");
-  back("/admin/covers", "ok", msg);
+  revalidatePath(`/artisan/${a.id}`); revalidatePath("/"); revalidatePath("/admin/covers"); revalidatePath(`/admin/artisan/${a.id}`);
+  back(R, "ok", msg);
 }
 
 /** Retire la cover de la fiche : la carte reprend la photo par défaut du métier. */
 export async function retirerCover(f: FormData) {
   const ctx = await requireAdmin();
+  const R = retour(f);
   const id = s(f, "id", 40);
-  if (!UUID.test(id)) redirect("/admin/covers");
+  if (!UUID.test(id)) redirect(R);
   const { data: a } = await ctx.db.from("artisans").select("id, name, cover_url").eq("id", id).maybeSingle();
-  if (!a) redirect("/admin/covers");
+  if (!a) redirect(R);
   await ctx.db.from("artisans").update({ cover_url: null }).eq("id", id);
   const old = a!.cover_url?.split(PUB)[1];
   if (old) await ctx.db.storage.from("realisations").remove([old]);
   await audit(ctx, "artisan.cover_retirer", { type: "artisan", id, label: a!.name });
   revalidatePath(`/artisan/${id}`); revalidatePath("/"); revalidatePath("/admin/covers");
-  back("/admin/covers", "ok", `Cover de ${a!.name} retirée.`);
+  back(R, "ok", `Cover de ${a!.name} retirée.`);
 }
 
 /** Photo par défaut d'un métier : recadrée en paysage, allégée (WebP) et publiée pour toutes les fiches de ce métier qui n'ont pas de photo paysage. */

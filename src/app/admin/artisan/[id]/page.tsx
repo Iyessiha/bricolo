@@ -7,9 +7,10 @@ import { mfaOk } from "@/lib/admin";
 import { countryName } from "@/lib/countries";
 import { initials } from "@/lib/format";
 import Flag from "@/components/Flag";
+import AdminImageInput from "@/components/AdminImageInput";
 import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
-import { removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
+import { retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover, removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
 import { fcfa } from "@/lib/format";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { REPORT_REASONS } from "@/lib/email-flows";
@@ -114,10 +115,37 @@ export default async function Review({ params, searchParams }: { params: Promise
           <button className="btn small" type="submit">Offrir le Pro</button></form>
       </div>
 
-      {(((a as any).cover_url) || shots?.length) ? (
+      <div className="card pad stack" id="cover">
+        <h2 style={{ fontSize: 20 }}>Cover de la fiche</h2>
+        {(a as any).cover_url && !/cover-bricolo|\/cover\/generated/.test((a as any).cover_url)
+          ? <img src={(a as any).cover_url} alt="Cover actuelle" style={{ width: "100%", aspectRatio: "16/7", objectFit: "cover", borderRadius: 10, display: "block" }} />
+          : <p className="meta">Aucune cover : la fiche et la carte affichent la photo par défaut du métier.</p>}
+        <form action={televerserCoverArtisan} className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input type="hidden" name="id" value={id} /><input type="hidden" name="retour" value={`/admin/artisan/${id}`} />
+          <AdminImageInput />
+          <button className="btn small primary" type="submit">{(a as any).cover_url ? "Remplacer la cover (paysage)" : "Téléverser une cover (paysage)"}</button>
+        </form>
+        {shots?.length ? (
+          <div>
+            <span className="meta">Ou choisir une photo de l’artisan (une photo en paysage)</span>
+            <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", marginTop: 6 }}>
+              {shots.map((p) => (
+                <form key={p.id} action={utiliserPhotoCommeCover} style={{ display: "grid", gap: 4 }}>
+                  <input type="hidden" name="id" value={id} /><input type="hidden" name="photo" value={p.id} /><input type="hidden" name="retour" value={`/admin/artisan/${id}`} />
+                  <img src={p.url} alt="" loading="lazy" style={{ width: "100%", aspectRatio: "16/7", objectFit: "cover", borderRadius: 8, display: "block" }} />
+                  <button className="btn small" type="submit">Utiliser comme cover</button>
+                </form>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {(a as any).cover_url && <form action={retirerCover}><input type="hidden" name="id" value={id} /><input type="hidden" name="retour" value={`/admin/artisan/${id}`} /><button className="btn small" type="submit">Retirer la cover</button></form>}
+        <p className="hint">Seules les images en paysage sont acceptées. Faites-le avec l’accord de l’artisan.</p>
+      </div>
+
+      {shots?.length ? (
         <div className="card pad stack"><h2 style={{ fontSize: 20 }}>Photos publiées</h2><p className="hint">Retirez toute photo inappropriée (personnes, documents, contenu choquant).</p>
           <div className="shotgrid">
-            {(a as any).cover_url && <figure style={{ gridColumn: "span 2", aspectRatio: "16/6" }}><img src={(a as any).cover_url} alt="Couverture" /><form action={removeMedia}><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="cover" /><button aria-label="Retirer la couverture">×</button></form></figure>}
             {shots?.map((p) => <figure key={p.id}><img src={p.url} alt="Réalisation" /><form action={removeMedia}><input type="hidden" name="id" value={id} /><input type="hidden" name="kind" value="photo" /><input type="hidden" name="photo" value={p.id} /><button aria-label="Retirer cette photo">×</button></form></figure>)}
           </div></div>
       ) : null}
