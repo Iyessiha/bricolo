@@ -111,8 +111,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const newReqs = (reqs ?? []).filter((r) => r.status === "new").length;
 
   const unreadHelp = await unreadForArtisan(artisan.id);
-  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
-  const paid = sec === "forfait" || sec === "boosts" ? await listPayments(artisan.id) : [];
+  const sec = (["apercu", "demandes", "profil", "prestations", "guide", "forfait", "boosts", "paiements", "notifs", "aide", "compte"] as const).find((k) => k === (sp.s === "horaires" ? "profil" : sp.s)) ?? "apercu";
+  const paid = sec === "paiements" ? await listPayments(artisan.id) : [];
   // Indicateurs du forfait : activité des 30 derniers jours, et pour un Pro, comparaison avec les 30 jours avant son début.
   const DAY = 864e5, nowMs = Date.now();
   const proStart = sec === "forfait" && pro && history?.length ? Math.min(...history.filter((h) => h.starts_at && new Date(h.ends_at).getTime() > nowMs - 400 * DAY).map((h) => new Date(h.starts_at!).getTime())) : NaN;
@@ -154,7 +154,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
   const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
-  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"], ["compte", "⚙️", "Mon compte"]] as const;
+  const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["paiements", "🧾", "Paiements"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"], ["compte", "⚙️", "Mon compte"]] as const;
   return (
     <section className="inner dash">
       <aside className="dside">
@@ -522,7 +522,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <p className={lift === null ? "meta" : lift >= 0 ? "up" : "down"}>{lift === null ? "Pas encore assez de données pour mesurer l’effet de votre Forfait Pro." : `Depuis le début de votre Forfait Pro : ${lift >= 0 ? "+" : ""}${lift} % d’appels et de WhatsApp, comparé aux 30 jours d’avant (${actProBefore.contacts} → ${actProAfter.contacts}). Indicatif : la saison joue aussi.`}</p>); })() : <p className="meta">{pro ? "La comparaison avant / après apparaîtra après quelques jours de Forfait Pro." : "Avec le Forfait Pro, vous verrez ici l’effet sur vos appels et vos messages."}</p>}
           </div>
         )}
-        <MyPayments rows={paid} kind="forfait" />
         <div className="offers">
           <section className={`offer${pro ? "" : " cur"}`} aria-label="Offre gratuite">
             <header><h2>Gratuit</h2>{!pro && <span className="tag mute">Votre offre</span>}</header>
@@ -561,6 +560,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Mes périodes de Forfait Pro</h2>
           {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>{(h as any).trial ? "Essai gratuit" : "Forfait Pro"} · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{(h as any).trial ? "Offert" : fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
+          <Link href="/tableau-de-bord?s=paiements&f=forfait" scroll={false}>Voir mes paiements et mes reçus →</Link>
         </div>
       </div>
 
@@ -572,7 +572,15 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {approved ? <Link className="btn boost" href="/boosts">{act?.length ? "Prolonger ou ajouter un boost" : "Découvrir les boosts"}</Link> : <p className="hint">Disponible une fois votre profil validé.</p>}
         </div>
         {act?.length ? <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Boosts actifs</h2>{act.map((b) => (<div key={b.id} className="row" style={{ justifyContent: "space-between" }}><b>{BOOST_TYPES[b.type].name}</b><span className="tag ok">reste {timeLeft(b.ends_at)}</span></div>))}</div> : null}
-              <MyPayments rows={paid} kind="boost" />
+        <Link href="/tableau-de-bord?s=paiements&f=boost" scroll={false}>Voir mes paiements de boosts et mes reçus →</Link>
+      </div>
+      <div id="paiements" className="stack" hidden={sec !== "paiements"}>
+        <h1 className="dtitle">Historique des paiements</h1>
+        <p className="meta">Tous vos paiements de Forfait Pro et de boosts, avec leur état et leur reçu. Les tentatives non abouties sont repliées : elles n’ont pas été débitées.</p>
+        <nav className="subnav" aria-label="Filtrer les paiements">
+          {([["tous", "Tous"], ["forfait", "Forfait Pro"], ["boost", "Boosts"]] as const).map(([k, l]) => <Link key={k} href={`/tableau-de-bord?s=paiements&f=${k}`} scroll={false} aria-current={(["forfait", "boost"].includes(sp.f ?? "") ? sp.f : "tous") === k ? "page" : undefined}>{l}</Link>)}
+        </nav>
+        <MyPayments rows={paid} kind={sp.f === "forfait" ? "forfait" : sp.f === "boost" ? "boost" : "all"} />
       </div>
       <div id="notifs" className="stack" hidden={sec !== "notifs"}>
         <h1 className="dtitle">Notifications</h1>

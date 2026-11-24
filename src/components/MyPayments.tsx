@@ -18,13 +18,13 @@ function Line({ r }: { r: PaymentRow }) {
 }
 
 /** Historique des paiements, séparé par nature : « forfait » (Forfait Pro) ou « boost ». Les paiements confirmés et en attente d'abord ; les tentatives non abouties sont repliées. */
-export default function MyPayments({ rows, kind, title }: { rows: PaymentRow[]; kind: "forfait" | "boost"; title?: string }) {
-  const mine = rows.filter((r) => r.kind === kind);
+export default function MyPayments({ rows, kind, title }: { rows: PaymentRow[]; kind: "forfait" | "boost" | "all"; title?: string }) {
+  const mine = kind === "all" ? rows : rows.filter((r) => r.kind === kind);
   const main = mine.filter((r) => r.status !== "failed"), failed = mine.filter((r) => r.status === "failed");
   return (
     <div className="card pad stack">
-      <h2 style={{ fontSize: 18 }}>{title ?? (kind === "boost" ? "Paiements de mes boosts" : "Paiements de mon forfait")}</h2>
-      {main.length === 0 ? <p className="empty">{kind === "boost" ? "Aucun paiement de boost confirmé pour le moment." : "Aucun paiement de forfait confirmé pour le moment."}</p> : main.map((r) => <Line key={r.id} r={r} />)}
+      <h2 style={{ fontSize: 18 }}>{title ?? (kind === "boost" ? "Paiements de mes boosts" : kind === "forfait" ? "Paiements de mon forfait" : "Tous mes paiements")}</h2>
+      {main.length === 0 ? <p className="empty">{kind === "boost" ? "Aucun paiement de boost confirmé pour le moment." : kind === "forfait" ? "Aucun paiement de forfait confirmé pour le moment." : "Aucun paiement pour le moment. Vos boosts et votre Forfait Pro apparaîtront ici."}</p> : main.map((r) => <Line key={r.id} r={r} />)}
       {main.some((r) => r.status === "pending") && <p className="hint">« En attente » : le paiement n’est pas encore confirmé par GeniusPay. S’il a bien été débité et que rien ne change au bout de quelques minutes, écrivez-nous depuis « Aide et compte » avec l’heure du paiement.</p>}
       {failed.length > 0 && (
         <details className="meta"><summary>{failed.length} tentative{failed.length > 1 ? "s" : ""} non abouti{failed.length > 1 ? "es" : "e"} (aucun débit)</summary>
