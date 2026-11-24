@@ -46,6 +46,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
           {a.headline && <p className="acard-hl">{a.headline}</p>}
           {zones && <p className="acard-meta" title={a.zones?.join(", ")}>📍 {zones}</p>}
           <ul className="lc-chips">
+            {a.is_pro && <li className="u">Pro</li>}
             {a.verified && <li className="v">✓ Vérifié</li>}
             {a.diploma_verified && <li>🎓 Diplômé</li>}
             {a.experience_years ? <li>{a.experience_years} an{a.experience_years > 1 ? "s" : ""} d’expérience</li> : null}
@@ -70,6 +71,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
         {a.cover_url && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
         {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         <div className="acard-badges">
+          {a.is_pro && <span className="tag boost">Pro</span>}
           {a.verified && <span className="tag ok">✓ Vérifié</span>}
           {a.diploma_verified && <span className="tag ok" title="Diplôme vérifié">🎓<span className="dtx"> Diplômé</span></span>}
         </div>

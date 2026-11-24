@@ -58,6 +58,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   // Rotation équitable des artisans à la une : l'ordre change toutes les heures.
   const rot = String(Math.floor(Date.now() / 3600000));
   const hash = (t: string) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
+  const { data: proRows } = ids.length ? await db.from("subscriptions").select("artisan_id").eq("status", "active").gt("ends_at", new Date().toISOString()).in("artisan_id", ids) : { data: [] as { artisan_id: string }[] };
+  const proIds = new Set((proRows ?? []).map((r) => r.artisan_id));
   const have = new Set((featured ?? []).map((f: any) => f.id));
   const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
   const POPULAR = ["plombier", "electricien", "frigoriste", "macon", "peintre", "mecanicien", "menuisier", "carreleur", "serrurier", "electromenager"];
@@ -65,7 +67,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   // Sélection de la une : fiches complètes d'abord, mises en avant en tête, 2 artisans max par métier, aucune case vide.
   const complete = (a: any) => (a.cover_url ? 2 : a.photo_url ? 1 : 0) + (a.verified ? 1 : 0) + (a.takes_urgent || a.hours || a.open_24_7 ? 1 : 0);
   const pool: any[] = [
-    ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name, trade_slug: a.trade?.slug })),
+    ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, is_pro: proIds.has(a.id), sponsored: true, trade: a.trade?.name, trade_slug: a.trade?.slug })),
     ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).map((a, i) => ({ ...a, trade: tradeName(a.trade_id), trade_slug: trades?.find((x) => x.id === a.trade_id)?.slug, _i: i })).sort((x: any, y: any) => complete(y) - complete(x) || x._i - y._i),
   ];
   const wanted = 9;
