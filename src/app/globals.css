@@ -429,10 +429,10 @@ h1 .flag{margin-inline:2px}
 .cardprev .cp{width:180px;aspect-ratio:3/2;border-radius:var(--radius-md);overflow:hidden;background:var(--surface-sunken);border:1px solid var(--line);flex:none}
 .cardprev .cp img{width:100%;height:100%;object-fit:cover;display:block}
 @media(max-width:699px){
-  /* Mobile : tous les métiers visibles d'un coup, en grille de 4 colonnes (plus de défilement caché). */
-  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-  .tile{display:grid;justify-items:center;text-align:center;padding:10px 4px;border-radius:14px;min-height:44px;align-content:start}
-  .tile b{font-size:12px;line-height:1.15;white-space:normal}.tile span{display:none}
+  /* Mobile : 2 métiers par ligne, tous visibles d'un coup (9 métiers + « Tous les métiers » = 5 lignes complètes). */
+  .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tile{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;border-radius:14px;min-height:56px}
+  .tile b{font-size:14px;line-height:1.2;white-space:normal;min-width:0}.tile span{display:none}
 }
 
 /* Audit UX : badges de carte sur une seule ligne, prestations qui passent à la ligne */
@@ -508,7 +508,7 @@ h1 .flag{margin-inline:2px}
 .tile .ti{display:grid;place-items:center;width:42px;height:42px;margin-bottom:6px;border-radius:12px;background:var(--brand-soft);color:var(--brand);font-style:normal}
 .tile .ti svg{width:24px;height:24px}
 @media(max-width:699px){
-  .tile .ti{width:40px;height:40px;margin:0 0 4px;border-radius:12px}.tile .ti svg{width:22px;height:22px}
+  .tile .ti{width:36px;height:36px;margin:0;border-radius:10px;flex:none}.tile .ti svg{width:20px;height:20px}
 }
 
 /* Troisième bouton : message sur la plateforme */
