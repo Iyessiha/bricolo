@@ -26,6 +26,10 @@ const P: Record<string, ReactNode> = {
   "femme-de-menage": <><path d="M12 2.5v8.5" /><path d="M8 11h8l2.5 10h-13z" /><path d="M9.5 16v5M12 16v5M14.5 16v5" /></>,
   puisatier: <><path d="M5 20V10M19 20V10M3 10h18M12 10v5" /><path d="M10 15h4l-.6 4h-2.8zM3 20h18" /></>,
   informatique: <><rect x="4" y="5" width="16" height="11" rx="1.5" /><path d="M2 19h20" /></>,
+  /* Volant : cercle, moyeu et trois branches. */
+  chauffeur: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="2.5" /><path d="M9.6 13.6 4.6 15.8M14.4 13.6l5 2.2M12 14.5V21" /></>,
+  /* Avant de bus : pare-brise, phares et deux roues. */
+  machiniste: <><rect x="4" y="3" width="16" height="15" rx="3" /><path d="M4 10h16M7 18v2.5M17 18v2.5M7.5 14.5h.01M16.5 14.5h.01" /></>,
   tous: <><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></>,
 };
 const DEFAULT = P.mecanicien;
