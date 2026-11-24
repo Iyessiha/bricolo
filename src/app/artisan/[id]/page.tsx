@@ -92,7 +92,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <div className="pfacts">
             <div><span aria-hidden="true">⭐</span><b>{rating ? `${rating}/5` : "Nouveau"}</b><small>{rating ? `${a.review_count} avis` : "pas encore d’avis"}</small></div>
             <div><span aria-hidden="true">🛠</span><b>{a.experience_years ? `${a.experience_years} an${a.experience_years > 1 ? "s" : ""}` : "—"}</b><small>d’expérience</small></div>
-            <div><span aria-hidden="true">💶</span><b>{price ?? "Sur devis"}</b><small>{trade?.slug === "machiniste" || trade?.slug === "chauffeur" ? "à convenir avec le professionnel" : "tarif indicatif"}</small></div>
+            <div><span aria-hidden="true">💶</span><b>{price ?? "Sur devis"}</b><small>{trade?.slug === "machiniste" || trade?.slug === "chauffeur" ? "à convenir directement" : "tarif indicatif"}</small></div>
             <div><span aria-hidden="true">🕒</span><b className={st.state === "open" ? "pf-open" : undefined}>{st.state === "none" ? "—" : st.state === "open" ? "Ouvert" : "Fermé"}</b><small>{st.state === "none" ? "horaires non précisés" : st.text.replace(/^(Ouvert|Fermé) · ?/, "") || (st.state === "open" ? "maintenant" : "")}</small></div>
           </div>
 

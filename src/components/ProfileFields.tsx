@@ -2,14 +2,14 @@
 import { useState } from "react";
 
 export const PRICE_UNITS = [
-  ["intervention", "par intervention"], ["heure", "par heure"], ["jour", "par jour"], ["m²", "par m²"], ["mètre", "par mètre"], ["pièce", "par pièce"], ["devis", "Sur devis gratuit"],
+  ["intervention", "par intervention"], ["heure", "par heure"], ["jour", "par jour"], ["mois", "par mois"], ["m²", "par m²"], ["mètre", "par mètre"], ["pièce", "par pièce"], ["devis", "Sur devis gratuit"],
 ] as const;
 
 /** Retrouve montant et unité dans un ancien tarif saisi librement. */
 export function parsePrice(raw?: string | null): { amount: string; unit: string } {
   const t = (raw ?? "").toLowerCase();
   const m = t.match(/\d[\d\s.,]*\d|\d/);
-  const unit = /devis/.test(t) && !m ? "devis" : /heure|\/\s*h\b/.test(t) ? "heure" : /jour/.test(t) ? "jour" : /m²|m2/.test(t) ? "m²" : /m[èe]tre|\bml\b/.test(t) ? "mètre" : /pi[èe]ce|unit[ée]/.test(t) ? "pièce" : "intervention";
+  const unit = /devis/.test(t) && !m ? "devis" : /heure|\/\s*h\b/.test(t) ? "heure" : /jour/.test(t) ? "jour" : /mois/.test(t) ? "mois" : /m²|m2/.test(t) ? "m²" : /m[èe]tre|\bml\b/.test(t) ? "mètre" : /pi[èe]ce|unit[ée]/.test(t) ? "pièce" : "intervention";
   return { amount: m ? m[0].replace(/[\s.,]/g, "") : "", unit };
 }
 

@@ -27,7 +27,10 @@ export function priceText(raw?: string | null): string | null {
   return out;
 }
 
-/** Métiers dont le prix n'est jamais affiché : il se négocie directement avec le professionnel. */
+/** Machiniste et chauffeur : pas de tarif de chantier. Ils peuvent indiquer le salaire qu'ils souhaitent ; sans indication, la fiche affiche « Prix à négocier ». */
 export const NEGOTIABLE_TRADES = new Set(["machiniste", "chauffeur"]);
-export const priceFor = (tradeSlug: string | null | undefined, raw?: string | null): string | null =>
-  tradeSlug && NEGOTIABLE_TRADES.has(tradeSlug) ? "Prix à négocier" : priceText(raw);
+export const priceFor = (tradeSlug: string | null | undefined, raw?: string | null): string | null => {
+  const p = priceText(raw);
+  if (tradeSlug && NEGOTIABLE_TRADES.has(tradeSlug)) return p ? `Salaire souhaité : ${p.replace(/^Dès /, "")}` : "Prix à négocier";
+  return p;
+};

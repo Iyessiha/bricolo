@@ -1,4 +1,4 @@
-const UNIT_LABEL: Record<string, string> = { intervention: "par intervention", heure: "par heure", jour: "par jour", "m²": "par m²", "mètre": "par mètre", "pièce": "par pièce" };
+const UNIT_LABEL: Record<string, string> = { intervention: "par intervention", heure: "par heure", jour: "par jour", mois: "par mois", "m²": "par m²", "mètre": "par mètre", "pièce": "par pièce" };
 /** Tarif construit à partir du montant et de l'unité choisis ; l'ancien champ libre reste accepté. */
 export function priceLabel(f: FormData): string | null {
   if (!f.has("price_unit")) return String(f.get("price_label") ?? "").trim().slice(0, 60) || null;

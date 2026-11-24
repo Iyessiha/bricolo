@@ -51,7 +51,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const country = profile.country_code as string;
 
   const [{ data: trades }, { data: zones }, { data: artisan }] = await Promise.all([
-    db.from("trades").select("id, name").order("name"),
+    db.from("trades").select("id, name, slug").order("name"),
     db.from("zones").select("id, name, parent_id").eq("country_code", country).order("name"),
     db.from("artisans").select("*, zones:artisan_zones(zone_id)").eq("user_id", user.id).maybeSingle(),
   ]);
@@ -360,7 +360,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
           <div className="card pad stack psec"><h2>Prix et contact</h2>
-          <PriceField value={artisan.price_label} label="Prix affiché sur votre carte" />
+          {["machiniste", "chauffeur"].includes(trades?.find((t) => t.id === artisan.trade_id)?.slug ?? "")
+            ? <><PriceField value={artisan.price_label} label="Salaire souhaité" /><p className="hint">Laissez vide : votre fiche affichera « Prix à négocier ». Sinon vos clients verront « Salaire souhaité : … ».</p></>
+            : <PriceField value={artisan.price_label} label="Prix affiché sur votre carte" />}
           <div className="fld"><label htmlFor="phone">Téléphone</label><input type="tel" id="phone" name="phone" required defaultValue={artisan.phone ?? ""} /></div>
           <div className="fld"><label htmlFor="whatsapp">WhatsApp (si différent)</label><input type="tel" id="whatsapp" name="whatsapp" defaultValue={artisan.whatsapp ?? ""} /></div>
           </div>
