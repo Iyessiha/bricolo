@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { initials, priceText } from "@/lib/format";
+import { initials, priceFor } from "@/lib/format";
 import { openStatus } from "@/lib/hours";
 import LiteCover from "@/components/LiteCover";
 import { defaultCoverUrl, isGeneratedCover } from "@/lib/default-covers";
@@ -53,7 +53,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
             {a.review_count ? <li>★ {String(a.avg_rating).replace(".", ",")} ({a.review_count})</li> : null}
           </ul>
           {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
-          {priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
+          {priceFor(a.trade_slug, a.price_label) && <p className="acard-price">{priceFor(a.trade_slug, a.price_label)}</p>}
         </div>
         <div className="acard-cta">
           <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>
@@ -85,7 +85,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
         </p>
         {st.state !== "none" && <p className={`acard-open ${st.state}`}><i aria-hidden="true" />{st.text}</p>}
         {a.takes_urgent && <p className="acard-meta">🚨 Prend les urgences</p>}
-        {!lite && priceText(a.price_label) && <p className="acard-price">{priceText(a.price_label)}</p>}
+        {!lite && priceFor(a.trade_slug, a.price_label) && <p className="acard-price">{priceFor(a.trade_slug, a.price_label)}</p>}
       </div>
       <div className="acard-cta">
         <a className="btn wa" href={`/api/contact?id=${a.id}&type=whatsapp`}>WhatsApp</a>

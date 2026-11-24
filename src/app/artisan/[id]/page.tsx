@@ -1,4 +1,4 @@
-import { priceText } from "@/lib/format";
+import { priceText, priceFor } from "@/lib/format";
 import { DAYS, cleanHours, openStatus, timeLabel } from "@/lib/hours";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -37,7 +37,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, headline, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, headline, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name, slug), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
@@ -48,13 +48,13 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   try { await supabaseAdmin().from("events").insert({ artisan_id: id, type: "view" }); } catch { /* statistiques non bloquantes */ }
 
   const zones = ((a as any).zones ?? []).map((z: any) => z.zone).filter(Boolean) as { id: string; name: string }[];
-  const trade = (a as any).trade as { id: string; name: string };
+  const trade = (a as any).trade as { id: string; name: string; slug?: string };
   const action = sendRequest.bind(null, id);
   const reportAction = reportArtisan.bind(null, id);
 
   const hrs = cleanHours((a as any).hours);
   const st = openStatus((a as any).hours, (a as any).open_24_7, a.country_code);
-  const price = priceText(a.price_label);
+  const price = priceFor(trade?.slug, a.price_label);
   const rating = a.review_count ? String(a.avg_rating).replace(".", ",") : null;
   const whoLine = a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? a.company_name : null;
 
@@ -92,7 +92,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
           <div className="pfacts">
             <div><span aria-hidden="true">⭐</span><b>{rating ? `${rating}/5` : "Nouveau"}</b><small>{rating ? `${a.review_count} avis` : "pas encore d’avis"}</small></div>
             <div><span aria-hidden="true">🛠</span><b>{a.experience_years ? `${a.experience_years} an${a.experience_years > 1 ? "s" : ""}` : "—"}</b><small>d’expérience</small></div>
-            <div><span aria-hidden="true">💶</span><b>{price ?? "Sur devis"}</b><small>tarif indicatif</small></div>
+            <div><span aria-hidden="true">💶</span><b>{price ?? "Sur devis"}</b><small>{trade?.slug === "machiniste" || trade?.slug === "chauffeur" ? "à convenir avec le professionnel" : "tarif indicatif"}</small></div>
             <div><span aria-hidden="true">🕒</span><b className={st.state === "open" ? "pf-open" : undefined}>{st.state === "none" ? "—" : st.state === "open" ? "Ouvert" : "Fermé"}</b><small>{st.state === "none" ? "horaires non précisés" : st.text.replace(/^(Ouvert|Fermé) · ?/, "") || (st.state === "open" ? "maintenant" : "")}</small></div>
           </div>
 
@@ -101,7 +101,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
               <div className="svcbox-h"><h2 id="svc-t">🛠️ Ce que je propose</h2><span className="svcbox-n">{list.length} prestation{list.length > 1 ? "s" : ""}</span></div>
               {list.map((s) => (
                 <article key={s.id} className="svc-pub">
-                  <div className="svc-pub-h"><h3>{s.headline}</h3>{priceText(s.price_label) && <span className="svc-price">{priceText(s.price_label)}</span>}</div>
+                  <div className="svc-pub-h"><h3>{s.headline}</h3>{priceFor(trade?.slug, s.price_label) && <span className="svc-price">{priceFor(trade?.slug, s.price_label)}</span>}</div>
                   {(((s as any).included?.length ?? 0) > 0 || ((s as any).extras?.length ?? 0) > 0) && (
                     <div className="svc-cols">
                       {(s as any).included?.length > 0 && <div><span className="svc-lbl">Inclus dans le prix</span><ul className="svc-inc">{(s as any).included.map((x: string) => <li key={x}>{x}</li>)}</ul></div>}

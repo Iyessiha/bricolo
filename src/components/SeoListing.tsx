@@ -46,7 +46,7 @@ export default function SeoListing({ d }: { d: Data }) {
         {n ? `${n} ${n > 1 ? d.trade.plural.toLowerCase() : d.trade.name.toLowerCase()} ${n > 1 ? "sont" : "est"} référencé${n > 1 ? "s" : ""} ${where} sur Bricolo.` : `Aucun ${d.trade.name.toLowerCase()} n’est encore référencé ${where}.`}{" "}
         {d.trade.description ? `${d.trade.description}. ` : ""}Comparez les profils, les avis et les prestations, puis contactez directement l’artisan par téléphone ou WhatsApp, gratuitement et sans compte.
       </p>
-      {n ? <div className="cards">{d.list.map((a) => <ArtisanCard country={d.country.code} key={a.id} a={a} />)}</div> : (
+      {n ? <div className="cards">{d.list.map((a) => <ArtisanCard country={d.country.code} key={a.id} a={{ ...a, trade_slug: d.trade.slug }} />)}</div> : (
         <div className="card pad stack"><p>Vous êtes {d.trade.name.toLowerCase()} {where} ? Soyez le premier à apparaître ici.</p><p><Link className="btn primary" href="/inscription">Créer mon profil gratuitement</Link></p></div>
       )}
       <p><Link className="btn" href={`/resultats?${q}`}>Affiner la recherche (vérifiés, ouverts maintenant, urgences)</Link></p>

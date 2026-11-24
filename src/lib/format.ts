@@ -26,3 +26,8 @@ export function priceText(raw?: string | null): string | null {
   if (/^\d/.test(out) && !out.includes("–")) out = `Dès ${out}`;
   return out;
 }
+
+/** Métiers dont le prix n'est jamais affiché : il se négocie directement avec le professionnel. */
+export const NEGOTIABLE_TRADES = new Set(["machiniste", "chauffeur"]);
+export const priceFor = (tradeSlug: string | null | undefined, raw?: string | null): string | null =>
+  tradeSlug && NEGOTIABLE_TRADES.has(tradeSlug) ? "Prix à négocier" : priceText(raw);
