@@ -68,7 +68,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     ...[...(featured ?? [])].sort((x: any, y: any) => (hash(x.id + rot) < hash(y.id + rot) ? -1 : 1)).map((a: any) => ({ ...a, sponsored: true, trade: a.trade?.name, trade_slug: a.trade?.slug })),
     ...((top ?? []) as any[]).filter((a) => !have.has(a.id)).map((a, i) => ({ ...a, trade: tradeName(a.trade_id), trade_slug: trades?.find((x) => x.id === a.trade_id)?.slug, _i: i })).sort((x: any, y: any) => complete(y) - complete(x) || x._i - y._i),
   ];
-  const wanted = pool.length >= 12 ? 8 : 6;
+  const wanted = 9;
   const perTrade = new Map<string, number>();
   const shown: any[] = [];
   for (const a of pool) {
@@ -137,11 +137,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
       {shown.length ? <section className="inner sec">
         <div className="sec-head"><h2>Des artisans près de chez vous</h2><Link href="/resultats">Voir tous →</Link></div>
-        <div className={`cards home${shown.length >= 8 ? " n8" : ""}`}>
+        <div className="cards home">
           {shown.map((a: any) => <ArtisanCard lite country={country} key={a.id} a={a} />)}
           {shown.length < 6 && <Link href="/inscription" className="acard acard-invite"><b>D’autres artisans arrivent</b><span>Vous êtes artisan ? Créez votre profil gratuit et soyez trouvé près de chez vous.</span><em>Créer mon profil →</em></Link>}
-          <Link href="/resultats" className="acard acard-more"><b>Voir tous les artisans</b><span>Comparez les profils près de chez vous</span><em>→</em></Link>
         </div>
+        <p className="home-more"><Link className="btn" href="/resultats">Voir tous les artisans →</Link></p>
       </section> : null}
 
       <section className="inner sec">
