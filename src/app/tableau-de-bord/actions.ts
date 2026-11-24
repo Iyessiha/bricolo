@@ -205,3 +205,23 @@ export async function requestMissingZone(raw: string): Promise<{ ok: boolean; er
   after(() => notifyMissingZone({ zone, country, who: user.email ?? a?.name ?? "artisan" }));
   return { ok: true };
 }
+
+/** Boost recherche de 24 h offert chaque mois aux artisans Pro vérifiés. */
+export async function claimFreeBoostAction(formData: FormData) {
+  const a = await currentArtisan();
+  if (!a) redirect("/connexion");
+  const { claimFreeBoost } = await import("@/lib/pro-perks");
+  const r = await claimFreeBoost(supabaseAdmin(), a.id, String(formData.get("zone") ?? ""));
+  revalidatePath("/tableau-de-bord"); revalidatePath("/");
+  redirect(r.ok ? "/tableau-de-bord?s=forfait&ok=boost" : `/tableau-de-bord?s=forfait&erreur=${encodeURIComponent(r.error)}`);
+}
+
+/** Essai gratuit du Forfait Pro (7 jours, une seule fois). */
+export async function startTrialAction() {
+  const a = await currentArtisan();
+  if (!a) redirect("/connexion");
+  const { startTrial } = await import("@/lib/pro-perks");
+  const r = await startTrial(supabaseAdmin(), a.id);
+  revalidatePath("/tableau-de-bord");
+  redirect(r.ok ? "/tableau-de-bord?s=forfait&ok=essai" : `/tableau-de-bord?s=forfait&erreur=${encodeURIComponent(r.error)}`);
+}

@@ -23,7 +23,8 @@ import DiplomaAdd from "@/components/DiplomaAdd";
 import ServiceDetails from "@/components/ServiceDetails";
 import AskReview from "@/components/AskReview";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { addService, markAnswered, removeService, replyToReview, saveZones, updateService, saveHours, saveProfile } from "./actions";
+import { addService, markAnswered, removeService, replyToReview, saveZones, updateService, saveHours, saveProfile, claimFreeBoostAction, startTrialAction } from "./actions";
+import { freeBoostUsed, nextMonthStart, proRecap, trialStatus, TRIAL_DAYS } from "@/lib/pro-perks";
 import { priceText } from "@/lib/format";
 import HoursEditor from "@/components/HoursEditor";
 import { cleanHours } from "@/lib/hours";
@@ -67,7 +68,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ]);
   const [{ data: planRow }, { data: history }] = await Promise.all([
     db.from("plan_prices").select("amount, week_amount, year_amount").eq("country_code", country).maybeSingle(),
-    db.from("subscriptions").select("id, days, amount, starts_at, ends_at, created_at").eq("artisan_id", artisan.id).eq("status", "active").order("created_at", { ascending: false }).limit(10),
+    db.from("subscriptions").select("id, days, amount, starts_at, ends_at, created_at, trial").eq("artisan_id", artisan.id).eq("status", "active").order("created_at", { ascending: false }).limit(10),
   ]);
   const monthPrice = planRow?.amount ?? 0;
   const planOf = planRow ?? { amount: 0 };
@@ -119,6 +120,18 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const [act30, actProBefore, actProAfter] = sec === "forfait"
     ? await countWindows(supabaseAdmin(), artisan.id, [{ from: nowMs - 30 * DAY, to: nowMs }, ...(Number.isFinite(proStart) && nowMs - proStart > 3 * DAY ? [{ from: proStart - 30 * DAY, to: proStart }, { from: proStart, to: Math.min(nowMs, proStart + 30 * DAY) }] : [])])
     : [];
+  // Avantages du Forfait Pro : essai gratuit, boost du mois offert, bilan chiffré.
+  const perks = sec !== "forfait" ? null : await (async () => {
+    const adb = supabaseAdmin();
+    const [trial, freeUsed, zs, recap] = await Promise.all([
+      !pro && approved ? trialStatus(adb, artisan.id) : Promise.resolve(null),
+      pro ? freeBoostUsed(adb, artisan.id) : Promise.resolve(null),
+      pro ? adb.from("artisan_zones").select("zone:zones(id, name)").eq("artisan_id", artisan.id) : Promise.resolve({ data: [] as any[] }),
+      pro && Number.isFinite(proStart) ? proRecap(adb, artisan.id, new Date(proStart).toISOString()) : Promise.resolve(null),
+    ]);
+    const zlist = ((zs.data ?? []) as any[]).map((r) => (Array.isArray(r.zone) ? r.zone[0] : r.zone)).filter(Boolean) as { id: string; name: string }[];
+    return { trial, freeUsed, zlist, recap };
+  })();
   // Avis reçus (les avis en attente de modération ne sont visibles que par l'artisan, ici, et par l'équipe).
   const { data: myReviews } = approved ? await supabaseAdmin().from("reviews").select("id, author_name, rating, comment, status, verified_by, artisan_reply, created_at").eq("artisan_id", artisan.id).neq("status", "hidden").order("created_at", { ascending: false }).limit(20) : { data: null };
   const reviewsPending = (myReviews ?? []).filter((r) => r.status === "pending").length;
@@ -192,7 +205,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <MomentPopup id={`welcome:${artisan.id}`} emoji="👋" title={`Bienvenue sur Bricolo, ${artisan.name.split(" ")[0]} !`} delay={1500}
           text={approved ? "Voici comment attirer vos premiers clients : complétez votre profil (photos, zones, tarif), puis partagez votre fiche. Les profils complets reçoivent plus de demandes." : "Votre dossier est en cours de vérification (24 à 48 h). En attendant, complétez votre profil : photos de réalisations, zones, tarif et horaires. Il sera visible dès sa validation."}
           actions={[{ label: "Compléter mon profil", primary: true, href: "/tableau-de-bord?s=profil" }]} />
-        {sp.ok && <p className="notice ok">Modifications enregistrées.</p>}
+        {sp.ok && <p className="notice ok" role="status">{sp.ok === "boost" ? "Votre boost recherche de 24 h est actif : vous passez en tête des résultats de votre zone." : sp.ok === "essai" ? `Votre essai du Forfait Pro est activé pour ${TRIAL_DAYS} jours. Profitez-en !` : "Modifications enregistrées."}</p>}
         {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
 
         <div className="stack" hidden={sec !== "apercu"}>
@@ -388,6 +401,41 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <div id="forfait" className="stack" hidden={sec !== "forfait"}>
         <h1 className="dtitle">Visibilité et forfait</h1>
         {sp.paye && (paid[0]?.status === "paid" ? <p className="notice ok" role="status">Paiement reçu. Votre Forfait Pro est actif.</p> : <p className="notice" role="status">Merci ! Nous attendons la confirmation de GeniusPay. Votre forfait s’activera automatiquement dans quelques instants : rechargez cette page dans une minute.</p>)}
+        {perks?.trial?.ok && (
+          <div className="card pad stack dboost big">
+            <div><b>Essayez le Forfait Pro {TRIAL_DAYS} jours, gratuitement</b>
+              <p className="meta">Sans paiement et sans engagement : 10 prestations, 20 photos, 10 quartiers et le badge Pro. Une seule fois par artisan.</p></div>
+            <form action={startTrialAction}><button className="btn boost" type="submit">Commencer mon essai gratuit</button></form>
+          </div>
+        )}
+        {pro && perks && (
+          <div className="card pad stack">
+            <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Mon boost du mois, offert</h2><span className="tag boost">Inclus dans le Pro</span></div>
+            {perks.freeUsed ? (
+              <p className="meta">Votre boost offert de ce mois est déjà pris{new Date(perks.freeUsed.ends_at) > new Date() ? ` (actif jusqu’au ${day(perks.freeUsed.ends_at)})` : ""}. Le prochain sera disponible le {day(nextMonthStart().toISOString())}.</p>
+            ) : !(artisan as any).verified ? (
+              <p className="meta">Il est réservé aux profils dont l’identité est vérifiée.</p>
+            ) : perks.zlist.length ? (
+              <form action={claimFreeBoostAction} className="stack" style={{ gap: 10 }}>
+                <p className="meta">Un boost recherche de 24 h dans le quartier de votre choix : votre fiche passe en tête des résultats de votre métier. Un par mois.</p>
+                <div className="fld"><label htmlFor="free_zone">Zone du boost</label>
+                  <select id="free_zone" name="zone" required>{perks.zlist.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}</select></div>
+                <div><button className="btn boost" type="submit">Activer mon boost offert (24 h)</button></div>
+              </form>
+            ) : <p className="meta">Ajoutez d’abord une zone d’intervention à votre fiche.</p>}
+          </div>
+        )}
+        {pro && perks?.recap && (
+          <div className="card pad stack">
+            <h2 style={{ fontSize: 18 }}>Bilan de mon Forfait Pro</h2>
+            <p className="meta">Depuis le début de votre forfait ({day(new Date(proStart).toISOString())}).</p>
+            <div className="stats">
+              {([["👁", perks.recap.vues, "Vues"], ["📞", perks.recap.appels, "Appels"], ["💬", perks.recap.wa, "WhatsApp"], ["📩", perks.recap.demandes, "Demandes"]] as const).map(([ic, n, l]) => (
+                <div key={l} className="card stat"><span aria-hidden="true">{ic}</span><b>{n}</b><span>{l}</span></div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="card pad stack">
           <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 18 }}>Mon offre actuelle</h2>{pro ? <span className="tag boost">Pro</span> : <span className="tag mute">Gratuit</span>}</div>
           <p>{pro && proSub ? <><b>Forfait Pro actif jusqu’au {day(proSub.ends_at)}</b> · il reste {leftLabel}. Prolonger ajoute la durée à la fin de la période en cours.</> : <><b>Offre gratuite.</b> Elle suffit pour démarrer ; le Pro vous donne plus de place pour convaincre.</>}</p>
@@ -443,7 +491,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           </div>
         ) : <p className="empty">Le Forfait Pro n’est pas encore disponible dans votre pays.</p>) : <p className="empty">Le Forfait Pro sera disponible dès la validation de votre profil.</p>}
         <div className="card pad stack"><h2 style={{ fontSize: 18 }}>Mes périodes de Forfait Pro</h2>
-          {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>Forfait Pro · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
+          {history?.length ? history.map((h) => <div key={h.id} className="row" style={{ justifyContent: "space-between" }}><span>{(h as any).trial ? "Essai gratuit" : "Forfait Pro"} · {h.days >= 365 ? "1 an" : h.days >= 30 ? `${Math.round(h.days / 30)} mois` : `${h.days} j`}<span className="meta"> · jusqu’au {day(h.ends_at)}</span></span><span className="row"><b className="num">{(h as any).trial ? "Offert" : fcfa(h.amount)}</b><span className={`tag ${new Date(h.ends_at) > new Date() ? "ok" : "mute"}`}>{new Date(h.ends_at) > new Date() ? "Actif" : "Terminé"}</span></span></div>) : <p className="empty">Aucun paiement de forfait pour le moment.</p>}
         </div>
       
       <div id="visibilite" className="stack">

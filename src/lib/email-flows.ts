@@ -112,7 +112,7 @@ const DAY = 864e5;
 export async function runReminders() {
   const db = supabaseAdmin();
   const now = Date.now();
-  const out = { expiring: 0, completeProfile: 0, firstBoost: 0, documents: 0 };
+  const out = { expiring: 0, completeProfile: 0, firstBoost: 0, documents: 0, proRecap: 0 };
   let marketingBudget = 40; // plan gratuit Resend : 100 e-mails/jour au total
 
   // 1. Boost qui se termine dans les 30 prochaines heures (transactionnel). Les boosts de 24 h sont ignorés.
@@ -122,6 +122,18 @@ export async function runReminders() {
     const c = await contactOf(b.artisan_id); if (!c) continue;
     const r = await sendOnce("boost_expiring", b.id, mail(c.email, T.boostExpiring(c.name, BOOST_TYPES[b.type]?.name ?? "boost", b.ends_at)));
     if (r.ok) out.expiring++;
+  }
+
+  // 1 bis. Forfait Pro (ou essai) qui se termine dans les 2 prochains jours : bilan chiffré et invitation à prolonger (une seule fois par période).
+  const { data: subs } = await db.from("subscriptions").select("id, artisan_id, trial, starts_at, ends_at").eq("status", "active").is("recap_sent_at", null)
+    .gt("ends_at", new Date(now).toISOString()).lt("ends_at", new Date(now + 2 * DAY).toISOString()).limit(50);
+  for (const sub of subs ?? []) {
+    const c = await contactOf(sub.artisan_id); if (!c) continue;
+    const since = sub.starts_at ?? new Date(now - 30 * DAY).toISOString();
+    const cnt = async (type: string) => (await db.from("events").select("id", { count: "exact", head: true }).eq("artisan_id", sub.artisan_id).eq("type", type).gte("created_at", since)).count ?? 0;
+    const [vues, appels, wa, demandes] = await Promise.all([cnt("view"), cnt("call"), cnt("whatsapp"), cnt("request")]);
+    const r = await sendOnce("pro_recap", sub.id, mail(c.email, T.proRecap({ name: c.name, trial: !!sub.trial, endsAt: sub.ends_at, vues, appels, wa, demandes })));
+    if (r.ok) { out.proRecap++; await db.from("subscriptions").update({ recap_sent_at: new Date().toISOString() }).eq("id", sub.id); }
   }
 
   // 2. Compte créé il y a 2 à 14 jours sans fiche artisan (marketing)

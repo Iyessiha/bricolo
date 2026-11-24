@@ -135,6 +135,25 @@ export const boostExpiring = (name: string, label: string, endsAt: string) => la
     btn("Renouveler mon boost", `${siteUrl()}/boosts`, true),
 });
 
+export const proRecap = (o: { name: string; trial: boolean; endsAt: string; vues: number; appels: number; wa: number; demandes: number }) => {
+  const total = o.appels + o.wa + o.demandes;
+  const line = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+  return layout({
+    subject: o.trial ? "Votre essai du Forfait Pro se termine bientôt" : "Votre Forfait Pro se termine bientôt : voici votre bilan",
+    pre: total > 0 ? `${line(total, "contact reçu", "contacts reçus")} pendant votre forfait.` : `Fin le ${when(o.endsAt)}.`,
+    title: o.trial ? "Votre essai se termine bientôt" : "Votre Forfait Pro se termine bientôt",
+    body: p(`Bonjour ${o.name}, votre ${o.trial ? "essai du Forfait Pro" : "Forfait Pro"} prend fin le ${when(o.endsAt)}.`) +
+      `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;border:1px solid #e3e7f0;border-radius:10px"><tr>
+        <td align="center" style="padding:14px"><b style="font-size:22px">${o.vues}</b><br><span style="color:${MUTED};font-size:13px">vues</span></td>
+        <td align="center" style="padding:14px"><b style="font-size:22px">${o.appels}</b><br><span style="color:${MUTED};font-size:13px">appels</span></td>
+        <td align="center" style="padding:14px"><b style="font-size:22px">${o.wa}</b><br><span style="color:${MUTED};font-size:13px">WhatsApp</span></td>
+        <td align="center" style="padding:14px"><b style="font-size:22px">${o.demandes}</b><br><span style="color:${MUTED};font-size:13px">demandes</span></td></tr></table>` +
+      p(total > 0 ? `Pendant votre forfait : ${line(o.appels, "appel", "appels")}, ${line(o.wa, "message WhatsApp", "messages WhatsApp")} et ${line(o.demandes, "demande", "demandes")}.` : "Les premiers jours servent surtout à être trouvé : photos, prestations et zones complètes font la différence.") +
+      p("Pour garder vos 10 prestations, vos 20 photos, vos quartiers en plus et le badge Pro, prolongez votre forfait : la durée s'ajoute à celle qui reste.") +
+      btn("Prolonger mon Forfait Pro", `${siteUrl()}/tableau-de-bord?s=forfait`, true),
+  });
+};
+
 export const documentsReminder = (name: string) => layout({
   subject: "Finalisez votre profil Bricolo : il manque vos documents", pre: "Photo et pièce d'identité requises pour être en ligne.",
   title: `${name}, votre profil n'est pas encore en ligne`,
