@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 const ITEMS = [
-  ["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes et avis"], ["profil", "👤", "Ma fiche"], ["forfait", "🚀", "Visibilité et forfait"], ["aide", "💬", "Aide et compte"],
+  ["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"],
+  ["boosts", "🚀", "Boosts"], ["forfait", "💎", "Forfait"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"],
 ] as const;
 
 /** Menu de l'espace artisan pour les pages qui sont hors du tableau de bord (ex. /boosts) : on ne perd plus ses repères.
@@ -12,7 +13,7 @@ export default function DashTabs({ current, children }: { current: string; child
       <aside className="dside">
         <nav className="dtabs" aria-label="Mon espace">
           {ITEMS.map(([k, ic, l]) => (
-            <Link key={k} href={`/tableau-de-bord?s=${k}`} aria-current={current === k ? "page" : undefined}>
+            <Link key={k} href={k === "boosts" ? "/boosts" : `/tableau-de-bord?s=${k}`} aria-current={current === k ? "page" : undefined}>
               <span aria-hidden="true">{ic}</span><span>{l}</span>
             </Link>
           ))}

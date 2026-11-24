@@ -29,7 +29,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   if (!a || a.status !== "approved") redirect("/tableau-de-bord");
 
   if (!a.verified) return (
-    <DashTabs current="forfait">
+    <DashTabs current="boosts">
       <div className="notice stack" style={{ gap: 8 }}>
         <b>Les boosts sont réservés aux artisans vérifiés.</b>
         <p>Le client voit votre fiche « Mis en avant » en tête des résultats : il doit pouvoir vous faire confiance. Votre badge « Vérifié » est accordé quand notre équipe a contrôlé votre identité. Dès que c’est fait, vous pouvez booster votre fiche ici.</p>
@@ -84,7 +84,7 @@ export default async function Boosts({ searchParams }: { searchParams: Promise<R
   ];
 
   return (
-    <DashTabs current="forfait">
+    <DashTabs current="boosts">
       {sp.erreur && <p className="notice err">{sp.erreur === "complet" ? "Complet : toutes les places de cet emplacement sont prises. Choisissez une autre zone ou un autre boost." : sp.erreur === "badge" ? "Le boost est réservé aux artisans dont l’identité est vérifiée (badge « Vérifié »)." : sp.erreur === "ferme" ? "Le paiement en ligne ouvrira très bientôt. Aucun montant n’a été débité." : "Le paiement n’a pas pu être lancé. Réessayez."}</p>}
       {sp.paye && (lastPay?.status === "paid"
         ? <p className="notice ok">Paiement confirmé. Votre boost est actif : votre fiche passe devant les autres.</p>
