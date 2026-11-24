@@ -19,7 +19,7 @@ import { unstable_cache } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 /** Métiers et zones changent rarement : lus une fois toutes les 5 minutes au lieu d'un aller-retour base à chaque visite. */
-const getTrades = unstable_cache(async () => (await supabaseAdmin().from("trades").select("id, slug, plural, description").order("plural")).data ?? [], ["home-trades"], { revalidate: 300 });
+const getTrades = unstable_cache(async () => (await supabaseAdmin().from("trades").select("id, slug, name, plural, description").order("plural")).data ?? [], ["home-trades"], { revalidate: 300 });
 const getZones = unstable_cache(async (country: string) => (await supabaseAdmin().from("zones").select("id, name, parent_id").eq("country_code", country).order("name")).data ?? [], ["home-zones"], { revalidate: 300 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -59,7 +59,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const rot = String(Math.floor(Date.now() / 3600000));
   const hash = (t: string) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
   const have = new Set((featured ?? []).map((f: any) => f.id));
-  const tradeName = (id: string) => trades?.find((x) => x.id === id)?.plural?.replace(/s$/, "");
+  // Libellé au singulier pris dans la base (et non en retirant le « s » du pluriel, ce qui casse « Caméras et alarmes »).
+  const tradeName = (id: string) => trades?.find((x) => x.id === id)?.name;
   const POPULAR = ["plombier", "electricien", "frigoriste", "macon", "peintre", "mecanicien", "menuisier", "carreleur", "serrurier", "electromenager"];
   const topTrades = [...(trades ?? [])].sort((a, b) => (POPULAR.indexOf(a.slug) + 1 || 99) - (POPULAR.indexOf(b.slug) + 1 || 99)).slice(0, 9);
   // Sélection de la une : fiches complètes d'abord, mises en avant en tête, 2 artisans max par métier, aucune case vide.

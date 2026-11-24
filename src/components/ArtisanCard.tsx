@@ -15,9 +15,10 @@ export type ArtisanRow = {
 /** Pourquoi cet artisan est en tête : transparence sur la mise en avant, accessible au clavier et au toucher. */
 function Why() {
   return (
-    <span className="why" tabIndex={0} role="button" aria-label="Pourquoi cet artisan est mis en avant ?">
+    // Le texte complet est lu par les lecteurs d'écran (le visuel n'est qu'une infobulle au survol ou au focus).
+    <span className="why" tabIndex={0} role="img" aria-label="Pourquoi cet artisan est mis en avant ? Cet artisan a choisi de se mettre en avant. Son identité est vérifiée par Bricolo.">
       <i aria-hidden="true">i</i>
-      <span role="tooltip">Cet artisan a choisi de se mettre en avant. Son identité est vérifiée par Bricolo.</span>
+      <span aria-hidden="true">Cet artisan a choisi de se mettre en avant. Son identité est vérifiée par Bricolo.</span>
     </span>
   );
 }

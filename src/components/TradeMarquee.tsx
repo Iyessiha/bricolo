@@ -15,6 +15,12 @@ export default function TradeMarquee({ trades, country }: { trades: T[]; country
   );
   return (
     <nav className="tmq" aria-label="Métiers disponibles sur Bricolo">
+      {/* Pause explicite (WCAG 2.2.2) : case cochée + CSS, comme les filtres mobiles. */}
+      <input type="checkbox" id="tmq-pause" className="tmq-ftog" aria-hidden="true" tabIndex={-1} />
+      <label htmlFor="tmq-pause" className="tmq-btn">
+        <span className="tmq-on">Mettre en pause</span>
+        <span className="tmq-off">Reprendre le défilement</span>
+      </label>
       <div className="tmq-track">{set(false)}{set(true)}</div>
     </nav>
   );
