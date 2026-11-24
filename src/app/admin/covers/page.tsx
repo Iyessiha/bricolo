@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AdminImageInput from "@/components/AdminImageInput";
 import { requireAdmin } from "@/lib/admin";
 import { retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover } from "@/app/admin/gestion";
 import { isGeneratedCover } from "@/lib/default-covers";
@@ -49,7 +50,7 @@ export default async function Covers({ searchParams }: { searchParams: Promise<R
             ) : <p className="meta">Cet artisan n’a pas encore téléversé de photo de réalisation.</p>}
             <form action={televerserCoverArtisan} className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input type="hidden" name="id" value={a.id} />
-              <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required style={{ maxWidth: "100%" }} />
+              <AdminImageInput />
               <button className="btn small primary" type="submit">Téléverser une cover (paysage)</button>
             </form>
             <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>

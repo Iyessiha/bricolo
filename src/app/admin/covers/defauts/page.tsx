@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AdminImageInput from "@/components/AdminImageInput";
 import { requireAdmin } from "@/lib/admin";
 import { definirModeDefaut, definirModeTous, retirerDefaut, televerserDefaut } from "@/app/admin/gestion";
 import { defaultSettings, resetUploadedDefaults } from "@/lib/default-covers-server";
@@ -40,7 +41,7 @@ export default async function Defauts({ searchParams }: { searchParams: Promise<
               </form>
               <form action={televerserDefaut} className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 <input type="hidden" name="slug" value={t.slug} />
-                <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required style={{ maxWidth: "100%" }} />
+                <AdminImageInput />
                 <button className="btn small" type="submit">{mine ? "Remplacer la photo" : "Envoyer une photo paysage"}</button>
               </form>
               {mine && <form action={retirerDefaut}><input type="hidden" name="slug" value={t.slug} /><button className="btn small" type="submit">Retirer ma photo</button></form>}
