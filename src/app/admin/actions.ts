@@ -4,13 +4,14 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { notifyBadge, notifyDecision } from "@/lib/email-flows";
 import { supabaseServer } from "@/lib/supabase/server";
+import { mfaOk } from "@/lib/admin";
 
 async function admin() {
   const db = await supabaseServer();
   const { data: { user } } = await db.auth.getUser();
   if (!user) return null;
   const { data } = await db.from("profiles").select("role").eq("id", user.id).single();
-  return data?.role === "admin" ? db : null;
+  return data?.role === "admin" && (await mfaOk(db)) ? db : null;
 }
 const back = (path: string, kind: "ok" | "erreur", msg: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
 

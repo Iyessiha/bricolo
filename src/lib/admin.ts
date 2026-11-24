@@ -6,12 +6,20 @@ import { supabaseAdmin } from "./supabase/admin";
 export type AdminCtx = { db: ReturnType<typeof supabaseAdmin>; id: string; email: string };
 
 /** Vérifie la session ET le rôle administrateur, puis donne un accès serveur complet. À appeler dans chaque page et chaque action d'administration. */
+/** Double authentification de l'équipe : exigée quand ADMIN_2FA=1 (variable Vercel). Sans cette variable, rien ne change, ce qui évite de se bloquer avant d'avoir configuré son application d'authentification. */
+export async function mfaOk(s: Awaited<ReturnType<typeof supabaseServer>>): Promise<boolean> {
+  if (process.env.ADMIN_2FA !== "1") return true;
+  const { data } = await s.auth.mfa.getAuthenticatorAssuranceLevel();
+  return data?.currentLevel === "aal2";
+}
+
 export async function requireAdmin(): Promise<AdminCtx> {
   const s = await supabaseServer();
   const { data: { user } } = await s.auth.getUser();
   if (!user) redirect("/connexion");
   const { data: me } = await s.from("profiles").select("role").eq("id", user.id).single();
   if (me?.role !== "admin") redirect("/");
+  if (!(await mfaOk(s))) redirect("/verification-2fa");
   return { db: supabaseAdmin(), id: user.id, email: user.email ?? "" };
 }
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
+import { mfaOk } from "@/lib/admin";
 import { COUNTRIES } from "@/lib/countries";
 import { emailConfigured } from "@/lib/email";
 import SetupNotice from "@/components/SetupNotice";
@@ -18,6 +19,7 @@ export default async function Campagnes({ searchParams }: { searchParams: Promis
   if (!user) redirect("/connexion");
   const { data: me } = await db.from("profiles").select("role").eq("id", user.id).single();
   if (me?.role !== "admin") redirect("/");
+  if (!(await mfaOk(db))) redirect("/verification-2fa");
 
   const [{ data: trades }, { data: past }] = await Promise.all([
     db.from("trades").select("id, name").order("name"),

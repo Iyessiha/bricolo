@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { hasSupabase } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
+import { mfaOk } from "@/lib/admin";
 import { countryName } from "@/lib/countries";
 import { initials } from "@/lib/format";
 import Flag from "@/components/Flag";
@@ -28,6 +29,7 @@ export default async function Review({ params, searchParams }: { params: Promise
   if (!user) redirect("/connexion");
   const { data: me } = await db.from("profiles").select("role").eq("id", user.id).single();
   if (me?.role !== "admin") redirect("/");
+  if (!(await mfaOk(db))) redirect("/verification-2fa");
 
   const { data: a } = await db.from("artisans")
     .select("*, trade:trades(name), profile:profiles(email), zones:artisan_zones(zone:zones(name))").eq("id", id).maybeSingle();

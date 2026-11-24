@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
+import { mfaOk } from "@/lib/admin";
 import { audienceOf, sendCampaign, sendTest, type Audience } from "@/lib/email-flows";
 
 async function adminUser() {
@@ -8,7 +9,7 @@ async function adminUser() {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return null;
   const { data } = await db.from("profiles").select("role").eq("id", user.id).single();
-  return data?.role === "admin" ? user : null;
+  return data?.role === "admin" && (await mfaOk(db)) ? user : null;
 }
 
 function read(fd: FormData) {
