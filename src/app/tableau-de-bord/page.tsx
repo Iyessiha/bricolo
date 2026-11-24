@@ -200,9 +200,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div className="dremind stack" role="note">
             <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap", gap: 12 }}><b>Votre fiche est complète à {pct} %</b><span className="num dpct" style={{ fontSize: 18 }}>{pct}%</span></div>
             <div className="bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
-            <p>Avant d’appeler, un client compare plusieurs artisans : une fiche avec photos, tarif, zones et horaires est bien plus facile à choisir qu’une fiche vide.</p>
+            <p>Avant d’appeler, un client compare plusieurs artisans. Sur la page d’accueil, les fiches avec cover, photo et horaires passent avant les fiches vides.</p>
             <div className="row" style={{ gap: 8, flexWrap: "wrap" }}><Link className="btn small primary" href={`/tableau-de-bord?s=${todo[0].s}`} scroll={false}>{todo[0].l}</Link><Link className="btn small ghost" href="/tableau-de-bord" scroll={false}>Voir tout ce qui reste ({todo.length})</Link></div>
           </div>
+        )}
+        {pct < 70 && !deleting && !suspended && !rejected && (
+          <MomentPopup id={`completer:${artisan.id}:${new Date().toISOString().slice(0, 10)}`} emoji="📝" title={`Votre fiche est complète à ${pct} %`}
+            text="Les clients comparent plusieurs artisans avant d’appeler, et sur l’accueil les fiches complètes passent avant les fiches vides. Il vous reste quelques minutes de travail pour être choisi plus souvent."
+            delay={2500} actions={[{ label: todo[0] ? `Commencer : ${todo[0].l}` : "Compléter ma fiche", primary: true, href: `/tableau-de-bord?s=${todo[0]?.s ?? "profil"}` }, { label: "Plus tard", href: "/tableau-de-bord" }]} />
         )}
         {approved ? (
           <MomentPopup id={`online:${artisan.id}`} emoji="🎉" title="Votre profil est en ligne !" text="Les clients peuvent maintenant vous trouver. Pour recevoir vos premières demandes plus vite, partagez votre fiche à vos clients et contacts sur WhatsApp."
