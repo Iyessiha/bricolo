@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { purgeAccount } from "@/lib/account-purge";
 
 /** Passe les boosts terminés à « expired ». Le classement ignore déjà les boosts échus : ceci tient la base propre. */
 export async function GET(req: NextRequest) {
@@ -15,5 +16,9 @@ export async function GET(req: NextRequest) {
     if (p.boost_id) await db.from("boosts").update({ status: "cancelled" }).eq("id", p.boost_id).eq("status", "pending");
     if (p.subscription_id) await db.from("subscriptions").update({ status: "cancelled" }).eq("id", p.subscription_id).eq("status", "pending");
   }
-  return NextResponse.json({ expired: data?.length ?? 0, abandoned: stale?.length ?? 0 });
+  // Suppressions de compte demandées il y a plus de 7 jours : effacement définitif.
+  const { data: due } = await db.from("artisans").select("user_id").not("deletion_at", "is", null).lt("deletion_at", new Date().toISOString()).limit(50);
+  let purged = 0;
+  for (const d of due ?? []) { const { error } = await purgeAccount(d.user_id); if (!error) purged++; }
+  return NextResponse.json({ expired: data?.length ?? 0, abandoned: stale?.length ?? 0, purged });
 }

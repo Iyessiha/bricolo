@@ -73,6 +73,7 @@ export default async function Review({ params, searchParams }: { params: Promise
       <p><Link href="/admin/artisans">← Tous les artisans</Link></p>
       {sp.ok && <p className="notice ok" role="status">{sp.ok}</p>}
       {sp.erreur && <p className="notice err" role="alert">{sp.erreur}</p>}
+      {(a as any).deletion_at && <p className="notice err">Suppression demandée par l’artisan : effacement définitif le {new Date((a as any).deletion_at).toLocaleDateString("fr-FR")}. Il peut encore annuler depuis son espace.</p>}
 
       <div className="card pad row" style={{ gap: 16, flexWrap: "nowrap" }}>
         {a.photo_url ? <img className="curphoto" src={a.photo_url} alt="Photo de profil" /> : <span className="avatar" style={{ width: 96, height: 96 }}>{initials(a.name)}</span>}

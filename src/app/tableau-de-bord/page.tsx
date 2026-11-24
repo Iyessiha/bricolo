@@ -33,6 +33,7 @@ import { cleanHours } from "@/lib/hours";
 import { signOut } from "../auth-actions";
 import SupportChat from "@/components/SupportChat";
 import DeleteAccount from "@/components/DeleteAccount";
+import { cancelAccountDeletion } from "@/app/tableau-de-bord/compte-actions";
 import { listPayments } from "@/lib/receipts";
 import MyPayments from "@/components/MyPayments";
 import { unreadForArtisan } from "@/lib/support";
@@ -92,7 +93,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const leftLabel = daysLeft > 60 ? `${Math.round(daysLeft / 30)} mois` : `${daysLeft} j`;
   if (!ident) redirect("/activation");
 
-  const approved = artisan.status === "approved", rejected = artisan.status === "rejected", suspended = artisan.status === "suspended";
+  const approved = artisan.status === "approved", rejected = artisan.status === "rejected", deleting = Boolean((artisan as any).deletion_at), suspended = artisan.status === "suspended" && !deleting;
   const myZones = new Set(((artisan as any).zones ?? []).map((z: any) => z.zone_id));
   const days = [7, 30, 90].includes(Number(sp.p)) ? Number(sp.p) : 7;
   const sinceMs = Date.now() - days * 864e5, prevMs = sinceMs - days * 864e5;
@@ -154,7 +155,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   ];
   const pct = Math.round((checks.filter((c) => c.ok).length / checks.length) * 100);
   const todo = checks.filter((c) => !c.ok);
-  const statusTag = approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
+  const statusTag = deleting ? ["err", "Suppression prévue"] : approved ? ["ok", "● En ligne"] : suspended ? ["err", "Suspendu"] : rejected ? ["err", "À corriger"] : ["wait", "En vérification"];
   const NAV = [["apercu", "🏠", "Accueil"], ["demandes", "📩", "Demandes"], ["profil", "👤", "Profil"], ["prestations", "🛠️", "Prestations"], ["guide", "💡", "Réussir ma fiche"], ["forfait", "💎", "Forfait"], ["boosts", "🚀", "Boosts"], ["paiements", "🧾", "Paiements"], ["notifs", "🔔", "Notifications"], ["aide", "💬", "Contacter Bricolo"], ["compte", "⚙️", "Mon compte"]] as const;
   return (
     <section className="inner dash">
@@ -213,6 +214,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <h1 className="dtitle">Bonjour 👋</h1>
           <InstallApp intro="Gardez Bricolo sur l’écran d’accueil de votre téléphone pour retrouver vos demandes en un geste." />
         {approved && <div className="notice ok row" style={{ justifyContent: "space-between" }}><span><b>Votre profil est en ligne.</b> Les clients peuvent vous trouver.</span><Link className="btn small" href={`/artisan/${artisan.id}`}>Voir ma fiche</Link></div>}
+        {deleting && <div className="notice err stack" style={{ gap: 6 }}><b>Suppression de votre compte prévue le {new Date((artisan as any).deletion_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}.</b><p>Votre fiche est masquée. Jusqu’à cette date, vous pouvez annuler : elle reviendra comme avant.</p><form action={cancelAccountDeletion}><button className="btn primary" type="submit">Annuler la suppression</button></form></div>}
         {suspended && <div className="notice err stack" style={{ gap: 6 }}><b>Votre profil est suspendu.</b><p>{artisan.reject_reason ?? "Il n’est plus visible des clients."} Pour en savoir plus ou le réactiver, contactez-nous.</p><div><a className="btn" href={`mailto:${COMPANY.email}`}>Nous contacter</a></div></div>}
         {!approved && !rejected && !suspended && (
           <div className="notice"><b>Dossier en cours de vérification.</b> Envoyé le {day(ident.submitted_at)}. Nous répondons en général sous 24 à 48 heures, par e-mail. Votre profil sera visible des clients dès sa validation.</div>
@@ -597,7 +599,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <div id="compte" className="stack" hidden={sec !== "compte"}>
         <h1 className="dtitle">Mon compte</h1>
         <p className="meta">Connecté avec {user.email}. Pour changer d’adresse e-mail, écrivez-nous depuis « Contacter Bricolo ».</p>
-        {sec === "compte" && <DeleteAccount hasPaid={Boolean(pro || act?.length)} />}
+        {sec === "compte" && deleting && <div className="card pad stack"><b>Suppression de votre compte prévue le {new Date((artisan as any).deletion_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}.</b><p>Votre fiche est masquée. Vous pouvez annuler jusqu’à cette date.</p><form action={cancelAccountDeletion}><button className="btn primary" type="submit">Annuler la suppression</button></form></div>}
+        {sec === "compte" && !deleting && <DeleteAccount hasPaid={Boolean(pro || act?.length)} />}
       </div>
       </main>
     </section>

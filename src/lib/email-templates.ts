@@ -127,6 +127,15 @@ export const boostReceipt = (o: { name: string; label: string; zone: string | nu
     btn("Voir mes boosts", `${siteUrl()}/boosts`, true),
 });
 
+export const accountDeletionScheduled = (name: string, at: string) => layout({
+  subject: "Suppression de votre compte Bricolo : vous avez 7 jours", pre: "Votre fiche est masquée. Vous pouvez annuler jusqu'à la date indiquée.",
+  title: `${name}, votre compte sera supprimé le ${new Date(at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`,
+  body: p("Vous avez demandé la suppression de votre compte. Votre fiche n'est plus visible des clients. À la date indiquée, votre compte, vos photos, vos pièces d'identité et vos statistiques seront effacés définitivement.") +
+    p("Si vous avez changé d'avis, connectez-vous et cliquez sur « Annuler la suppression » : votre fiche reviendra comme avant.") +
+    p("Si vous n'êtes pas à l'origine de cette demande, annulez-la tout de suite et changez votre mot de passe, puis écrivez-nous à contact@monbricolo.com.") +
+    btn("Annuler la suppression", `${siteUrl()}/tableau-de-bord?s=compte`),
+});
+
 export const boostExpiring = (name: string, label: string, endsAt: string) => layout({
   subject: `Votre ${label.toLowerCase()} se termine bientôt`, pre: `Fin le ${when(endsAt)}.`,
   title: "Votre boost se termine bientôt",
