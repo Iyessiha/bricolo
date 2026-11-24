@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { initials, priceText } from "@/lib/format";
 import { openStatus } from "@/lib/hours";
-import TradeIcon from "@/components/TradeIcon";
+import TradeArt from "@/components/TradeArt";
 
 export type ArtisanRow = {
   id: string; name: string; description?: string | null; price_label?: string | null; verified: boolean;
@@ -30,7 +30,7 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
     <article className={`acard${a.sponsored ? " sp" : ""}${lite ? " lite" : ""}`}>
       {/* Couverture : celle de l'artisan, sinon la photo du métier (téléversée par l'administration), sinon une illustration SVG du métier. */}
       <div className={`acard-media${cover ? " cov" : ""}`}>
-        {cover ? <img src={cover} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : a.trade_slug ? <span className="acard-art" aria-hidden="true"><TradeIcon slug={a.trade_slug} /></span> : <span aria-hidden="true">{initials(a.name)}</span>}
+        {cover ? <img src={cover} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : a.trade_slug ? <span className="acard-art" aria-hidden="true"><TradeArt slug={a.trade_slug} /></span> : <span aria-hidden="true">{initials(a.name)}</span>}
         {cover && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
         {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         <div className="acard-badges">
