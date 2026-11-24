@@ -149,7 +149,8 @@ a,button,summary,label{-webkit-tap-highlight-color:transparent}
 .opts.two{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .mbar{display:none}
 @media (max-width:860px){
-  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "trust" "form" "tmq";gap:14px}
+  .hero2{grid-template-columns:1fr;grid-template-areas:"intro" "trust" "form";gap:14px}
+  .tmq{display:none}
   .btn{min-height:48px}.btn.small{min-height:44px}.chip{min-height:44px;padding:0 16px}
   .pad{padding:16px}.sec{padding-block:20px}.sec-head{margin-bottom:12px}
   h1{font-size:clamp(28px,8.5vw,38px)}h2{font-size:clamp(21px,6vw,26px)}
@@ -428,10 +429,10 @@ h1 .flag{margin-inline:2px}
 .cardprev .cp{width:180px;aspect-ratio:3/2;border-radius:var(--radius-md);overflow:hidden;background:var(--surface-sunken);border:1px solid var(--line);flex:none}
 .cardprev .cp img{width:100%;height:100%;object-fit:cover;display:block}
 @media(max-width:699px){
-  .tiles{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;margin-inline:-16px;padding:2px 16px 6px;scrollbar-width:none}
-  .tiles::-webkit-scrollbar{display:none}
-  .tile{flex:0 0 auto;scroll-snap-align:start;padding:10px 16px;border-radius:var(--radius-pill);min-height:44px;align-content:center}
-  .tile b{font-size:15px;white-space:nowrap}.tile span{display:none}
+  /* Mobile : tous les métiers visibles d'un coup, en grille de 4 colonnes (plus de défilement caché). */
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .tile{display:grid;justify-items:center;text-align:center;padding:10px 4px;border-radius:14px;min-height:44px;align-content:start}
+  .tile b{font-size:12px;line-height:1.15;white-space:normal}.tile span{display:none}
 }
 
 /* Audit UX : badges de carte sur une seule ligne, prestations qui passent à la ligne */
@@ -507,8 +508,7 @@ h1 .flag{margin-inline:2px}
 .tile .ti{display:grid;place-items:center;width:42px;height:42px;margin-bottom:6px;border-radius:12px;background:var(--brand-soft);color:var(--brand);font-style:normal}
 .tile .ti svg{width:24px;height:24px}
 @media(max-width:699px){
-  .tile{grid-auto-flow:column;align-items:center;column-gap:8px}
-  .tile .ti{width:28px;height:28px;margin:0;border-radius:8px}.tile .ti svg{width:18px;height:18px}
+  .tile .ti{width:40px;height:40px;margin:0 0 4px;border-radius:12px}.tile .ti svg{width:22px;height:22px}
 }
 
 /* Troisième bouton : message sur la plateforme */
@@ -823,6 +823,7 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
 .acard.lite .acard-cta{margin-top:auto;padding:12px 14px 14px}
 .lc-cover .acard-flag{top:10px;left:10px}
 .lc-cover{aspect-ratio:16/7}
+@media(max-width:699px){.lc-cover{aspect-ratio:16/5}}
 .lc-ill{position:absolute;right:8px;bottom:8px;z-index:1;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:rgba(10,20,40,.55);color:#fff;backdrop-filter:blur(4px)}
 .lc-head{margin-top:-30px}
 .lc-body{display:grid;gap:4px;padding:10px 14px 0;flex:1;align-content:start}
