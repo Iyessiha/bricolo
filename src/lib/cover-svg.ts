@@ -10,6 +10,8 @@ const ICON: Record<string, string> = {
   nettoyage: "M8 3h5v4H8zM10.5 7v3M6 10h10v11H6zM16 5l2-2M17 8h3M16 11l2 2",
   "femme-de-menage": "M8 3h5v4H8zM10.5 7v3M6 10h10v11H6zM16 5l2-2M17 8h3M16 11l2 2",
   macon: "M3 5h18v5H3zM3 14h18v5H3zM9 5v5M15 14v5M12 10v4",
+  machiniste: "M3 18h13M5 18v-4h8v4M13 14l4-8 4 2M17 6l-1.5 5M6 20.5a1 1 0 1 0 0 .01M13 20.5a1 1 0 1 0 0 .01",
+  chauffeur: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 9.5V3M9.8 13.2L4 15.5M14.2 13.2L20 15.5",
   informatique: "M5 5h14v10H5zM2 19h20M9 19l1-4h4l1 4",
   cameras: "M3 8h13v8H3zM16 11l5-3v8l-5-3M7 5l3 3",
   electricien: "M13 2L5 13h6l-1 9 9-12h-6z",
