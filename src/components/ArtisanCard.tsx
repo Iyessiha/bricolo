@@ -35,12 +35,15 @@ export default function ArtisanCard({ a, country, lite }: { a: ArtisanRow; count
         <div className="lc-cover">
           <LiteCover own={own} shots={shots} fallback={dflt ?? ""} />
           {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
+          {/* Repère visuel : la carte entière ouvre la fiche (lien du nom, étendu à toute la carte). */}
+          <span className="lc-go" aria-hidden="true">›</span>
         </div>
         <div className="lc-head">
           <span className="lc-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>
           <div className="lc-id">
             <h3><Link href={`/artisan/${a.id}`}>{a.name}</Link></h3>
-            <p className="lc-sub">{a.trade}</p>
+            {/* Le métier mène à la liste de ce métier dans le pays. */}
+            <p className="lc-sub">{a.trade_slug ? <Link className="lc-trade" href={`/artisans/${country ?? a.country_code ?? "ci"}/${a.trade_slug}`}>{a.trade}</Link> : a.trade}</p>
           </div>
         </div>
         <div className="lc-body">
