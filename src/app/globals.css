@@ -853,9 +853,9 @@ a.chip.on{background:var(--brand);color:var(--on-brand);border-color:transparent
   .cards.home .lc-chips li{font-size:10.5px;padding:2px 7px}
   .cards.home .lc-chips li:not(.v):not(.u){display:none}
   .cards.home .acard-cta{padding:10px}
-  .cards.home .acard-cta .msg{display:none}
+  .cards.home .acard-cta .msg{width:42px;min-height:44px}
   .cards.home .acard-cta .wa{font-size:14px}
-  .cards.home .acard-cta .call{width:42px}
+  .cards.home .acard-cta .call{width:42px;min-height:44px}
   .cards.home .lc-ill{font-size:9.5px;padding:1px 6px}
   .cards.home .acard-flag{font-size:10px}
 }
