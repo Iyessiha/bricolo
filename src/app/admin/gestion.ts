@@ -179,6 +179,18 @@ export async function retirerPhotoProfil(f: FormData) {
   refresh(a.id); back(page, "ok", paths.length ? `Photo de profil : ${paths.length} fichier(s) supprimé(s).` : "Aucun fichier à supprimer.");
 }
 
+/** Valide (ou retire la validation de) le registre de commerce : l'artisan peut alors être présenté comme « Entreprise ». */
+export async function validerRegistre(f: FormData) {
+  const { ctx, a, page } = await target(f);
+  const ok = s(f, "ok", 3) === "1";
+  const { data: c } = await ctx.db.from("artisan_companies").select("registration_number").eq("artisan_id", a.id).maybeSingle();
+  if (!c?.registration_number) back(page, "erreur", "Aucun numéro de registre renseigné.");
+  const { error } = await ctx.db.from("artisan_companies").update({ verified_at: ok ? new Date().toISOString() : null, verified_by: ok ? ctx.id : null }).eq("artisan_id", a.id);
+  if (error) back(page, "erreur", "La validation n’a pas pu être enregistrée.");
+  await audit(ctx, ok ? "registre.valider" : "registre.retirer", { type: "artisan", id: a.id, label: a.name });
+  refresh(a.id); back(page, "ok", ok ? "Registre de commerce validé : la fiche peut afficher « Entreprise »." : "Validation retirée.");
+}
+
 const KINDS = ["avertissement", "badge_retire", "suspension", "bannissement"] as const;
 
 /** Traite un signalement : le classer, ou le retenir avec (ou sans) sanction. L'artisan est prévenu par e-mail. */

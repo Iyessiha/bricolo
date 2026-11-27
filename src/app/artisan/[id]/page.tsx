@@ -1,3 +1,4 @@
+import { companyShown } from "@/lib/company";
 import { priceText, priceFor } from "@/lib/format";
 import { DAYS, cleanHours, openStatus, timeLabel } from "@/lib/hours";
 import { notFound } from "next/navigation";
@@ -37,7 +38,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await supabaseServer();
   const { data: a } = await db.from("artisans")
-    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, headline, experience_years, hours, open_24_7, takes_urgent, diploma_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name, slug), zones:artisan_zones(zone:zones(id, name))")
+    .select("id, name, account_type, company_name, description, price_label, photo_url, cover_url, headline, experience_years, hours, open_24_7, takes_urgent, diploma_verified, registration_verified, diploma_title, verified, avg_rating, review_count, country_code, status, trade:trades(id, name, slug), zones:artisan_zones(zone:zones(id, name))")
     .eq("id", id).maybeSingle();
   if (!a || a.status !== "approved") notFound();
 
@@ -56,7 +57,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
   const st = openStatus((a as any).hours, (a as any).open_24_7, a.country_code);
   const price = priceFor(trade?.slug, a.price_label);
   const rating = a.review_count ? String(a.avg_rating).replace(".", ",") : null;
-  const whoLine = a.account_type === "entreprise" && a.company_name && a.company_name !== a.name ? a.company_name : null;
+  const whoLine = companyShown(a as any) && a.company_name && a.company_name !== a.name ? a.company_name : null;
 
   const base = siteUrl();
   const ld = {
@@ -80,7 +81,7 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
                 {isPro && <span className="tag boost">⭐ Pro</span>}
                 {a.verified && <span className="tag ok">✓ Identité vérifiée</span>}
                 {a.diploma_verified && <span className="tag ok">🎓 Diplômé</span>}
-                {a.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
+                {companyShown(a as any) && <span className="tag mute">Entreprise</span>}
                 {(a as any).takes_urgent && <span className="tag boost">🚨 Urgences</span>}
               </div>
               <h1>{a.name}</h1>

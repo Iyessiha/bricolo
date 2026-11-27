@@ -1,3 +1,4 @@
+import { companyShown } from "@/lib/company";
 import PayButton from "@/components/PayButton";
 import { COMPANY } from "@/lib/company";
 import type { Metadata } from "next";
@@ -64,7 +65,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const [{ data: ident }, { data: diplomas }, { data: company }, { data: shots }, { data: services }, { data: proSub }] = await Promise.all([
     db.from("artisan_identity").select("status, reject_reason, submitted_at").eq("artisan_id", artisan.id).maybeSingle(),
     db.from("artisan_diplomas").select("id, title, status, reject_reason, submitted_at").eq("artisan_id", artisan.id).order("submitted_at", { ascending: false }),
-    db.from("artisan_companies").select("registration_number").eq("artisan_id", artisan.id).maybeSingle(),
+    db.from("artisan_companies").select("registration_number, verified_at").eq("artisan_id", artisan.id).maybeSingle(),
     db.from("portfolio_photos").select("id, url, caption").eq("artisan_id", artisan.id).order("created_at"),
     db.from("artisan_services").select("id, headline, price_label, included, extras").eq("artisan_id", artisan.id).order("created_at"),
     db.from("subscriptions").select("ends_at").eq("artisan_id", artisan.id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
@@ -252,7 +253,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           {artisan.verified && <span className="tag ok">✓ Badge Vérifié</span>}
           {artisan.diploma_verified && <span className="tag ok">🎓 Diplôme vérifié</span>}
           {artisan.experience_years != null && <span className="tag mute">{artisan.experience_years} an{artisan.experience_years > 1 ? "s" : ""} d’expérience</span>}
-          {artisan.account_type === "entreprise" && <span className="tag mute">Entreprise</span>}
+          {companyShown(artisan as any) ? <span className="tag mute">Entreprise</span> : artisan.account_type === "entreprise" && <span className="tag wait">Entreprise : à vérifier</span>}
         </div>
           {approved && (
             <div className="stack" style={{ gap: 8 }}>
@@ -379,6 +380,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               <label className="chip"><input type="radio" name="account_type" value="individuel" defaultChecked={artisan.account_type === "individuel"} />À titre individuel</label>
               <label className="chip"><input type="radio" name="account_type" value="entreprise" defaultChecked={artisan.account_type === "entreprise"} />Au nom d’une entreprise</label>
             </div></div>
+          {artisan.account_type === "entreprise" && !companyShown(artisan as any) && <p className="notice">Votre fiche s’affiche pour l’instant <b>sans la mention « Entreprise »</b> : elle apparaît dès que l’équipe a vérifié votre registre de commerce (numéro ci-dessous) ou un diplôme ou une certification (onglet Diplômes). Écrivez-nous depuis « Contacter Bricolo » pour la faire vérifier.</p>}
           <div className="fld when-ent"><label htmlFor="company_name">Nom officiel de l’entreprise</label><input type="text" id="company_name" name="company_name" maxLength={120} defaultValue={artisan.company_name ?? ""} /></div>
           <div className="fld when-ent"><label htmlFor="registration_number">Numéro d’immatriculation (RCCM, IFU, NIF ou NINEA)</label><input type="text" id="registration_number" name="registration_number" maxLength={60} defaultValue={company?.registration_number ?? ""} /><span className="hint">Jamais affiché aux clients. Il sert à valider votre profil.</span></div>
           <div className="fld"><label htmlFor="name">Nom affiché aux clients</label><input type="text" id="name" name="name" required defaultValue={artisan.name} /></div>

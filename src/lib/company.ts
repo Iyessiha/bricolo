@@ -34,3 +34,8 @@ export const SOCIALS = [
   { name: "YouTube", handle: "@monbricolo", href: "https://www.youtube.com/@monbricolo" },
   { name: "LinkedIn", handle: "Bricolo", href: "https://www.linkedin.com/company/bricolo/" },
 ] as const;
+
+/** Une fiche n'est présentée comme « Entreprise » (mention et nom de l'entreprise) que si l'équipe a vérifié son registre de commerce ou un diplôme / une certification. */
+export function companyShown(a: { account_type?: string | null; diploma_verified?: boolean | null; registration_verified?: boolean | null }): boolean {
+  return a.account_type === "entreprise" && Boolean(a.registration_verified || a.diploma_verified);
+}

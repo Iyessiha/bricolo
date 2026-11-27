@@ -10,7 +10,7 @@ import Flag from "@/components/Flag";
 import AdminImageInput from "@/components/AdminImageInput";
 import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
-import { retirerPhotoProfil, retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover, removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
+import { validerRegistre, retirerPhotoProfil, retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover, removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
 import { fcfa } from "@/lib/format";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { REPORT_REASONS } from "@/lib/email-flows";
@@ -38,7 +38,7 @@ export default async function Review({ params, searchParams }: { params: Promise
   const [{ data: ident }, { data: diplomas }, { data: company }, { data: proSub }] = await Promise.all([
     db.from("artisan_identity").select("*").eq("artisan_id", id).maybeSingle(),
     db.from("artisan_diplomas").select("*").eq("artisan_id", id).order("submitted_at", { ascending: false }),
-    db.from("artisan_companies").select("registration_number").eq("artisan_id", id).maybeSingle(),
+    db.from("artisan_companies").select("registration_number, verified_at").eq("artisan_id", id).maybeSingle(),
     db.from("subscriptions").select("ends_at").eq("artisan_id", id).eq("status", "active").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
@@ -188,7 +188,13 @@ export default async function Review({ params, searchParams }: { params: Promise
           <dt>Expérience</dt><dd>{a.experience_years != null ? `${a.experience_years} an${a.experience_years > 1 ? "s" : ""}` : "Non renseignée"}</dd>
           <dt>Zones</dt><dd>{zones || "—"}</dd>
           <dt>Tarif indicatif</dt><dd>{a.price_label ?? "—"}</dd>
-          {a.account_type === "entreprise" && <><dt>Entreprise</dt><dd>{a.company_name ?? "—"}<br /><span className="meta">N° {company?.registration_number ?? "non renseigné"}</span></dd></>}
+          {a.account_type === "entreprise" && <><dt>Entreprise</dt><dd>{a.company_name ?? "—"}<br /><span className="meta">N° {company?.registration_number ?? "non renseigné"}</span>
+            <div className="row" style={{ gap: 8, flexWrap: "wrap", marginTop: 6, alignItems: "center" }}>
+              {company?.verified_at ? <span className="tag ok">Registre validé</span> : <span className="tag wait">Registre non validé</span>}
+              {(a as any).diploma_verified && <span className="tag ok">Diplôme vérifié</span>}
+              <span className="meta">{(company?.verified_at || (a as any).diploma_verified) ? "Affiché « Entreprise » sur la fiche publique." : "Pas affiché « Entreprise » tant qu’un justificatif n’est pas validé."}</span>
+              {company?.registration_number && <form action={validerRegistre}><input type="hidden" name="id" value={id} /><input type="hidden" name="ok" value={company?.verified_at ? "0" : "1"} /><button className="btn small" type="submit">{company?.verified_at ? "Retirer la validation" : "Valider le registre de commerce"}</button></form>}
+            </div></dd></>}
           <dt>Description</dt><dd>{a.description ?? "—"}</dd>
         </dl>
       </div>
