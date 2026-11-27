@@ -48,7 +48,8 @@ export async function avatarVerdict(buf: Buffer, userId: string): Promise<{ ok: 
         }),
       });
       if (r.ok) { const j = await r.json(); if (/^\s*OUI/i.test(String(j?.content?.[0]?.text ?? ""))) return { ok: false, error: REFUS }; }
-    } catch { /* fail-open */ }
+      else console.warn("[avatar-check] réponse", r.status, (await r.text()).slice(0, 200));
+    } catch (e) { console.warn("[avatar-check] contrôle indisponible", e instanceof Error ? e.message : e); }
   }
   return { ok: true };
 }
