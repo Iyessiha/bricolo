@@ -165,6 +165,20 @@ export async function removeMedia(f: FormData) {
   refresh(a.id); back(page, "ok", "Photo retirée.");
 }
 
+/** Photo de profil : « retirer » enlève la photo de la fiche et efface ses fichiers ; « nettoyer » efface seulement les fichiers qui ne servent plus (anciennes photos, pièce d'identité envoyée par erreur). */
+export async function retirerPhotoProfil(f: FormData) {
+  const { ctx, a, page } = await target(f);
+  const mode = s(f, "mode", 10) === "retirer" ? "retirer" : "nettoyer";
+  const { data: cur } = await ctx.db.from("artisans").select("photo_url, user_id").eq("id", a.id).single();
+  if (mode === "retirer") await ctx.db.from("artisans").update({ photo_url: null }).eq("id", a.id);
+  const keep = mode === "nettoyer" ? cur?.photo_url?.split("/object/public/avatars/")[1] : undefined;
+  const { data: files } = await ctx.db.storage.from("avatars").list(cur!.user_id, { limit: 1000 });
+  const paths = (files ?? []).filter((x) => x.name).map((x) => `${cur!.user_id}/${x.name}`).filter((x) => x !== keep);
+  if (paths.length) await ctx.db.storage.from("avatars").remove(paths);
+  await audit(ctx, "photo.profil_retirer", { type: "artisan", id: a.id, label: a.name }, { mode, fichiers: paths.length });
+  refresh(a.id); back(page, "ok", paths.length ? `Photo de profil : ${paths.length} fichier(s) supprimé(s).` : "Aucun fichier à supprimer.");
+}
+
 const KINDS = ["avertissement", "badge_retire", "suspension", "bannissement"] as const;
 
 /** Traite un signalement : le classer, ou le retenir avec (ou sans) sanction. L'artisan est prévenu par e-mail. */

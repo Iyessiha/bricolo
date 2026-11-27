@@ -10,7 +10,7 @@ import Flag from "@/components/Flag";
 import AdminImageInput from "@/components/AdminImageInput";
 import SetupNotice from "@/components/SetupNotice";
 import { reviewDiplomaAction, reviewDossier } from "../../actions";
-import { retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover, removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
+import { retirerPhotoProfil, retirerCover, televerserCoverArtisan, utiliserPhotoCommeCover, removeMedia, deleteArtisan, giftBoost, giftPro, reactivateArtisan, saveNote, setVerified, suspendArtisan } from "../../gestion";
 import { fcfa } from "@/lib/format";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { REPORT_REASONS } from "@/lib/email-flows";
@@ -113,6 +113,13 @@ export default async function Review({ params, searchParams }: { params: Promise
           <b>Forfait Pro :</b> <span className={`tag ${proSub ? "boost" : "mute"}`}>{proSub ? `Pro jusqu’au ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(proSub.ends_at))}` : "Gratuit"}</span>
           <select name="days" aria-label="Durée offerte"><option value="7">Offrir 1 semaine</option><option value="30">Offrir 1 mois</option><option value="365">Offrir 1 an</option></select>
           <button className="btn small" type="submit">Offrir le Pro</button></form>
+      </div>
+
+      <div className="card pad row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <b>Photo de profil</b>
+        <form action={retirerPhotoProfil}><input type="hidden" name="id" value={id} /><input type="hidden" name="mode" value="retirer" /><button className="btn small" type="submit">Retirer la photo de profil</button></form>
+        <form action={retirerPhotoProfil}><input type="hidden" name="id" value={id} /><input type="hidden" name="mode" value="nettoyer" /><button className="btn small" type="submit">Supprimer les anciens fichiers inutilisés</button></form>
+        <span className="hint">À utiliser si l’artisan a mis une pièce d’identité ou une photo inappropriée comme photo de profil.</span>
       </div>
 
       <div className="card pad stack" id="cover">
