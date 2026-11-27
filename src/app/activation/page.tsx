@@ -6,6 +6,7 @@ import { countryName } from "@/lib/countries";
 import SetupNotice from "@/components/SetupNotice";
 import Activation from "@/components/Activation";
 
+export const maxDuration = 60;
 export const metadata: Metadata = { title: "Activer mon compte", robots: { index: false } };
 
 export default async function ActivationPage() {

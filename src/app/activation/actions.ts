@@ -1,4 +1,5 @@
 "use server";
+import { runIdentityCheck } from "@/lib/identity-check";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
@@ -72,7 +73,7 @@ export async function submitDossier(d: Dossier): Promise<{ ok: boolean; error?: 
     if (stale.length) await db.storage.from("kyc").remove(stale);
   }
   const { data: a } = await db.from("artisans").select("id").eq("user_id", user.id).maybeSingle();
-  if (a?.id) { const id = a.id as string; after(() => notifyProfileReceived(id)); }
+  if (a?.id) { const id = a.id as string; after(async () => { await notifyProfileReceived(id); await runIdentityCheck(id); }); }
   revalidatePath("/tableau-de-bord");
   return { ok: true };
 }

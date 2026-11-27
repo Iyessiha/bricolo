@@ -35,6 +35,7 @@ export default async function Review({ params, searchParams }: { params: Promise
   const { data: a } = await db.from("artisans")
     .select("*, trade:trades(name), profile:profiles(email), zones:artisan_zones(zone:zones(name))").eq("id", id).maybeSingle();
   if (!a) notFound();
+  const { data: ai } = await db.from("identity_ai_checks").select("verdict, reason, decided, checked_at, front_path").eq("artisan_id", id).maybeSingle();
   const [{ data: ident }, { data: diplomas }, { data: company }, { data: proSub }] = await Promise.all([
     db.from("artisan_identity").select("*").eq("artisan_id", id).maybeSingle(),
     db.from("artisan_diplomas").select("*").eq("artisan_id", id).order("submitted_at", { ascending: false }),
@@ -205,6 +206,7 @@ export default async function Review({ params, searchParams }: { params: Promise
           <>
             <p className="meta">{DOC[ident.doc_type] ?? ident.doc_type}{ident.doc_last4 ? ` · n° …${ident.doc_last4}` : ""} · envoyée le {when(ident.submitted_at)}{ident.status === "approved" ? " · acceptée" : ident.status === "rejected" ? " · refusée" : ""}</p>
             <div className="docs"><Doc label="Recto" path={ident.front_path} /><Doc label="Verso" path={ident.back_path} /><Doc label="Selfie avec la pièce" path={ident.selfie_path} /></div>
+            {ai && ai.front_path === ident.front_path && <div className={ai.verdict === "conforme" ? "notice ok" : "notice"}><b>Pré-contrôle IA : {ai.verdict === "conforme" ? "conforme" : ai.verdict === "refuser" ? "non conforme" : ai.verdict === "douter" ? "à vérifier à la main" : "indisponible"}</b>{ai.decided === "refuse_auto" ? " (dossier refusé automatiquement)" : ai.decided === "approuve_auto" ? " (validé automatiquement)" : ""}{ai.reason ? ` · ${ai.reason}` : ""}</div>}
             <div className="notice"><b>À contrôler :</b> le nom sur la pièce correspond au nom du profil · la pièce est valide et lisible · le visage du selfie correspond à la photo de la pièce · la photo de profil montre bien la personne.</div>
           </>
         ) : <p className="empty">Cet artisan n’a pas encore envoyé de pièce d’identité.</p>}
