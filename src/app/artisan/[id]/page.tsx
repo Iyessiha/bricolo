@@ -1,3 +1,5 @@
+import { defaultCoverFor } from "@/lib/default-covers-server";
+import { defaultCoverUrl, isGeneratedCover } from "@/lib/default-covers";
 import { companyShown } from "@/lib/company";
 import { priceText, priceFor } from "@/lib/format";
 import { DAYS, cleanHours, openStatus, timeLabel } from "@/lib/hours";
@@ -67,14 +69,16 @@ export default async function ArtisanPage({ params, searchParams }: { params: Pr
     areaServed: zones.map((z) => ({ "@type": "Place", name: z.name })), knowsAbout: trade?.name,
     ...(a.review_count ? { aggregateRating: { "@type": "AggregateRating", ratingValue: a.avg_rating, reviewCount: a.review_count, bestRating: 5, worstRating: 1 } } : {}),
   };
+  const ownCover = (a as any).cover_url && !isGeneratedCover((a as any).cover_url) ? ((a as any).cover_url as string) : null;
+  const dflt = ownCover ? null : await defaultCoverFor(trade?.slug);
   return (
     <section className="inner sec stack has-mbar">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(ld) }} />
       <p><Link href="/resultats">← Retour aux résultats</Link></p>
       <div className="pgrid">
         <div className="stack">
-          <header className={`card pfhead${(a as any).cover_url ? " hascover" : ""}`}>
-            {(a as any).cover_url && <div className="pfcover"><img src={(a as any).cover_url} alt={`Réalisations de ${a.name}`} /></div>}
+          <header className="card pfhead hascover">
+            <div className="pfcover"><img src={ownCover ?? dflt?.url ?? defaultCoverUrl(trade?.slug, a.id)} alt={ownCover ? `Réalisations de ${a.name}` : ""} /></div>
             <div className="pfphoto">{a.photo_url ? <img src={a.photo_url} alt={`Photo de ${a.name}`} /> : <span aria-hidden="true">{initials(a.name)}</span>}</div>
             <div className="pfid">
               <div className="tags">

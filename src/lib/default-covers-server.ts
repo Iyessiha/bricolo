@@ -32,3 +32,9 @@ export async function defaultCoverFor(slug?: string | null): Promise<DefaultCove
   return s.up[slug] ? { url: s.up[slug], kind: "photo" } : null;
 }
 export const uploadedDefaults = async () => (await defaultSettings()).up;
+/** Ajoute à une carte artisan la cover par défaut de son métier (photo ou dessin), pour les listes qui n'ont pas de cover propre. */
+export function withDefault<T extends { trade_slug?: string | null }>(a: T, ds: Awaited<ReturnType<typeof defaultSettings>>): T & { default_cover: string | null; default_kind: "svg" | "photo" } {
+  const sl = a.trade_slug ?? "";
+  const svg = ds.modes[sl] === "svg";
+  return { ...a, default_kind: svg ? "svg" : "photo", default_cover: !sl ? null : svg ? `/cover-defaut/${sl}` : ds.up[sl] ?? null };
+}

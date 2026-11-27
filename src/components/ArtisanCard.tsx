@@ -64,11 +64,12 @@ export default function ArtisanCard({ a, country, lite, src }: { a: ArtisanRow; 
       </article>
     );
   }
+  const cover = (a.cover_url && !isGeneratedCover(a.cover_url) ? a.cover_url : null) ?? a.default_cover ?? defaultCoverUrl(a.trade_slug, a.id);
   return (
     <article className={`acard${a.sponsored ? " sp" : ""}${lite ? " lite" : ""}`}>
-      <div className={`acard-media${a.cover_url ? " cov" : ""}`}>
-        {a.cover_url ? <img src={a.cover_url} alt="" loading="lazy" /> : a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{initials(a.name)}</span>}
-        {a.cover_url && <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>}
+      <div className="acard-media cov">
+        <img src={cover} alt="" loading="lazy" />
+        <span className="acard-av">{a.photo_url ? <img src={a.photo_url} alt="" loading="lazy" /> : initials(a.name)}</span>
         {a.sponsored && <span className="acard-flag">⭐ Mis en avant<Why /></span>}
         <div className="acard-badges">
           {a.is_pro && <span className="tag boost">Pro</span>}
