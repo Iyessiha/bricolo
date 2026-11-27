@@ -1,3 +1,4 @@
+import { contactError } from "@/lib/contact-guard";
 import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import { composeHeadline, priceLabel } from "@/lib/compose";
@@ -91,6 +92,8 @@ export async function saveArtisanProfile(formData: FormData): Promise<SaveResult
     if (!h.ok) return { ok: false, error: h.error };
     fields.headline = h.value;
   }
+  const guard = contactError({ "Présentation": fields.description, "Promesse": String(formData.get("headline_rest") ?? ""), "Tarif indicatif": fields.price_label });
+  if (guard) return { ok: false, error: guard };
   const registration = String(formData.get("registration_number") ?? "").trim().slice(0, 60);
   const zoneIds = formData.getAll("zones").map(String);
   if (fields.name.length < 2) return { ok: false, error: "Indiquez le nom affiché aux clients." };

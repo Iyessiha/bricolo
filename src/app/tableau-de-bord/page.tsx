@@ -389,7 +389,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <div id="presentation" className="card pad stack psec"><h2>Ma présentation</h2>
             <p className="sub">Une promesse claire et une description concrète donnent envie d’appeler.</p>
           <HeadlineField value={(artisan as any).headline} label="Ma promesse principale (affichée sur votre carte)" />
-          <div className="fld"><label htmlFor="description">Description</label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
+          <div className="fld"><label htmlFor="description">Description <span className="hint">Sans numéro de téléphone : les clients vous joignent par les boutons de votre fiche.</span></label><textarea id="description" name="description" maxLength={1000} defaultValue={artisan.description ?? ""} /></div>
           </div>
           <div className="card pad stack psec"><h2>Prix et contact</h2>
           {["machiniste", "chauffeur"].includes(trades?.find((t) => t.id === artisan.trade_id)?.slug ?? "")

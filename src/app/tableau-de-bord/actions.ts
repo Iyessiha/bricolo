@@ -1,4 +1,5 @@
 "use server";
+import { contactError } from "@/lib/contact-guard";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
@@ -168,6 +169,8 @@ export async function removePortfolio(id: string): Promise<{ ok: boolean }> {
 const svcTo = (kind: "ok" | "erreur", msg: string): never => redirect(`/tableau-de-bord?s=prestations&${kind}=${encodeURIComponent(msg)}`);
 export async function addService(formData: FormData) {
   const c = await me(); if (!c) redirect("/connexion");
+  const guard = contactError({ "Promesse": String(formData.get("headline_rest") ?? ""), "Ce qui est inclus": String(formData.get("included") ?? ""), "Options en supplément": String(formData.get("extras") ?? "") });
+  if (guard) return svcTo("erreur", guard);
   const h = composeHeadline(String(formData.get("headline_rest") ?? ""));
   if (!h.ok) return svcTo("erreur", h.error);
   const { error } = await c.db.from("artisan_services").insert({ artisan_id: c.a.id, headline: h.value, price_label: priceLabel(formData), included: lines(formData.get("included"), 8), extras: lines(formData.get("extras"), 6) });
@@ -176,6 +179,8 @@ export async function addService(formData: FormData) {
 }
 export async function updateService(formData: FormData) {
   const c = await me(); if (!c) redirect("/connexion");
+  const guard = contactError({ "Promesse": String(formData.get("headline_rest") ?? ""), "Ce qui est inclus": String(formData.get("included") ?? ""), "Options en supplément": String(formData.get("extras") ?? "") });
+  if (guard) return svcTo("erreur", guard);
   const id = String(formData.get("id") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return svcTo("erreur", "Prestation introuvable.");
   const h = composeHeadline(String(formData.get("headline_rest") ?? ""));

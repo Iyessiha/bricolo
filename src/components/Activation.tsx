@@ -8,7 +8,7 @@ import ImagePick from "./ImagePick";
 import LiveSelfie from "./LiveSelfie";
 import { prepareImage, IMAGE_ERRORS } from "@/lib/images";
 import { supabaseBrowser } from "@/lib/supabase/browser";
-import { saveProfileStep, savePhoto, submitDossier, type StepState } from "@/app/activation/actions";
+import { saveProfileStep, uploadAvatar, submitDossier, type StepState } from "@/app/activation/actions";
 
 type Opt = { id: string; name: string; parent_id?: string | null };
 export type ActivationProps = {
@@ -61,10 +61,8 @@ export default function Activation(p: ActivationProps) {
     try {
       setBusy("Envoi de la photo…");
       const blob = await prepareImage(photo, 800);
-      const path = `${p.uid}/avatar-${Date.now()}.jpg`;
-      const { error } = await supabaseBrowser().storage.from("avatars").upload(path, blob, { contentType: "image/jpeg" });
-      if (error) throw new Error("upload");
-      const r = await savePhoto(path);
+      const fd = new FormData(); fd.set("photo", blob, "photo.jpg");
+      const r = await uploadAvatar(fd);
       if (!r.ok) { setErr(r.error ?? "Erreur."); return; }
       setStep(3);
     } catch (e) { setErr(errText(e)); } finally { setBusy(""); }
@@ -142,7 +140,7 @@ export default function Activation(p: ActivationProps) {
           <div className="fld"><label htmlFor="whatsapp">WhatsApp <span className="hint">(si différent)</span></label><input id="whatsapp" name="whatsapp" type="tel" defaultValue={d.whatsapp} /></div>
           <PriceField value={d.price_label} />
           <HeadlineField value={(d as any).headline} />
-          <div className="fld"><label htmlFor="description">Description <span className="hint">(facultatif)</span></label><textarea id="description" name="description" maxLength={1000} defaultValue={d.description} placeholder="Vos services, votre méthode, vos garanties : 3 ou 4 phrases." /></div>
+          <div className="fld"><label htmlFor="description">Description <span className="hint">(facultatif). Sans numéro de téléphone : les clients vous joignent par les boutons de votre fiche.</span></label><textarea id="description" name="description" maxLength={1000} defaultValue={d.description} placeholder="Vos services, votre méthode, vos garanties : 3 ou 4 phrases." /></div>
           {nav(null, <button className="btn primary" type="submit" disabled={pending}>{pending ? "Enregistrement…" : "Continuer"}</button>)}
         </form>
       )}
@@ -152,7 +150,7 @@ export default function Activation(p: ActivationProps) {
           <h1 style={{ fontSize: 30 }}>Votre photo de profil</h1>
           <p className="key">Une photo de vous, <b>visage bien visible</b>, rassure les clients. <b>Elle sera affichée sur votre fiche</b> : ne montrez pas votre pièce d’identité sur cette photo.</p>
           {p.photoUrl && !photo && <img className="curphoto" src={p.photoUrl} alt="Votre photo actuelle" />}
-          <ImagePick label="Votre photo" hint="Portrait net, bonne lumière, sans lunettes de soleil." file={photo} onFile={setPhoto} capture="user" round />
+          <ImagePick label="Votre photo" hint="Portrait net, bonne lumière, sans lunettes de soleil. Votre visage ou votre logo uniquement : jamais de pièce d’identité (elle est refusée)." file={photo} onFile={setPhoto} capture="user" round />
           {nav(1, <button className="btn primary" type="button" onClick={putPhoto} disabled={!!busy}>{busy || "Continuer"}</button>)}
         </>
       )}

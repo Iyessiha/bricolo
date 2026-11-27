@@ -2,6 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { avatarVerdict } from "@/lib/avatar-guard";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { tooMany } from "@/lib/rate-limit";
 import { saveArtisanProfile } from "@/lib/artisan-save";
 import { notifyProfileReceived } from "@/lib/email-flows";
 import { documentHash } from "@/lib/email-guard";
@@ -16,16 +19,28 @@ export async function saveProfileStep(_prev: StepState, fd: FormData): Promise<S
   return { ok: true };
 }
 
-/** Étape 2 : la photo est déjà dans le stockage public ; on enregistre son adresse. */
-export async function savePhoto(path: string): Promise<{ ok: boolean; error?: string }> {
+/** Photo de profil : contrôlée AVANT d'être stockée (pas de pièce d'identité), puis enregistrée ; les anciennes photos de l'artisan sont effacées. */
+export async function uploadAvatar(fd: FormData): Promise<{ ok: boolean; error?: string }> {
   const db = await supabaseServer();
   const { data: { user } } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Votre session a expiré. Reconnectez-vous." };
-  if (!path.startsWith(`${user.id}/`) || path.includes("..")) return { ok: false, error: "Fichier invalide." };
-  const { data } = db.storage.from("avatars").getPublicUrl(path);
-  const { error } = await db.from("artisans").update({ photo_url: data.publicUrl }).eq("user_id", user.id);
-  if (error) return { ok: false, error: "L’enregistrement de la photo a échoué." };
-  revalidatePath("/activation");
+  if (tooMany(`avatar:${user.id}`, 10, 10 * 60_000)) return { ok: false, error: "Trop d’essais. Patientez quelques minutes." };
+  const f = fd.get("photo");
+  if (!(f instanceof Blob) || f.size < 1000 || f.size > 3_000_000) return { ok: false, error: "Photo invalide ou trop lourde." };
+  const buf = Buffer.from(await f.arrayBuffer());
+  const verdict = await avatarVerdict(buf, user.id);
+  if (!verdict.ok) return { ok: false, error: verdict.error };
+  const admin = supabaseAdmin();
+  const path = `${user.id}/avatar-${Date.now()}.jpg`;
+  const { error: upErr } = await admin.storage.from("avatars").upload(path, buf, { contentType: "image/jpeg" });
+  if (upErr) return { ok: false, error: "L’envoi a échoué. Réessayez." };
+  const url = admin.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+  const { error } = await db.from("artisans").update({ photo_url: url }).eq("user_id", user.id);
+  if (error) { await admin.storage.from("avatars").remove([path]); return { ok: false, error: "L’enregistrement de la photo a échoué." }; }
+  const { data: old } = await admin.storage.from("avatars").list(user.id, { limit: 1000 });
+  const stale = (old ?? []).filter((x) => x.name && `${user.id}/${x.name}` !== path).map((x) => `${user.id}/${x.name}`);
+  if (stale.length) await admin.storage.from("avatars").remove(stale);
+  revalidatePath("/activation"); revalidatePath("/tableau-de-bord");
   return { ok: true };
 }
 
