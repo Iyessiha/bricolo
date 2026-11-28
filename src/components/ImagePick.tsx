@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
 import CropEditor from "./CropEditor";
+import { prepareImage } from "@/lib/images";
 
 /** Sélecteur de photo avec aperçu. Sur mobile, le bouton propose l'appareil photo ou la galerie. */
 export default function ImagePick({ label, hint, file, onFile, capture, round, optional }: {
@@ -15,6 +16,11 @@ export default function ImagePick({ label, hint, file, onFile, capture, round, o
     const u = URL.createObjectURL(file); setUrl(u);
     return () => URL.revokeObjectURL(u);
   }, [file]);
+  /** Photo de profil : on la réduit avant le cadrage, pour ne pas charger une photo de 12 Mpx en mémoire sur un téléphone modeste. */
+  async function shrink(f: File) {
+    try { const b = await prepareImage(f, 1600, 0.9); setRaw(new File([b], "photo.jpg", { type: "image/jpeg" })); }
+    catch { setRaw(f); }
+  }
   return (
     <div className="pick">
       <span className="lbl">{label}{optional && <span className="hint"> (facultatif)</span>}</span>
@@ -23,7 +29,7 @@ export default function ImagePick({ label, hint, file, onFile, capture, round, o
           {url ? <img src={url} alt="" /> : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>}
         </div>
         <div className="stack" style={{ gap: 6 }}>
-          <input ref={ref} id={id} type="file" accept="image/*" capture={capture} hidden onChange={(e) => { const f = e.target.files?.[0] ?? null; if (f && round) setRaw(f); else onFile(f); e.target.value = ""; }} />
+          <input ref={ref} id={id} type="file" accept="image/*" capture={round ? undefined : capture} hidden onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; if (f && round) void shrink(f); else onFile(f); }} />
           <div className="row">
             <button type="button" className="btn small" onClick={() => ref.current?.click()}>{file ? "Changer" : "Choisir une photo"}</button>
             {file && <button type="button" className="btn small ghost" onClick={() => { onFile(null); if (ref.current) ref.current.value = ""; }}>Retirer</button>}
